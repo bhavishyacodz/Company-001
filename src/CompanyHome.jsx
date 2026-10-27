@@ -83,7 +83,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
             <div className="company-service-icon violet"><LayoutTemplate size={22}/></div><span className="company-card-label">02 / EVENT PLATFORM</span>
             <h3>Event pages without the hassle.</h3><p>A self-service platform for organisers to create event pages, collect registrations and review payment evidence.</p>
             <ul><li><Check size={14}/> Multiple event categories</li><li><Check size={14}/> Organiser-managed details</li><li><Check size={14}/> Review before publication</li></ul>
-            <button onClick={onOrganiser}>Explore organiser access <ArrowRight size={15}/></button>
+            <button onClick={onOrganiser}>Get started free <ArrowRight size={15}/></button>
           </article>
           <article className="company-service-card">
             <div className="company-service-icon amber"><Smartphone size={22}/></div><span className="company-card-label">03 / DIGITAL EXPERIENCES</span>
@@ -164,7 +164,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
       <section className="company-event-callout" id="event-platform">
         <div className="company-event-mark"><CalendarDays size={25}/></div>
         <div className="company-event-copy"><div className="company-kicker">FOR EVENT ORGANISERS</div><h2>Garba night, workshop, sports event or tournament.</h2><p>Choose a category-specific template inside the organiser workspace. The public event page is separate from the Company-001 business website.</p></div>
-        <button className="company-button primary" onClick={onOrganiser}>Open organiser workspace <ArrowRight size={16}/></button>
+        <button className="company-button primary" onClick={onOrganiser}>Get started free <ArrowRight size={16}/></button>
       </section>
 
       <footer className="company-footer"><div className="company-footer-brand"><span className="company-footer-mark"><Globe2 size={17}/></span><span>COMPANY-001<small>WEB & DIGITAL STUDIO</small></span></div><p>Thoughtful websites. Practical digital tools.</p><button onClick={onStart}>View project process <ArrowRight size={14}/></button></footer>
