@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
@@ -7,6 +8,10 @@ import {
   Zap, Settings2, ExternalLink
 } from "lucide-react";
 import "./styles.css";
+
+const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
@@ -37,8 +42,6 @@ function App() {
   const isLiveEventRoute = routeSlugs.length === 2;
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
-  const supabaseUrl = "https://zkzgkovwktljfuuuhivk.supabase.co";
-  const supabasePublishableKey = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
 
   useEffect(() => {
     if (!isLiveEventRoute) return;
@@ -49,7 +52,7 @@ function App() {
       status: "eq.published",
       "organizers.status": "eq.approved",
     });
-    fetch(supabaseUrl + "/rest/v1/events?" + query.toString(), { headers: { apikey: supabasePublishableKey } })
+    fetch(SUPABASE_URL + "/rest/v1/events?" + query.toString(), { headers: { apikey: SUPABASE_PUBLISHABLE_KEY } })
       .then(async (response) => {
         if (!response.ok) throw new Error("Could not load this event.");
         const rows = await response.json();
@@ -91,9 +94,9 @@ function App() {
       form.set("team_name", teamName);
       form.set("website", "");
       if (paymentScreenshot) form.set("payment_screenshot", paymentScreenshot);
-      const response = await fetch(supabaseUrl + "/functions/v1/register-esports", {
+      const response = await fetch(SUPABASE_URL + "/functions/v1/register-esports", {
         method: "POST",
-        headers: { apikey: supabasePublishableKey },
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY },
         body: form,
       });
       const result = await response.json().catch(() => ({}));
@@ -145,12 +148,12 @@ function App() {
         </nav>
         <div className="top-actions">
           <button className="icon-button" aria-label="Notifications"><Bell size={17} /></button>
-          <button className="avatar" onClick={() => setView(view === "site" ? "organizer" : "site")} aria-label="Open organiser preview">N</button>
+          <button className="avatar" onClick={() => setView("account")} aria-label="Sign in or create organiser account">N</button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
 
-      {view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("site")} /> : view === "site" ? (
         <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
@@ -269,6 +272,137 @@ function App() {
         </main>
       )}
     </div>
+  );
+}
+
+
+function AccountPanel({ onBack }) {
+  const [mode, setMode] = useState("signup");
+  const [displayName, setDisplayName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [user, setUser] = useState(null);
+  const [application, setApplication] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setApplication(null); return; }
+    supabase.from("profiles").upsert({
+      id: user.id,
+      display_name: user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer",
+      platform_role: "organizer",
+    }, { onConflict: "id", ignoreDuplicates: true }).then(({ error }) => {
+      if (error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
+    });
+    supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
+      .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data, error }) => { if (!error) setApplication(data); });
+  }, [user]);
+
+  const authenticate = async (event) => {
+    event.preventDefault();
+    setBusy(true); setNotice("");
+    try {
+      if (mode === "signup") {
+        const { data, error } = await supabase.auth.signUp({
+          email, password,
+          options: { data: { display_name: displayName.trim() } },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          setNotice("Account created. Check your email to confirm the account, then sign in here.");
+        } else {
+          const { error: profileError } = await supabase.from("profiles").insert({
+            id: data.user.id, display_name: displayName.trim(), platform_role: "organizer",
+          });
+          if (profileError && profileError.code !== "23505") throw profileError;
+          setUser(data.user);
+          setNotice("Account created. Next, submit your organiser application.");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: data.user.id, display_name: data.user.user_metadata?.display_name || email.split("@")[0], platform_role: "organizer",
+        }, { onConflict: "id", ignoreDuplicates: true });
+        if (profileError) throw profileError;
+        setUser(data.user);
+        setNotice("Signed in successfully.");
+      }
+    } catch (error) {
+      setNotice(error.message || "Could not complete account action.");
+    } finally { setBusy(false); }
+  };
+
+  const submitApplication = async (event) => {
+    event.preventDefault();
+    if (!user) return;
+    setBusy(true); setNotice("");
+    try {
+      const { data, error } = await supabase.from("organizer_applications").insert({
+        applicant_user_id: user.id,
+        business_name: businessName.trim(),
+        category: "esports",
+        contact_email: user.email,
+        notes: "Requested template: Template 001 · eSports",
+        status: "pending",
+      }).select("id,business_name,status,decision_note,created_at").single();
+      if (error) throw error;
+      setApplication(data);
+      setNotice("Application submitted. You can preview your template while we review it.");
+    } catch (error) {
+      setNotice(error.message || "Could not submit the organiser application.");
+    } finally { setBusy(false); }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null); setApplication(null); setNotice("Signed out.");
+  };
+
+  return (
+    <main className="account-shell">
+      <section className="account-card">
+        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to eSports template</button>
+        <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
+        <h1>{user ? "Your organiser account." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
+        <p className="account-lead">Create an account, apply for organiser approval, and prepare your eSports registration page.</p>
+        {!user ? (
+          <>
+            <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
+            <form className="account-form" onSubmit={authenticate}>
+              {mode === "signup" ? <label>YOUR DISPLAY NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How organisers see your name" /></label> : null}
+              <label>EMAIL ADDRESS<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
+              <label>PASSWORD<input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder="At least 8 characters" /></label>
+              <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Please wait…" : mode === "signup" ? "Create organiser account" : "Sign in"} <ArrowRight size={16} /></button>
+            </form>
+          </>
+        ) : (
+          <div className="account-signed-in">
+            <div className="account-user"><span>{(user.email || "O").slice(0,1).toUpperCase()}</span><div><strong>{user.user_metadata?.display_name || user.email}</strong><small>{user.email}</small></div><button onClick={signOut}>Sign out</button></div>
+            {application ? (
+              <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : application.status === "rejected" ? "pending" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. The owner workspace still needs to activate your organiser page." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p></div>
+            ) : (
+              <form className="account-form" onSubmit={submitApplication}>
+                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your esports community" /></label>
+                <div className="account-template-note"><Gamepad2 size={17} /><span><strong>Template 001 · eSports</strong><small>You'll be able to request approval before publishing a live registration page.</small></span></div>
+                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Apply for organiser approval"} <ArrowRight size={16} /></button>
+              </form>
+            )}
+          </div>
+        )}
+        {notice ? <p className="account-notice" role="status">{notice}</p> : null}
+        <p className="account-footnote">Never share your password or payment credentials. Approval is required before a live event can be published.</p>
+      </section>
+    </main>
   );
 }
 
