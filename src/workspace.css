@@ -164,3 +164,18 @@
 .workspace-preview-form-grid input:disabled,.workspace-preview-form-grid select:disabled{cursor:default;opacity:1}
 .workspace-preview-form-empty{padding:11px;border:1px dashed #303447;border-radius:7px}
 @media(max-width:560px){.workspace-preview-form{padding:14px}.workspace-preview-form-grid{grid-template-columns:1fr}}
+
+
+/* Quick section navigation for long-form event creation. */
+.workspace-builder-jumpnav{position:sticky;top:8px;z-index:6;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:9px 10px;margin:12px 0 16px;border:1px solid #353145;border-radius:10px;background:rgba(15,17,27,.94);box-shadow:0 8px 24px rgba(0,0,0,.16);backdrop-filter:blur(14px)}
+.workspace-builder-jumpnav>span{margin-right:4px;color:#8f8ba6;font-size:9px;font-weight:800;letter-spacing:.1em}
+.workspace-builder-jumpnav button{min-height:30px;padding:6px 10px;border:1px solid #383447;border-radius:7px;background:#191724;color:#d4cfe5;font:inherit;font-size:10px;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.workspace-builder-jumpnav button:hover{background:#292239;border-color:#7a60a8}
+.workspace-builder-jumpnav button:focus-visible{outline:2px solid #c1a6ff;outline-offset:2px}
+#workspace-builder-templates,#workspace-builder-branding,#workspace-builder-fields,#workspace-builder-preview{scroll-margin-top:76px}
+@media(max-width:560px){
+ .workspace-builder-jumpnav{top:4px;gap:5px;padding:8px}
+ .workspace-builder-jumpnav>span{width:100%;margin-bottom:2px}
+ .workspace-builder-jumpnav button{flex:1;padding-inline:7px}
+}
+@media(prefers-reduced-motion:reduce){.workspace-builder-jumpnav button{transition:none}}
