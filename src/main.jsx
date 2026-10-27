@@ -441,7 +441,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
-      setNotice("Your organiser workspace is active. You can now create event drafts.");
+      setNotice("Application submitted. Your workspace will become available after platform-owner approval.");
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
@@ -478,7 +478,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
               <form className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. You can create event drafts from the available templates right away.</small></span></div>
+                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. After platform-owner approval, you can create event drafts from the available templates.</small></span></div>
                 <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Create organiser workspace"} <ArrowRight size={16} /></button>
               </form>
             )}
