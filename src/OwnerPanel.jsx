@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Check, ExternalLink, Users } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
+import OwnerEventReview from "./OwnerEventReview.jsx";
 
 const supabase = createClient(
   "https://zkzgkovwktljfuuuhivk.supabase.co",
@@ -91,6 +92,7 @@ export default function OwnerPanel({ onBack }) {
           <div className="owner-filters">{["pending","approved","rejected","all"].map(f => <button key={f} className={filter === f ? "active" : ""} onClick={() => setFilter(f)}>{f[0].toUpperCase()+f.slice(1)}</button>)}</div>
           {loading ? <p className="owner-muted">Loading platform records…</p> : visibleApplications.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No applications in this view.</strong><p>New organiser requests will appear here when submitted.</p></div> : <div className="owner-app-list">{visibleApplications.map(app => <article className="owner-app" key={app.id}><div className="owner-app-top"><div><strong>{app.business_name}</strong><span>{app.contact_email} · {app.category}</span></div><span className={"status-chip " + (app.status === "approved" ? "approved" : "pending")}><span />{app.status.toUpperCase()}</span></div><p>{app.notes || "No extra notes provided."}</p><small>Submitted {new Date(app.created_at).toLocaleString()}</small>{app.status === "pending" ? <div className="owner-app-actions"><button className="button button-primary" disabled={busyId === app.id} onClick={() => review(app,"approved")}>{busyId === app.id ? "Working…" : "Approve & create workspace"} <Check size={14} /></button><button className="button button-secondary" disabled={busyId === app.id} onClick={() => review(app,"rejected")}>Reject</button></div> : app.decision_note ? <div className="owner-decision">Decision note: {app.decision_note}</div> : null}</article>)}</div>}
         </section>
+        <OwnerEventReview />
         <section className="owner-card"><div className="owner-section-head"><div><span className="panel-label">TENANT DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into approved, pending and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
