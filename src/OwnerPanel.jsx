@@ -16,7 +16,7 @@ export default function OwnerPanel({ onBack }) {
   const [applications, setApplications] = useState([]);
   const [consultationRequests, setConsultationRequests] = useState([]);
   const [organizers, setOrganizers] = useState([]);
-  const [counts, setCounts] = useState({ events: 0, registrations: 0 });
+  const [counts, setCounts] = useState({ events: 0, registrations: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
@@ -37,22 +37,24 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, registrationResult, consultationResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, registrationResult, consultationResult, pendingEventResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("registrations").select("id", { count: "exact", head: true }),
-        supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100)
+        supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
+        supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review")
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
       if (eventResult.error) throw eventResult.error;
       if (registrationResult.error) throw registrationResult.error;
       if (consultationResult.error) throw consultationResult.error;
+      if (pendingEventResult.error) throw pendingEventResult.error;
       setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
-      setCounts({ events: eventResult.count || 0, registrations: registrationResult.count || 0 });
+      setCounts({ events: eventResult.count || 0, registrations: registrationResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
     } catch (e) {
       setError(e.message || "Could not load the owner workspace.");
     } finally { setLoading(false); }
