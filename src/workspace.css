@@ -473,3 +473,57 @@
   .workspace-builder .workspace-form-actions .button {flex:1 1 120px;min-width:0}
   .workspace-builder input,.workspace-builder textarea,.workspace-builder select {width:100%;min-width:0;max-width:100%;box-sizing:border-box}
 }
+
+
+/* Simple editing mode for phones: prioritise readable fields over the advanced
+   three-panel canvas. The live preview stays in the flow below the form. */
+@media (pointer: coarse) {
+  .workspace-builder.workspace-website-canvas-mode .workspace-form>:not(.workspace-canvas-layers):not(#workspace-builder-preview):not(.workspace-canvas-inspector):not(.workspace-form-actions) {
+    display:grid!important;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers,
+  .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    display:none!important;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-form>label,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form .workspace-wide,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form .workspace-branding-fields,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form .workspace-section-visibility-options {
+    grid-column:1!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-form>label {
+    display:grid!important;
+    gap:8px;
+    font-size:11px!important;
+    letter-spacing:.04em;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-form input,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form textarea,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form select {
+    min-height:44px;
+    padding:12px!important;
+    font-size:16px!important;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-slug-preview {
+    overflow-wrap:anywhere;
+    white-space:normal;
+  }
+  .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    grid-column:1!important;
+    grid-row:auto!important;
+    margin-top:8px!important;
+  }
+  .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+    position:sticky;
+    bottom:8px;
+    z-index:20;
+    padding:10px;
+    border:1px solid #393149;
+    border-radius:12px;
+    background:rgba(15,15,24,.96);
+    backdrop-filter:blur(12px);
+    box-shadow:0 8px 28px rgba(0,0,0,.35);
+  }
+}
