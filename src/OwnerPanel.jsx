@@ -116,7 +116,7 @@ export default function OwnerPanel({ onBack }) {
           <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>
           <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
           <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
-          <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span></a>
+          <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span><b>{counts.pendingEvents}</b></a>
           <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
           <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
         </nav>
@@ -124,7 +124,8 @@ export default function OwnerPanel({ onBack }) {
         <div className="owner-metrics">
           <div className="owner-metric"><span>ORGANIZER WORKSPACES</span><strong>{organizers.length}</strong><small>Active and suspended accounts</small></div>
           <div className="owner-metric"><span>APPROVED ORGANISERS</span><strong>{organizers.filter(o => o.status === "approved").length}</strong><small>Active organiser accounts</small></div>
-          <div className="owner-metric"><span>EVENTS</span><strong>{counts.events}</strong><small>Database records</small></div>
+          <div className="owner-metric"><span>EVENTS TO REVIEW</span><strong>{counts.pendingEvents}</strong><small>Awaiting publication decision</small></div>
+          <div className="owner-metric"><span>ALL EVENTS</span><strong>{counts.events}</strong><small>Total event records</small></div>
           <div className="owner-metric"><span>REGISTRATIONS</span><strong>{counts.registrations}</strong><small>Participant records</small></div>
         </div>
         <section id="owner-enquiries" className="owner-card">
