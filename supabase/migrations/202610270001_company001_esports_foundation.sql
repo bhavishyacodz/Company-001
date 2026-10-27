@@ -169,12 +169,12 @@ grant select, insert on public.profiles to authenticated;
 grant update (display_name) on public.profiles to authenticated;
 
 grant select, insert, update on public.organizer_applications to authenticated;
-grant select, insert, update on public.organizers to authenticated;
+grant select, insert on public.organizers to authenticated;
 grant update (display_name, slug, branding) on public.organizers to authenticated;
 
 grant select on public.organizers, public.events to anon, authenticated;
 grant insert, update, delete on public.events to authenticated;
-grant select, update on public.registrations to authenticated;
+grant select on public.registrations to authenticated;
 grant update (payment_status, registration_status) on public.registrations to authenticated;
 grant select on public.payment_evidence, public.audit_logs to authenticated;
 
@@ -210,9 +210,14 @@ to authenticated
 using ((select private.is_platform_owner()))
 with check ((select private.is_platform_owner()));
 
-create policy "organizers_read_approved_or_own_or_owner"
+create policy "organizers_public_read_approved"
 on public.organizers for select
-to anon, authenticated
+to anon
+using (status = 'approved');
+
+create policy "organizers_read_own_or_owner"
+on public.organizers for select
+to authenticated
 using (
   status = 'approved'
   or owner_user_id = (select auth.uid())
@@ -230,9 +235,14 @@ to authenticated
 using (owner_user_id = (select auth.uid()) or (select private.is_platform_owner()))
 with check (owner_user_id = (select auth.uid()) or (select private.is_platform_owner()));
 
+create policy "events_public_read_published"
+on public.events for select
+to anon
+using (status = 'published');
+
 create policy "events_read_published_or_owner_or_organizer"
 on public.events for select
-to anon, authenticated
+to authenticated
 using (
   status = 'published'
   or (select private.is_platform_owner())
