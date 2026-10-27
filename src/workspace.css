@@ -56,7 +56,7 @@
 .workspace-live-preview{overflow:hidden;border:1px solid #343044;border-radius:12px;background:#0b0d14}
 .workspace-live-preview-head{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #292638}
 .workspace-preview-pill{padding:5px 8px;border:1px solid #655139;border-radius:999px;color:#f0d6a5;font-size:8px;font-weight:800;letter-spacing:.08em}
-.workspace-live-preview-hero{--preview-accent:#9a6bff;padding:22px;background:radial-gradient(ellipse at 90% 0%,color-mix(in srgb,var(--preview-accent),transparent 76%),transparent 60%),linear-gradient(145deg,#171b29,#0c0e16);border-bottom:1px solid #292d3b}
+.workspace-live-preview-hero{--preview-accent:#9a6bff;font-family:var(--preview-font,var(--display)),sans-serif;padding:22px;background:radial-gradient(ellipse at 90% 0%,color-mix(in srgb,var(--preview-accent),transparent 76%),transparent 60%),linear-gradient(145deg,#171b29,#0c0e16);border-bottom:1px solid #292d3b}
 .workspace-live-preview-brand{display:flex;align-items:center;gap:9px;color:#b9bbca;font-size:10px;font-weight:700}
 .workspace-live-preview-brand>span:first-child,.workspace-live-preview-brand img{width:30px;height:30px;display:grid;place-items:center;object-fit:cover;border-radius:8px;background:var(--preview-accent);color:white;font-size:18px}
 .workspace-live-preview-category{margin:22px 0 8px;color:var(--preview-accent);font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
