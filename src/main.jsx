@@ -10,6 +10,7 @@ import {
 import "./styles.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
+import CompanyHome from "./CompanyHome.jsx";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
@@ -144,22 +145,20 @@ function App() {
     <div className={`app accent-${accent}`}>
       <div className="prototype-banner">
         <span className="prototype-dot" />
-        <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "EARLY PREVIEW"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Homepage showcase uses demo content. Sign in to manage your approved organiser workspace."}</span>
-        <button className="banner-link" onClick={() => setView(view === "site" ? "organizer" : "site")}>
-          {view === "site" ? "See organiser panel" : "Back to public page"} <ArrowRight size={14} />
+        <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
+        <button className="banner-link" onClick={() => setView(isLiveEventRoute ? "account" : (signedInUser ? "organizer" : "account"))}>
+          {isLiveEventRoute ? "Organiser information" : "Start a project"} <ArrowRight size={14} />
         </button>
       </div>
 
       <header className="topbar">
-        <button className="brand" onClick={() => setView("site")} aria-label="ARENA home">
-          <span className="brand-mark"><Swords size={19} strokeWidth={2.5} /></span>
-          <span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span>
+        <button className="brand" onClick={() => setView("site")} aria-label={isLiveEventRoute ? "Event home" : "Company-001 home"}>
+          <span className="brand-mark">{isLiveEventRoute ? <Swords size={19} strokeWidth={2.5} /> : <Globe2 size={19} strokeWidth={2.2} />}</span>
+          <span className="brand-word">{isLiveEventRoute ? <>ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></> : <>COMPANY<span className="brand-period">-001</span><small>WEB & DIGITAL STUDIO</small></>}</span>
         </button>
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
           {view === "site" ? <>
-            <a href="#overview" onClick={() => setMobileMenu(false)}>Overview</a>
-            <a href="#templates" onClick={() => setMobileMenu(false)}>Templates</a>
-            <a href="#rules" onClick={() => setMobileMenu(false)}>How it works</a>
+            {isLiveEventRoute ? <><a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a></> : <><a href="#services" onClick={() => setMobileMenu(false)}>Services</a><a href="#process" onClick={() => setMobileMenu(false)}>Process</a><a href="#event-platform" onClick={() => setMobileMenu(false)}>Event platform</a></>}
           </> : <>
             <button className="nav-text active" onClick={() => setView("organizer")}>Overview</button>
             <button className="nav-text" onClick={() => setView("customize")}>Customize</button>
@@ -175,7 +174,7 @@ function App() {
       </header>
 
       {view === "account" ? <AccountPanel onBack={() => setView("site")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "site" ? (
-        <main>
+        isLiveEventRoute ? <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
             <div className="hero-content">
@@ -278,7 +277,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView(signedInUser ? "organizer" : "account")}>Organiser workspace <ArrowRight size={14} /></button></footer>
-        </main>
+        </main> : <CompanyHome onStart={() => setView(signedInUser ? "organizer" : "account")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
