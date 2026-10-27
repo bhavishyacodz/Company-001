@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users } from "lucide-react";
+import "./workspace.css";
 const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB");
 
 export default function OrganizerWorkspace({ user, initialView = "organizer", onBack }) {
