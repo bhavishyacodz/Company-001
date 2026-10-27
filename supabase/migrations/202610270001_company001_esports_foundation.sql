@@ -64,14 +64,7 @@ language sql
 stable
 security definer
 set search_path = ''
-as $
-  select exists (
-    select 1
-    from public.organizers o
-    where o.id = p_organizer_id
-      and o.owner_user_id = (select auth.uid())
-  );
-$;
+as 'select exists (select 1 from public.organizers o where o.id = p_organizer_id and o.owner_user_id = (select auth.uid()))';
 
 revoke all on function private.is_organizer_owner(uuid) from public;
 grant execute on function private.is_organizer_owner(uuid) to authenticated;
