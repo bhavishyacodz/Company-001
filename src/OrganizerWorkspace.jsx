@@ -14,6 +14,15 @@ const EVENT_TEMPLATES = [
   { key:"community-001", category:"community", name:"Community meetup", label:"Community", icon:UsersRound, description:"Meetups, club gatherings, volunteering and community sessions.", title:"Local Creators Meetup", fieldLabel:"GROUP / SESSION", fieldPlaceholder:"e.g. Volunteer, Creator circle", teamSize:1, gameTitle:"Community meetup", sampleDescription:"Join a local gathering to meet people, share ideas and participate in community activities. Check the session details before attending.", sampleRules:"Treat attendees respectfully, follow venue guidance and contact the organiser if plans change. Do not share other attendees private information." }
 ];
 const getTemplate = (key) => EVENT_TEMPLATES.find((item) => item.key === key) || EVENT_TEMPLATES[0];
+const isRecoverableFormDraft = (draft) => Boolean(
+  draft && typeof draft === "object" && !Array.isArray(draft) &&
+  EVENT_TEMPLATES.some(template => template.key === draft.template_key) &&
+  typeof draft.title === "string" && typeof draft.slug === "string" &&
+  typeof draft.game_title === "string" && typeof draft.description === "string" &&
+  typeof draft.rules === "string" && typeof draft.entry_fee === "string" &&
+  typeof draft.team_size === "string" && Array.isArray(draft.custom_fields) &&
+  Array.isArray(draft.page_sections)
+);
 const getWhiteContrastRatio = (hex) => {
   const match = /^#?([0-9a-f]{6})$/i.exec(String(hex || ""));
   if (!match) return null;
@@ -74,10 +83,17 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
           const savedEvent = (ev.data || []).find(item => item.id === savedEditor.eventId);
           if (savedEvent) {
             editEvent(savedEvent);
+            if (isRecoverableFormDraft(savedEditor.formDraft) && savedEditor.formDraft.template_key === (savedEvent.template_key || "esports-001")) {
+              setForm(savedEditor.formDraft);
+              setIsDirty(true);
+            }
             setSelectedCanvasElement(["brand","title","description","highlights","details","rules","registration"].includes(savedEditor.selectedElement) ? savedEditor.selectedElement : "title");
             setWebsiteOnlyMode(Boolean(savedEditor.websiteOnlyMode));
             setTab("customize");
           }
+        } else if (savedEditor?.isNewDraft && isRecoverableFormDraft(savedEditor.formDraft)) {
+          setEditingId(null); setEditingStatus(null);
+          setForm(savedEditor.formDraft); setIsDirty(true); setWebsiteOnlyMode(false); setTab("customize");
         }
       } catch { /* Ignore unavailable or invalid session editor state. */ }
     } catch(e) { setError(e.message || "Could not load your workspace."); }
@@ -86,12 +102,21 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   useEffect(() => { load(); }, [user.id]);
   useEffect(() => {
     if (!isDirty || tab !== "customize") return;
+    try {
+      const key = `company001:editor:${user.id}`;
+      const previous = JSON.parse(window.sessionStorage.getItem(key) || "{}");
+      window.sessionStorage.setItem(key, JSON.stringify({
+        ...previous, eventId: editingId || null, isNewDraft: !editingId,
+        tab: "customize", websiteOnlyMode, selectedElement: selectedCanvasElement,
+        formDraft: form
+      }));
+    } catch { /* Session draft recovery is best-effort. */ }
     const warnBeforeLeaving = (event) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warnBeforeLeaving);
     return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
-  }, [isDirty, tab]);
+  }, [form, isDirty, tab, editingId, websiteOnlyMode, selectedCanvasElement, user.id]);
 
-  const resetForm = (templateKey = initialTemplateKey) => { setWebsiteOnlyMode(false); const template = getTemplate(templateKey); setUndoStack([]); setRedoStack([]); setEditingId(null); setEditingStatus(null); setIsDirty(false); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:"",primary_color:template.defaultColor || "#9a6bff",font_family:"Inter",logo_url:"",contact_email:"",contact_phone:"",page_sections:["highlights","details","steps"],hero_title_size:72,hero_title_align:"left",custom_fields:[]}); };
+  const resetForm = (templateKey = initialTemplateKey) => { try { window.sessionStorage.removeItem(`company001:editor:${user.id}`); } catch { /* Session persistence is optional. */ } setWebsiteOnlyMode(false); const template = getTemplate(templateKey); setUndoStack([]); setRedoStack([]); setEditingId(null); setEditingStatus(null); setIsDirty(false); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:"",primary_color:template.defaultColor || "#9a6bff",font_family:"Inter",logo_url:"",contact_email:"",contact_phone:"",page_sections:["highlights","details","steps"],hero_title_size:72,hero_title_align:"left",custom_fields:[]}); };
   const editEvent = (ev) => {
     try { window.sessionStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({eventId:ev.id,tab:"customize",websiteOnlyMode:false,selectedElement:"title"})); } catch { /* Session persistence is optional. */ }
     setWebsiteOnlyMode(false);
