@@ -23,7 +23,7 @@ const sampleRegistrations = [
 ];
 
 function App() {
-  const [view, setView] = useState("site");
+  const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState("esports-001");
   const [platformRole, setPlatformRole] = useState(null);
   const [signedInUser, setSignedInUser] = useState(null);
@@ -60,6 +60,8 @@ function App() {
   const registrationClosed = Boolean(isLiveEventRoute && eventData?.registration_closes_at && new Date(eventData.registration_closes_at).getTime() <= Date.now());
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
+
+  useEffect(() => { try { if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view]);
 
   useEffect(() => { const refresh = async (user) => { setSignedInUser(user || null); if (!user) { setPlatformRole(null); return; } const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle(); setPlatformRole(profile?.platform_role || "organizer"); }; supabase.auth.getSession().then(({ data }) => refresh(data.session?.user || null)); const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { window.setTimeout(() => refresh(session?.user || null), 0); }); return () => listener.subscription.unsubscribe(); }, []);
 
