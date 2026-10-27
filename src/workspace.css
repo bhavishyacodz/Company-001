@@ -320,3 +320,14 @@
 .workspace-canvas-inline-tools label,.workspace-canvas-inline-tools button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:5px 9px;border:1px solid #ffffff2a;border-radius:7px;background:#10121dcc;color:#f6f3ff;font:inherit;font-size:10px;cursor:pointer}
 .workspace-canvas-inline-tools input[type="color"]{width:21px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;cursor:pointer}
 .workspace-canvas-inline-tools button:hover,.workspace-canvas-inline-tools label:hover{border-color:#b59aff}
+
+
+/* Keep the three-panel editor layout after legacy canvas defaults. */
+.workspace-website-canvas-mode .workspace-form{grid-template-columns:190px minmax(0,1fr) 250px!important;align-items:start}
+.workspace-website-canvas-mode .workspace-form>:not(.workspace-canvas-layers):not(#workspace-builder-preview):not(.workspace-canvas-inspector):not(.workspace-form-actions){display:none!important}
+.workspace-website-canvas-mode #workspace-builder-preview{grid-column:2;grid-row:1;min-width:0}
+.workspace-website-canvas-mode .workspace-canvas-layers{grid-column:1;grid-row:1}
+.workspace-website-canvas-mode .workspace-canvas-inspector{grid-column:3;grid-row:1}
+.workspace-website-canvas-mode .workspace-form-actions{grid-column:2}
+@media(max-width:1050px){.workspace-website-canvas-mode .workspace-form{grid-template-columns:165px minmax(0,1fr)!important}.workspace-website-canvas-mode .workspace-canvas-inspector{grid-column:1/-1;grid-row:2;position:static;max-height:none}.workspace-website-canvas-mode .workspace-canvas-inspector .workspace-canvas-property-stack{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-website-canvas-mode .workspace-form-actions{grid-column:1/-1}}
+@media(max-width:650px){.workspace-website-canvas-mode .workspace-form{grid-template-columns:minmax(0,1fr)!important}.workspace-website-canvas-mode .workspace-canvas-layers{grid-column:1;grid-row:1;position:static;max-height:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}.workspace-website-canvas-mode #workspace-builder-preview{grid-column:1;grid-row:2}.workspace-website-canvas-mode .workspace-canvas-inspector{grid-column:1;grid-row:3}.workspace-website-canvas-mode .workspace-canvas-inspector .workspace-canvas-property-stack{grid-template-columns:minmax(0,1fr)}.workspace-website-canvas-mode .workspace-form-actions{grid-column:1}}
