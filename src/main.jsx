@@ -172,7 +172,7 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          {platformRole === "owner" ? <button className="owner-shortcut" onClick={() => setView("owner")}><ShieldCheck size={14} /> OWNER</button> : null}
+          <button className="owner-shortcut king-login" onClick={() => setView(platformRole === "owner" ? "owner" : "account")} aria-label="King Login — owner dashboard sign in"><ShieldCheck size={15} /> KING LOGIN</button>
           <button className="account-entry" onClick={() => setView("account")} aria-label="Sign in or create organiser account">{signedInUser ? "WORKSPACE" : "SIGN IN"} <ArrowRight size={14} /></button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
