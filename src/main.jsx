@@ -5,7 +5,7 @@ import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard,
   Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
-  Zap, Settings2, ExternalLink
+  Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake
 } from "lucide-react";
 import "./styles.css";
 import OwnerPanel from "./OwnerPanel.jsx";
@@ -195,6 +195,22 @@ function App() {
             <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>30 NOV · 8:00 PM</strong></div>
             <i />
             <div><Gamepad2 size={17} /><span>GAME</span><strong>Choose your game</strong></div>
+          </section>
+
+          <section className="section template-showcase" id="templates">
+            <div className="section-heading">
+              <div><div className="section-kicker">ONE PLATFORM · MANY POSSIBILITIES</div><h2>YOUR EVENT.<br /><span className="gradient-text">YOUR FORMAT.</span></h2></div>
+              <p>Company-001 is built for more than gaming. Start from a ready-made event layout and tailor it to your audience.</p>
+            </div>
+            <div className="showcase-grid">
+              <article className="showcase-card showcase-esports"><span className="showcase-icon"><Gamepad2 size={21}/></span><span className="showcase-tag">01 · COMPETITION</span><h3>eSports tournaments</h3><p>Player sign-ups, game IDs, squads, entry information and competition rules.</p><small>Example · Nexus Open Qualifiers</small></article>
+              <article className="showcase-card showcase-garba"><span className="showcase-icon"><Music2 size={21}/></span><span className="showcase-tag">02 · CULTURE</span><h3>Garba & Navratri</h3><p>Pass registrations, evening sessions, venue details and attendee instructions.</p><small>Example · Rang Raas Garba Night</small></article>
+              <article className="showcase-card showcase-sports"><span className="showcase-icon"><Trophy size={21}/></span><span className="showcase-tag">03 · SPORTS</span><h3>Sports tournaments</h3><p>Team entries, player categories, schedules, venue and match rules.</p><small>Example · City Champions Cup</small></article>
+              <article className="showcase-card showcase-workshop"><span className="showcase-icon"><BookOpen size={21}/></span><span className="showcase-tag">04 · LEARNING</span><h3>Workshops & seminars</h3><p>Reserve seats, share the agenda, and collect attendee contact details.</p><small>Example · Creative Skills Lab</small></article>
+              <article className="showcase-card showcase-coaching"><span className="showcase-icon"><GraduationCap size={21}/></span><span className="showcase-tag">05 · EDUCATION</span><h3>Coaching & classes</h3><p>Course enquiries, batch selection, session timings and enrolment details.</p><small>Example · Foundation Learning Batch</small></article>
+              <article className="showcase-card showcase-community"><span className="showcase-icon"><HeartHandshake size={21}/></span><span className="showcase-tag">06 · COMMUNITY</span><h3>Cultural & community events</h3><p>Showcases, meetups, auditions, volunteer groups and local gatherings.</p><small>Example · Rhythm & Culture Fest</small></article>
+            </div>
+            <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Explore organiser workspace <ArrowRight size={15}/></button></div>
           </section>
 
           <section className="section event-section" id="format">
