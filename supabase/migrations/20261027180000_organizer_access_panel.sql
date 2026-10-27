@@ -160,6 +160,8 @@ drop policy if exists audit_logs_insert_owner_only on public.audit_logs;
 create policy audit_logs_insert_owner_only
   on public.audit_logs for insert to authenticated
   with check ((select private.is_platform_owner()) and actor_user_id = (select auth.uid()));
+-- The owner-only RLS policy above remains the gate for this INSERT privilege.
+grant insert on public.audit_logs to authenticated;
 
 grant select, insert, update, delete on public.organizer_event_access to authenticated;
 -- Allow the existing owner-only organiser UPDATE policy to be exercised by the access panel.
