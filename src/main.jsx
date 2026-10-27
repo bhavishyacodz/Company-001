@@ -132,7 +132,7 @@ function App() {
     <div className={`app accent-${accent}`}>
       <div className="prototype-banner">
         <span className="prototype-dot" />
-        <span><strong>EARLY PREVIEW</strong> · Sample data only — live registrations and uploads aren't connected yet.</span>
+        <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "EARLY PREVIEW"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Homepage showcase uses demo content. Sign in to manage your approved organiser workspace."}</span>
         <button className="banner-link" onClick={() => setView(view === "site" ? "organizer" : "site")}>
           {view === "site" ? "See organiser panel" : "Back to public page"} <ArrowRight size={14} />
         </button>
