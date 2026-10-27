@@ -96,3 +96,12 @@
 /* Accessible field-builder controls and organiser-defined dropdown choices. */
 .workspace-field-actions{display:flex;align-items:center;gap:6px}.workspace-field-move{width:28px;height:28px;border:1px solid var(--border);border-radius:7px;background:#171a25;color:var(--text);font-weight:800;cursor:pointer}.workspace-field-move:disabled{opacity:.35;cursor:not-allowed}.workspace-field-options-label{grid-column:1/-1}.workspace-field-options-label small{font-size:10px;color:var(--muted);line-height:1.5}.workspace-form select,.registration-form select{width:100%;min-width:0;background:#0b0e15;border:1px solid #343849;border-radius:6px;padding:11px;color:#f4f2fa;font:inherit;font-size:11px}.workspace-form select:focus-visible,.registration-form select:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
 @media(max-width:650px){.workspace-field-options-label{grid-column:auto}}
+
+
+/* Event builder preview viewport controls. */
+.workspace-live-preview-head{flex-wrap:wrap}
+.workspace-preview-heading{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.workspace-preview-mode{display:flex;gap:4px;padding:3px;border:1px solid #343044;border-radius:8px;background:#0b0d14}
+.workspace-preview-mode button{border:1px solid transparent;border-radius:5px;padding:7px 10px;background:transparent;color:#a6a2b6;font:inherit;font-size:10px;cursor:pointer}
+.workspace-preview-mode button.active{background:#302542;border-color:#65508d;color:#f4edff}
+.workspace-preview-mode button:focus-visible{outline:2px solid #c1a6ff;outline-offset:2px}
