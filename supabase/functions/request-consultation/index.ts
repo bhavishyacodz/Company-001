@@ -9,7 +9,7 @@ function responseHeaders(origin: string) {
 }
 function reply(origin: string, status: number, body: Record<string, unknown>) { return new Response(JSON.stringify(body), { status, headers: responseHeaders(origin) }); }
 const str = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
-const validEmail = (value: string) => value.length <= 254 && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+const validEmail = (value: string) => value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 async function sha256(value: string) { const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)); return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join(""); }
 const projectTypes = new Set(["business-website", "landing-page", "web-app", "dashboard", "event-platform", "other"]);
 Deno.serve(async (req: Request) => {
