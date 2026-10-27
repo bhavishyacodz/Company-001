@@ -1,0 +1,9 @@
+
+.owner-access-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:end;margin:18px 0 28px}
+.owner-access-form label{display:flex;flex-direction:column;gap:7px;color:#a6a8b7;font-size:11px}
+.owner-access-form select{width:100%;min-height:42px;padding:9px 10px;border-radius:7px;border:1px solid #353747;background:#10131d;color:#f4f5fb;font:inherit}
+.owner-access-form .button{grid-column:1/-1;justify-self:start}
+.owner-access-organizers{margin-top:24px}
+.owner-access-organizers h3{font-size:14px;margin:0 0 12px}
+.owner-error{color:#ff9f9f;background:#281719;border:1px solid #67343a;padding:10px 12px;border-radius:7px;font-size:12px}
+@media(max-width:760px){.owner-access-form{grid-template-columns:1fr}.owner-access-form .button{grid-column:auto;width:100%}}
