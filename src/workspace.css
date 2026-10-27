@@ -427,3 +427,49 @@
   .workspace-builder .workspace-form-actions{display:flex;flex-wrap:wrap;gap:8px}
   .workspace-builder .workspace-form-actions .button{flex:1 1 120px;min-width:0}
 }
+
+
+/* Phone/tablet touch devices: choose a single-column editor even when the
+   embedded browser reports a desktop-sized CSS viewport. */
+@media (pointer: coarse) {
+  .workspace-shell,.workspace-wrap,.workspace-card.workspace-builder {
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    box-sizing:border-box!important;
+  }
+  .workspace-card.workspace-builder {padding:12px!important;overflow-x:clip}
+  .workspace-builder .workspace-form,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form,
+  .workspace-website-canvas-mode .workspace-form {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    gap:12px!important;align-items:stretch!important;
+  }
+  .workspace-builder .workspace-form>*,
+  .workspace-builder.workspace-website-canvas-mode .workspace-form>*,
+  .workspace-website-canvas-mode .workspace-form>* {
+    grid-column:1!important;grid-row:auto!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    justify-self:stretch!important;box-sizing:border-box!important;
+  }
+  .workspace-builder .workspace-form>label,
+  .workspace-builder .workspace-form .workspace-wide {grid-column:1!important}
+  .workspace-builder .workspace-canvas-layers,
+  .workspace-builder .workspace-canvas-inspector {
+    position:static!important;top:auto!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    max-height:none!important;overflow:visible!important;
+  }
+  .workspace-builder #workspace-builder-preview {
+    grid-column:1!important;grid-row:auto!important;
+    width:100%!important;max-width:100%!important;min-width:0!important;
+    margin:0!important;justify-self:stretch!important;
+  }
+  .workspace-builder .workspace-live-preview,
+  .workspace-builder .workspace-live-preview>* {min-width:0!important;max-width:100%!important;box-sizing:border-box}
+  .workspace-builder .workspace-canvas-property-stack,
+  .workspace-builder .workspace-branding-fields {grid-template-columns:minmax(0,1fr)!important}
+  .workspace-builder .workspace-form-actions {grid-column:1!important;grid-row:auto!important;display:flex;flex-wrap:wrap;gap:8px}
+  .workspace-builder .workspace-form-actions .button {flex:1 1 120px;min-width:0}
+  .workspace-builder input,.workspace-builder textarea,.workspace-builder select {width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+}
