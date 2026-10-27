@@ -66,7 +66,7 @@ function App() {
   useEffect(() => {
     if (!isLiveEventRoute) return;
     const query = new URLSearchParams({
-      select: "id,title,category,game_title,team_format,team_size,entry_fee_minor,prize_pool_label,description,rules,starts_at,registration_closes_at,payment_instructions,payment_qr_public_url,organizers!inner(slug,display_name,status)",
+      select: "id,title,category,game_title,team_format,team_size,entry_fee_minor,prize_pool_label,description,rules,starts_at,registration_closes_at,payment_instructions,payment_qr_public_url,branding,organizers!inner(slug,display_name,status)",
       slug: "eq." + eventSlug,
       "organizers.slug": "eq." + organizerSlug,
       status: "eq.published",
@@ -143,7 +143,7 @@ function App() {
   if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
 
   return (
-    <div className={`app accent-${accent}`}>
+    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3" } : undefined}>
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
@@ -154,7 +154,7 @@ function App() {
 
       <header className={isLiveEventRoute ? "topbar" : "topbar company-topbar"}>
         <button className="brand" onClick={() => setView("site")} aria-label={isLiveEventRoute ? "Event home" : "Company-001 home"}>
-          <span className="brand-mark">{isLiveEventRoute ? <Swords size={19} strokeWidth={2.5} /> : <Globe2 size={19} strokeWidth={2.2} />}</span>
+          <span className="brand-mark">{isLiveEventRoute && eventData?.branding?.logoUrl ? <img className="event-brand-logo" src={eventData.branding.logoUrl} alt="" /> : isLiveEventRoute ? <Swords size={19} strokeWidth={2.5} /> : <Globe2 size={19} strokeWidth={2.2} />}</span>
           <span className="brand-word">{isLiveEventRoute ? <>ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></> : <>COMPANY<span className="brand-period">-001</span><small>WEB & DIGITAL STUDIO</small></>}</span>
         </button>
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
@@ -271,6 +271,7 @@ function App() {
               ) : (
                 <form className="registration-form" onSubmit={submitDemo}>
                   <div className="form-grid"><label>{isLiveEventRoute ? categoryPresentation.participant : "PLAYER NAME"}<input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder={isLiveEventRoute ? categoryPresentation.namePlaceholder : "Your in-game name"} required /></label><label>EMAIL ADDRESS<input type="email" value={playerEmail} onChange={e => setPlayerEmail(e.target.value)} placeholder="you@example.com" required /></label><label>{isLiveEventRoute ? categoryPresentation.idLabel : "GAME ID / UID"}<input value={gameId} onChange={e => setGameId(e.target.value)} placeholder={isLiveEventRoute && categoryKey !== "esports" ? "Optional details" : "Enter your player ID"} required={!isLiveEventRoute || categoryKey === "esports"} /></label><label>TEAM NAME <span className="optional">(optional)</span><input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Your squad name" /></label></div>
+                  {isLiveEventRoute && Array.isArray(eventData?.branding?.registrationFields) ? <div className="form-grid custom-registration-fields">{eventData.branding.registrationFields.slice(0,8).map((field) => <label key={field.id}>{field.label}{field.required ? null : <span className="optional"> (optional)</span>}<input name={"custom_" + field.id} type={["text","email","number","tel"].includes(field.type) ? field.type : "text"} required={Boolean(field.required)} maxLength={500} placeholder={field.placeholder || "Enter " + String(field.label || "details").toLowerCase()} /></label>)}</div> : null}
                   <div className="payment-box"><div className="payment-title"><ShieldCheck size={17} /><span>ENTRY POLICY</span><strong>{eventData?.entry_fee_minor > 0 ? "₹" + (eventData.entry_fee_minor / 100).toFixed(0) : "FREE"}</strong></div>{eventData?.entry_fee_minor > 0 ? <><p>{eventData.payment_instructions || "Follow the organiser's payment instructions, then attach your screenshot for review."}</p>{eventData.payment_qr_public_url ? <img className="payment-qr" src={eventData.payment_qr_public_url} alt="Organiser payment QR code" /> : null}<label className="upload-area"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setPaymentScreenshot(e.target.files?.[0] || null)} required /><ImagePlus size={21} /><span><strong>{paymentScreenshot ? paymentScreenshot.name : "Attach payment screenshot"}</strong><small>PNG, JPG or WEBP · maximum 3 MB</small></span><span className="upload-action">{paymentScreenshot ? "Change" : "Browse"}</span></label></> : <p>This event is free to enter. No payment is collected.</p>}</div>
                   {submissionError ? <p className="form-error" role="alert">{submissionError}</p> : null}
                   <label className="consent-check"><input type="checkbox" required /><span>I confirm these details are accurate and agree to the event rules and privacy notice.</span></label>
