@@ -26,12 +26,12 @@ begin
   end if;
   v_slug := v_base || '-' || substr(replace(new.id::text, '-', ''), 1, 8);
 
-  insert into public.organizers (owner_user_id, display_name, slug, status)
+  insert into public.organizers as existing_organizer (owner_user_id, display_name, slug, status)
   values (new.applicant_user_id, new.business_name, v_slug, 'approved')
   on conflict (owner_user_id) do update
     set status = case
-      when public.organizers.status = 'pending' then 'approved'
-      else public.organizers.status
+      when existing_organizer.status = 'pending' then 'approved'
+      else existing_organizer.status
     end;
 
   return new;
@@ -44,6 +44,13 @@ drop trigger if exists organizer_applications_auto_activate on public.organizer_
 create trigger organizer_applications_auto_activate
 before insert on public.organizer_applications
 for each row execute function public.auto_activate_organizer_application();
+
+-- The BEFORE INSERT trigger changes pending to approved before RLS checks the row.
+drop policy if exists applications_submit_own_pending on public.organizer_applications;
+create policy applications_submit_own_autoactivated
+on public.organizer_applications for insert
+to authenticated
+with check (applicant_user_id = (select auth.uid()) and status = 'approved');
 
 -- Activate workspaces blocked only by the removed approval step.
 update public.organizers
@@ -77,13 +84,13 @@ ready as (
       substr(replace(id::text, '-', ''), 1, 8) as organizer_slug
   from normalized
 )
-insert into public.organizers (owner_user_id, display_name, slug, status)
+insert into public.organizers as existing_organizer (owner_user_id, display_name, slug, status)
 select applicant_user_id, business_name, organizer_slug, 'approved'
 from ready
 on conflict (owner_user_id) do update
   set status = case
-    when public.organizers.status = 'pending' then 'approved'
-    else public.organizers.status
+    when existing_organizer.status = 'pending' then 'approved'
+    else existing_organizer.status
   end;
 
 -- Clear pending/rejected states from the retired organizer-approval workflow.
