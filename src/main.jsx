@@ -143,7 +143,7 @@ function App() {
 
   return (
     <div className={`app accent-${accent}`}>
-      <div className="prototype-banner">
+      <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
         <button className="banner-link" onClick={() => isLiveEventRoute ? setView("account") : document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
@@ -151,7 +151,7 @@ function App() {
         </button>
       </div>
 
-      <header className="topbar">
+      <header className={isLiveEventRoute ? "topbar" : "topbar company-topbar"}>
         <button className="brand" onClick={() => setView("site")} aria-label={isLiveEventRoute ? "Event home" : "Company-001 home"}>
           <span className="brand-mark">{isLiveEventRoute ? <Swords size={19} strokeWidth={2.5} /> : <Globe2 size={19} strokeWidth={2.2} />}</span>
           <span className="brand-word">{isLiveEventRoute ? <>ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></> : <>COMPANY<span className="brand-period">-001</span><small>WEB & DIGITAL STUDIO</small></>}</span>
