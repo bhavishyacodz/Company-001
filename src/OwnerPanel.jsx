@@ -107,7 +107,7 @@ export default function OwnerPanel({ onBack }) {
   return (
     <main className="owner-shell">
       <div className="owner-wrap">
-        <header className="owner-heading"><div><div className="section-kicker">COMPANY-001 / PRIVATE CONTROL ROOM</div><h1>Platform overview.</h1><p>Organizer workspaces activate automatically. Review events before publication and manage project enquiries here.</p></div><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></header>
+        <header className="owner-heading"><div><div className="section-kicker">COMPANY-001 / PRIVATE CONTROL ROOM</div><h1>Platform overview.</h1><p>Review organiser applications and events before activation or publication, and manage project enquiries here.</p></div><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></header>
         <div className="owner-metrics">
           <div className="owner-metric"><span>ORGANIZER WORKSPACES</span><strong>{organizers.length}</strong><small>Active and suspended accounts</small></div>
           <div className="owner-metric"><span>APPROVED ORGANISERS</span><strong>{organizers.filter(o => o.status === "approved").length}</strong><small>Active organiser accounts</small></div>
