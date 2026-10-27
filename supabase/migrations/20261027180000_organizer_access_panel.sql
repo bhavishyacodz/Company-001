@@ -125,22 +125,18 @@ create policy registrations_read_own_organizer_or_owner
     or (select private.can_access_event(event_id))
   );
 
+-- Keep direct registration-row updates limited to the platform owner and the event's own organiser.
+-- Delegated users can read assigned registrations, but payment/status changes stay behind the audited RPC.
 drop policy if exists registrations_update_payment_review_only on public.registrations;
 create policy registrations_update_payment_review_only
   on public.registrations for update to authenticated
   using (
     (select private.is_platform_owner())
-    or (
-      (select private.can_edit_event(event_id))
-      and exists (select 1 from public.organizers o where o.id = organizer_id and o.status = 'approved')
-    )
+    or (select private.is_organizer_owner(organizer_id))
   )
   with check (
     (select private.is_platform_owner())
-    or (
-      (select private.can_edit_event(event_id))
-      and exists (select 1 from public.organizers o where o.id = organizer_id and o.status = 'approved')
-    )
+    or (select private.is_organizer_owner(organizer_id))
   );
 
 drop policy if exists payment_evidence_read_own_organizer_or_owner on public.payment_evidence;
