@@ -54,6 +54,7 @@ function App() {
     cultural: { label:"Cultural event", cta:"Join the event", participant:"PARTICIPANT NAME", idLabel:"PERFORMANCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"MAKE IT", heroAccent:"MEMORABLE", ticker:"EVENT DETAILS" },
     community: { label:"Community meetup", cta:"Join the meetup", participant:"ATTENDEE NAME", idLabel:"GROUP / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"MEET. SHARE.", heroAccent:"CONNECT.", ticker:"MEETUP DETAILS" },
   })[categoryKey] || { label:"Event registration", cta:"Register for event", participant:"PARTICIPANT NAME", idLabel:"REFERENCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"YOUR NEXT", heroAccent:"CHAPTER STARTS HERE", ticker:"EVENT DETAILS" };
+  const HeroCategoryIcon = ({esports:Gamepad2,garba:Music2,sports:Trophy,workshop:BookOpen,coaching:GraduationCap,cultural:Palette,community:HeartHandshake})[categoryKey] || Gamepad2;
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
@@ -179,7 +180,7 @@ function App() {
             <div className="hero-content">
               <div className="eyebrow"><span className="live-pip" /> REGISTRATION OPEN <span className="eyebrow-line" /> SEASON 01</div>
               <h1>{isLiveEventRoute ? <>{categoryPresentation.heroLine}<br /><span className="gradient-text">{categoryPresentation.heroAccent}</span></> : <>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</>}</h1>
-              <p className="hero-copy">{eventData?.description || "One arena. One shot at glory. Join the open tournament built for the next generation of competitors."}</p>
+              <p className="hero-copy">{eventData?.description || (isLiveEventRoute ? "Review the event details and organiser instructions, then register your interest." : "One arena. One shot at glory. Join the open tournament built for the next generation of competitors.")}</p>
               <div className="hero-buttons">
                 <button className="button button-primary" onClick={openRegister}>{isLiveEventRoute ? categoryPresentation.cta : "Register for tournament"} <ArrowRight size={17} /></button>
                 <a className="button button-quiet" href="#format">Explore event <ArrowDownRight size={17} /></a>
@@ -189,9 +190,9 @@ function App() {
             <div className="hero-art" aria-hidden="true">
               <div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-ring ring-three" />
               <div className="art-cross cross-one" /><div className="art-cross cross-two" />
-              <div className="art-core"><Swords size={96} strokeWidth={1.1} /></div>
-              <div className="art-label label-top"><span className="label-dot" /> OPEN QUALIFIERS</div>
-              <div className="art-label label-bottom"><Trophy size={16} /> COMPETE FOR THE CROWN</div>
+              <div className="art-core"><HeroCategoryIcon size={96} strokeWidth={1.1} /></div>
+              <div className="art-label label-top"><span className="label-dot" /> {isLiveEventRoute ? categoryPresentation.label.toUpperCase() : "OPEN QUALIFIERS"}</div>
+              <div className="art-label label-bottom">{isLiveEventRoute ? <HeroCategoryIcon size={16} /> : <Trophy size={16} />} {isLiveEventRoute ? "REGISTRATION OPEN" : "COMPETE FOR THE CROWN"}</div>
               <div className="art-coordinate">22°43' N<br />75°51' E</div>
             </div>
             <div className="hero-index"><span>01</span> / 04</div>
