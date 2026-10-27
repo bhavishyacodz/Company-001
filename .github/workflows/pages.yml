@@ -40,7 +40,8 @@ jobs:
           grep -qi "access-control-allow-origin: $SITE_ORIGIN" /tmp/consultation-preflight-headers.txt
           invalid_code="$(curl --silent --show-error --output /tmp/consultation-invalid.json --write-out '%{http_code}' --request POST "$CONSULTATION_URL" --header "Origin: $SITE_ORIGIN" --header "apikey: $SUPABASE_PUBLISHABLE_KEY" --header 'Content-Type: application/json' --data '{"name":"x","email":"invalid","project_type":"unknown","requirements":"short"}')"
           test "$invalid_code" = "400"
-          echo "Consultation endpoint is reachable, CORS preflight works, and invalid input is rejected without creating a row."
+          grep -q '"error":"Please check your name, email, project type and project details."' /tmp/consultation-invalid.json
+          echo "Consultation endpoint is reachable, CORS preflight works, and malformed input receives the expected validation error without creating a row."
       - name: Prepare SPA fallback
         run: cp dist/index.html dist/404.html
       - name: Upload build artifact
