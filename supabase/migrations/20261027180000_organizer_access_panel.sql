@@ -111,7 +111,13 @@ create policy events_delete_own_or_owner
   on public.events for delete to authenticated
   using (
     (select private.is_platform_owner())
-    or (select private.is_organizer_owner(organizer_id))
+    or (
+      (select private.is_organizer_owner(organizer_id))
+      and exists (
+        select 1 from public.organizers o
+        where o.id = events.organizer_id and o.status = 'approved'
+      )
+    )
   );
 
 drop policy if exists registrations_read_own_organizer_or_owner on public.registrations;
