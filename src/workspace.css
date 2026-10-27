@@ -224,3 +224,10 @@
     margin: 12px 0 16px;
   }
 }
+
+.workspace-contrast-check{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid #6a5030;border-radius:9px;background:rgba(120,78,22,.12)}
+.workspace-contrast-check.good{border-color:#285b48;background:rgba(20,82,55,.12)}
+.workspace-contrast-dot{width:12px;height:12px;flex:0 0 auto;margin-top:3px;border:1px solid #ffffff70;border-radius:50%}
+.workspace-contrast-check>div{display:grid;gap:4px;min-width:0}
+.workspace-contrast-check strong{font-size:11px;color:#eeeaf7}
+.workspace-contrast-check small{font-size:10px;line-height:1.6;color:#a5a8ba}
