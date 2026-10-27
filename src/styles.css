@@ -179,3 +179,16 @@
 .account-entry{min-height:36px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid #3b4355;border-radius:6px;background:#141923;color:#e7eaf3;font-size:9px;font-weight:800;letter-spacing:.08em;white-space:nowrap;transition:background .18s,border-color .18s}
 .account-entry:hover{background:#20283a;border-color:#697ba6}
 @media(max-width:700px){.account-entry{min-height:34px;padding:0 10px;font-size:8px}.top-actions{gap:8px}}
+
+
+/* Keep the Company-001 business shell visually distinct from ARENA event pages. */
+.company-banner{background:#0d1119;border-bottom-color:#242d3b;color:#aab3c4}
+.company-banner strong{color:#c4d0f3}
+.company-banner .prototype-dot{background:#9bb2ff;box-shadow:0 0 12px #7899ff}
+.company-banner .banner-link{color:#c6d2ff}
+.company-banner .banner-link:hover{color:#fff}
+.company-topbar .brand-mark{border-color:#3a4865;background:linear-gradient(145deg,#1d2a42,#10141d);color:#b8c8ff;border-radius:7px}
+.company-topbar .brand-period{color:#a9bcff}
+.company-topbar .brand-word small{color:#8995ab}
+.company-topbar .account-entry{border-color:#3a455a;background:#121824;color:#e3e8f5}
+.company-topbar .account-entry:hover{background:#1a2435;border-color:#7187b9}
