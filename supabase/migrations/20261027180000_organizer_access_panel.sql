@@ -38,9 +38,16 @@ as $function$
       and o.status = 'approved'
       and (
         o.owner_user_id = (select auth.uid())
-        or exists (
-          select 1 from public.organizer_event_access a
-          where a.event_id = e.id and a.user_id = (select auth.uid())
+        or (
+          exists (
+            select 1 from public.organizers grantee
+            where grantee.owner_user_id = (select auth.uid())
+              and grantee.status = 'approved'
+          )
+          and exists (
+            select 1 from public.organizer_event_access a
+            where a.event_id = e.id and a.user_id = (select auth.uid())
+          )
         )
       )
   );
@@ -61,10 +68,17 @@ as $function$
       and o.status = 'approved'
       and (
         o.owner_user_id = (select auth.uid())
-        or exists (
-          select 1 from public.organizer_event_access a
-          where a.event_id = e.id and a.user_id = (select auth.uid())
-            and a.access_level = 'editor'
+        or (
+          exists (
+            select 1 from public.organizers grantee
+            where grantee.owner_user_id = (select auth.uid())
+              and grantee.status = 'approved'
+          )
+          and exists (
+            select 1 from public.organizer_event_access a
+            where a.event_id = e.id and a.user_id = (select auth.uid())
+              and a.access_level = 'editor'
+          )
         )
       )
   );
