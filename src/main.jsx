@@ -203,7 +203,7 @@ function App() {
             <div className="hero-index"><span>01</span> / 04</div>
           </section>
 
-          <section className="ticker" aria-label={isLiveEventRoute ? "Event highlights" : "Tournament highlights"}>
+          <section className="ticker" aria-label={isLiveEventRoute ? "Event highlights" : "Tournament highlights"} style={isLiveEventRoute && Array.isArray(eventData?.branding?.pageSections) && !eventData.branding.pageSections.includes("highlights") ? {display:"none"} : undefined}>
             <div><Trophy size={17} /><span>REWARDS</span><strong>Badges & recognition</strong></div>
             <i />
             <div><Users size={17} /><span>FORMAT</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Solo, teams & more"}</strong></div>
@@ -229,7 +229,7 @@ function App() {
             <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView("account")}>Get started free <ArrowRight size={15}/></button></div>
           </section> : null}
 
-          <section className="section event-section" id="format">
+          <section className="section event-section" id="format" style={isLiveEventRoute && Array.isArray(eventData?.branding?.pageSections) && !eventData.branding.pageSections.includes("details") ? {display:"none"} : undefined}>
             <div className="section-heading">
               <div><div className="section-kicker">{isLiveEventRoute ? categoryPresentation.ticker : "THE MISSION"}</div><h2>{isLiveEventRoute ? <>MADE FOR <span className="gradient-text">{categoryPresentation.label.toUpperCase()}.</span></> : <>BUILT FOR THE <span className="gradient-text">COMPETITIVE.</span></>}</h2></div>
               <p>{isLiveEventRoute ? "Review the organiser’s details, schedule, entry requirements and rules before registering." : "Everything you need to know before you drop in. Read the details, lock your slot, and get ready to play."}</p>
@@ -254,7 +254,7 @@ function App() {
             {isLiveEventRoute && (eventData?.branding?.venue || eventData?.branding?.contactEmail || eventData?.branding?.contactPhone) ? <div className="event-contact-strip">{eventData?.branding?.venue ? <div><MapPin size={17}/><span><small>VENUE / LOCATION</small><strong>{eventData.branding.venue}</strong></span></div> : null}{eventData?.branding?.contactEmail ? <a href={"mailto:" + eventData.branding.contactEmail}><Mail size={17}/><span><small>CONTACT EMAIL</small><strong>{eventData.branding.contactEmail}</strong></span></a> : null}{eventData?.branding?.contactPhone ? <a href={"tel:" + eventData.branding.contactPhone}><PhoneCall size={17}/><span><small>CONTACT PHONE</small><strong>{eventData.branding.contactPhone}</strong></span></a> : null}</div> : null}
           </section>
 
-          <section className="section steps-section" id="rules">
+          <section className="section steps-section" id="rules" style={isLiveEventRoute && Array.isArray(eventData?.branding?.pageSections) && !eventData.branding.pageSections.includes("steps") ? {display:"none"} : undefined}>
             <div className="steps-copy"><div className="section-kicker">{isLiveEventRoute ? "HOW TO REGISTER" : "HOW TO ENTER"}</div><h2>{isLiveEventRoute ? <>THREE STEPS.<br /><span className="gradient-text">ONE EVENT.</span></> : <>THREE STEPS.<br /><span className="gradient-text">ONE SHOT.</span></>}</h2><p>Simple from the first click to your registration confirmation.</p></div>
             <div className="steps-list">
               <div className="step-row"><span className="step-no">01</span><div><h3>Fill in your details</h3><p>{isLiveEventRoute ? "Enter your name and contact details, plus any event-specific information requested." : "Player name, contact details, game ID and team information."}</p></div><Check size={18} /></div>
