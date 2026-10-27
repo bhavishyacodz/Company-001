@@ -431,3 +431,26 @@
  .owner-module-anchor{scroll-margin-top:130px}
 }
 @media(prefers-reduced-motion:reduce){.owner-metric,.owner-app,.owner-command-nav a{transition:none}}
+
+/* Keep expanded audit metadata readable on narrow owner-dashboard screens. */
+.owner-audit-metadata {
+  max-width: 100%;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  padding: 0.9rem;
+  border: 1px solid var(--owner-border, rgba(255,255,255,0.12));
+  border-radius: 0.8rem;
+  background: rgba(8, 10, 24, 0.55);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.owner-app details summary {
+  cursor: pointer;
+  color: var(--owner-muted, #aaa9c5);
+  padding: 0.45rem 0;
+}
+.owner-app details summary:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
