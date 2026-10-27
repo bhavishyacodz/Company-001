@@ -266,3 +266,8 @@
 .workspace-website-canvas-mode .workspace-live-preview-hero h3[contenteditable="true"]:hover,.workspace-website-canvas-mode .workspace-live-preview-description[contenteditable="true"]:hover,.workspace-website-canvas-mode .workspace-live-preview-details span[contenteditable="true"]:hover,.workspace-website-canvas-mode .workspace-live-preview-rules p[contenteditable="true"]:hover{outline-color:#9a6bff88}
 .workspace-website-canvas-mode .workspace-live-preview-hero h3[contenteditable="true"]:focus,.workspace-website-canvas-mode .workspace-live-preview-description[contenteditable="true"]:focus,.workspace-website-canvas-mode .workspace-live-preview-details span[contenteditable="true"]:focus,.workspace-website-canvas-mode .workspace-live-preview-rules p[contenteditable="true"]:focus{outline:2px solid #b59aff;background:#ffffff08}
 .workspace-canvas-inline-hint{margin:12px 0 0;padding:9px 11px;border:1px dashed #63518b;border-radius:7px;color:#c8b8f0;font-size:10px;line-height:1.6}
+
+.workspace-canvas-inline-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 12px}
+.workspace-canvas-inline-tools label,.workspace-canvas-inline-tools button{display:inline-flex;align-items:center;gap:7px;min-height:30px;padding:5px 9px;border:1px solid #ffffff2a;border-radius:7px;background:#10121dcc;color:#f6f3ff;font:inherit;font-size:10px;cursor:pointer}
+.workspace-canvas-inline-tools input[type="color"]{width:21px;height:20px;padding:0;border:0;border-radius:4px;background:transparent;cursor:pointer}
+.workspace-canvas-inline-tools button:hover,.workspace-canvas-inline-tools label:hover{border-color:#b59aff}
