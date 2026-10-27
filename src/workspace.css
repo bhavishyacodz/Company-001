@@ -127,3 +127,26 @@
 .workspace-setup-check.done strong{color:#b8f1d3}
 @media(max-width:760px){.workspace-setup-checks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:420px){.workspace-setup-progress{padding:13px}.workspace-setup-checks{grid-template-columns:1fr}.workspace-setup-check{align-items:center}}
+
+
+/* Premium builder polish: clearer focus states and always-reachable draft actions. */
+.workspace-form>label{font-size:10px;letter-spacing:.055em;line-height:1.5}
+.workspace-form input:not([type="checkbox"]):not([type="color"]),.workspace-form textarea,.workspace-form select{transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease}
+.workspace-form input:not([type="checkbox"]):not([type="color"]):hover,.workspace-form textarea:hover,.workspace-form select:hover{border-color:#55516b}
+.workspace-form input:not([type="checkbox"]):not([type="color"]):focus-visible,.workspace-form textarea:focus-visible,.workspace-form select:focus-visible{outline:2px solid #a78bfa;outline-offset:2px;border-color:#a78bfa;background:#10121d}
+.workspace-form-actions{position:sticky;bottom:8px;z-index:5;padding:12px;border:1px solid #393448;border-radius:12px;background:rgba(14,16,25,.94);box-shadow:0 12px 32px rgba(0,0,0,.28);backdrop-filter:blur(16px)}
+.workspace-form-actions .button{min-height:42px}
+.workspace-form-actions .button-primary{box-shadow:0 5px 18px rgba(154,107,255,.18)}
+.workspace-setup-progress,.workspace-branding-builder,.workspace-fields-builder,.workspace-live-preview{scroll-margin-top:18px}
+.template-choice:focus-visible,.workspace-field-move:focus-visible,.workspace-remove-field:focus-visible{outline:2px solid #c1a6ff;outline-offset:3px}
+.workspace-custom-field{transition:border-color .16s ease,background-color .16s ease}
+.workspace-custom-field:focus-within{border-color:#675386;background:rgba(31,24,46,.34)}
+.workspace-brand-preview{min-width:0;overflow-wrap:anywhere}
+.workspace-brand-preview strong{overflow-wrap:anywhere}
+@media(max-width:700px){
+  .workspace-form-actions{bottom:5px;padding:9px;gap:7px}
+  .workspace-form-actions .button{flex:1;justify-content:center;min-width:0;padding-inline:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .workspace-form input,.workspace-form textarea,.workspace-form select,.workspace-custom-field,.template-choice{transition:none}
+}
