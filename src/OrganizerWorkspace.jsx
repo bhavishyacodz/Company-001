@@ -88,6 +88,19 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       if (!organizer || organizer.status !== "approved") throw new Error("Your organiser account must be approved before creating events.");
       const slug = form.slug.toLowerCase().trim().replace(/[^a-z0-9-]+/g,"-").replace(/^-+|-+$/g,"");
       if (!/^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$/.test(slug)) throw new Error("Event slug must be 3–60 characters using lowercase letters, numbers and hyphens.");
+      const startsAt = form.starts_at ? new Date(form.starts_at) : null;
+      const closesAt = form.registration_closes_at ? new Date(form.registration_closes_at) : null;
+      if (startsAt && Number.isNaN(startsAt.getTime())) throw new Error("Enter a valid event start date and time.");
+      if (closesAt && Number.isNaN(closesAt.getTime())) throw new Error("Enter a valid registration closing date and time.");
+      if (startsAt && closesAt && closesAt.getTime() > startsAt.getTime()) throw new Error("Registration must close before the event starts.");
+      for (const field of form.custom_fields) {
+        if (field.type === "select") {
+          const options = String(field.options || "").split(",").map(option => option.trim()).filter(Boolean);
+          if (options.length < 2) throw new Error("Each dropdown field needs at least two comma-separated choices.");
+          if (options.length > 20) throw new Error("Each dropdown field can have at most 20 choices.");
+          if (new Set(options.map(option => option.toLocaleLowerCase())).size !== options.length) throw new Error("Dropdown choices must be unique (duplicate choices found).");
+        }
+      }
       const safePublicImageUrl = (value, label) => {
         const raw = String(value || "").trim();
         if (!raw) return "";
@@ -98,7 +111,6 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         }
         return parsed.href;
       };
-      for (const field of form.custom_fields) { if (field.type === "select" && String(field.options || "").split(",").map(option=>option.trim()).filter(Boolean).length < 2) throw new Error("Each dropdown field needs at least two comma-separated choices."); }
       const safeLogoUrl = safePublicImageUrl(form.logo_url, "Logo URL");
       const safePaymentQrUrl = safePublicImageUrl(form.payment_qr_public_url, "Payment QR URL");
       const selectedTemplate = getTemplate(form.template_key);
