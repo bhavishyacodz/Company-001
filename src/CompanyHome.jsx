@@ -14,7 +14,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
           <h1>Turn your idea into a <em>website that works.</em></h1>
           <p className="company-hero-lead">Company-001 designs and builds custom websites, focused landing pages and practical digital tools for businesses, creators and event organisers.</p>
           <div className="company-hero-actions">
-            <button className="company-button primary" onClick={onStart}>Discuss a website project <ArrowRight size={17} /></button>
+            <button className="company-button primary" onClick={onStart}>See how projects work <ArrowRight size={17} /></button>
             <a className="company-button secondary" href="#services">Explore services <ArrowUpRight size={16} /></a>
           </div>
           <div className="company-proof"><span><Check size={15} /> Clear scope before work starts</span><span><Check size={15} /> Custom-built to your needs</span></div>
@@ -52,7 +52,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
             <div className="company-service-icon"><Monitor size={22}/></div><span className="company-card-label">01 / CUSTOM DEVELOPMENT</span>
             <h3>Websites made for your business.</h3><p>Business websites, service pages and landing pages shaped around your brand, content and goals.</p>
             <ul><li><Check size={14}/> Responsive desktop and mobile layout</li><li><Check size={14}/> Custom features scoped in advance</li><li><Check size={14}/> Hosting and domain setup guidance</li></ul>
-            <button onClick={onStart}>Plan a website <ArrowRight size={15}/></button>
+            <button onClick={onStart}>View project process <ArrowRight size={15}/></button>
           </article>
           <article className="company-service-card">
             <div className="company-service-icon violet"><LayoutTemplate size={22}/></div><span className="company-card-label">02 / EVENT PLATFORM</span>
@@ -64,7 +64,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
             <div className="company-service-icon amber"><Smartphone size={22}/></div><span className="company-card-label">03 / DIGITAL EXPERIENCES</span>
             <h3>Useful tools, not just pages.</h3><p>Purpose-built forms, dashboards and workflows to make a specific business process easier to manage.</p>
             <ul><li><Check size={14}/> Forms and admin views</li><li><Check size={14}/> Database-backed features when needed</li><li><Check size={14}/> Scope and milestones agreed first</li></ul>
-            <button onClick={onStart}>Discuss an idea <ArrowRight size={15}/></button>
+            <button onClick={onStart}>View project process <ArrowRight size={15}/></button>
           </article>
         </div>
       </section>
@@ -88,7 +88,7 @@ export default function CompanyHome({ onStart, onOrganiser }) {
         <button className="company-button primary" onClick={onOrganiser}>Open organiser workspace <ArrowRight size={16}/></button>
       </section>
 
-      <footer className="company-footer"><div className="company-footer-brand"><span className="company-footer-mark"><Globe2 size={17}/></span><span>COMPANY-001<small>WEB & DIGITAL STUDIO</small></span></div><p>Thoughtful websites. Practical digital tools.</p><button onClick={onStart}>Start a conversation <ArrowRight size={14}/></button></footer>
+      <footer className="company-footer"><div className="company-footer-brand"><span className="company-footer-mark"><Globe2 size={17}/></span><span>COMPANY-001<small>WEB & DIGITAL STUDIO</small></span></div><p>Thoughtful websites. Practical digital tools.</p><button onClick={onStart}>View project process <ArrowRight size={14}/></button></footer>
     </main>
   );
 }

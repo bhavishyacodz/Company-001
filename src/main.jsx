@@ -146,8 +146,8 @@ function App() {
       <div className="prototype-banner">
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
-        <button className="banner-link" onClick={() => setView(isLiveEventRoute ? "account" : (signedInUser ? "organizer" : "account"))}>
-          {isLiveEventRoute ? "Organiser information" : "Start a project"} <ArrowRight size={14} />
+        <button className="banner-link" onClick={() => isLiveEventRoute ? setView("account") : document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
+          {isLiveEventRoute ? "Organiser sign in" : "Explore services"} <ArrowRight size={14} />
         </button>
       </div>
 
@@ -166,9 +166,8 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button className="icon-button" aria-label="Notifications"><Bell size={17} /></button>
           {platformRole === "owner" ? <button className="owner-shortcut" onClick={() => setView("owner")}><ShieldCheck size={14} /> OWNER</button> : null}
-          <button className="avatar" onClick={() => setView("account")} aria-label="Sign in or create organiser account">{signedInUser ? (signedInUser.email || "N").slice(0,1).toUpperCase() : "N"}</button>
+          <button className="account-entry" onClick={() => setView("account")} aria-label="Sign in or create organiser account">{signedInUser ? "WORKSPACE" : "SIGN IN"} <ArrowRight size={14} /></button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
@@ -277,7 +276,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView(signedInUser ? "organizer" : "account")}>Organiser workspace <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => setView(signedInUser ? "organizer" : "account")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+        </main> : <CompanyHome onStart={() => document.getElementById("process")?.scrollIntoView({ behavior: "smooth" })} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
