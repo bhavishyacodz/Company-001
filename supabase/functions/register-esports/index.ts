@@ -88,7 +88,10 @@ Deno.serve(async (req: Request) => {
     return reply(origin, 503, { error: "Could not verify this event right now." });
   }
   if (!event) return reply(origin, 404, { error: "This registration page is not available." });
-  if ((event.category ?? "esports") === "esports" && gameId.length < 2) {\n    return reply(origin, 400, { error: "Enter your in-game ID to register for this eSports event." });\n  }\n  if (event.registration_closes_at && new Date(event.registration_closes_at).getTime() <= now) {
+  if ((event.category ?? "esports") === "esports" && gameId.length < 2) {
+    return reply(origin, 400, { error: "Enter your in-game ID to register for this eSports event." });
+  }
+  if (event.registration_closes_at && new Date(event.registration_closes_at).getTime() <= now) {
     return reply(origin, 409, { error: "Registration for this event has closed." });
   }
 
