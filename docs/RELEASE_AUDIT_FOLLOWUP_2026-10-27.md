@@ -11,6 +11,11 @@
 - The three previously missing migration files have now been restored from their original GitHub commit diffs: `20261027084200_limit_registration_review_updates.sql`, `20261027085931_atomic_registration_payment_review.sql`, and `20261027091337_guard_payment_review_transitions.sql`. They were restored as source-history files only; they were not replayed against the live database.
 - Supabase's security advisor still reports leaked-password protection disabled and warns about three authenticated-callable SECURITY DEFINER review RPCs. The RPCs deny `anon`, require internal owner/event-organiser authorization, and use an empty `search_path`; do not revoke access blindly because the owner dashboard uses these operations.
 
+- A source-level release check was added to CI. The six invariants were independently checked against the current repository files and all six passed; the actual GitHub Actions run and Node.js build still need confirmation.
+- A live read-only RLS audit confirmed RLS is enabled on the reviewed public tables. The `profiles` policies only allow self-insert as `organizer`, self-read (or owner-read), and self-update only while the resulting role remains `organizer`. Owner-only organiser creation, publication transitions, and review RPC authorization checks are present. This was a policy-definition review, not a full multi-user end-to-end test.
+- The latest live Supabase security advisor still reports leaked-password protection disabled and three authenticated-callable `SECURITY DEFINER` review RPCs. Inspection confirmed those RPCs deny `anon`, use an empty `search_path`, and check the platform owner or appropriate event organiser internally. Keep their authenticated grants only while required by the owner dashboard and continue testing authorization.
+- The performance advisor currently reports 12 unused indexes as informational findings. Do not remove them without query/workload evidence.
+
 ## Safe next steps
 
 1. Compare the restored migration contents with the live schema and migration ledger before any future migration replay or fresh-project bootstrap.
