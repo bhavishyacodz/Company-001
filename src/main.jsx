@@ -203,7 +203,7 @@ function App() {
             <i />
             <div><Users size={17} /><span>FORMAT</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Solo, teams & more"}</strong></div>
             <i />
-            <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>30 NOV · 8:00 PM</strong></div>
+            <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>{isLiveEventRoute && eventData?.registration_closes_at ? new Date(eventData.registration_closes_at).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Check event details"}</strong></div>
             <i />
             <div><Gamepad2 size={17} /><span>EVENT TYPE</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Choose your format"}</strong></div>
           </section>
@@ -233,17 +233,17 @@ function App() {
               <article className="event-card feature-card">
                 <div className="card-top"><span className="card-icon"><Gamepad2 size={20} /></span><span className="card-number">01 / GAME</span></div>
                 <h3>{isLiveEventRoute ? "Your event." : "Your game."}<br />{isLiveEventRoute ? "Your way." : "Your arena."}</h3><p>{isLiveEventRoute ? "Review the organiser’s event details, schedule and instructions before registering." : "The organiser chooses the game and competition rules for each tournament."}</p>
-                <div className="game-tags"><span>Mobile</span><span>PC</span><span>Console</span></div>
+                <div className="game-tags">{isLiveEventRoute ? <><span>{categoryPresentation.label}</span><span>{eventData?.game_title || "All welcome"}</span></> : <><span>Mobile</span><span>PC</span><span>Console</span></>}</div>
               </article>
               <article className="event-card">
                 <div className="card-top"><span className="card-icon"><Users size={20} /></span><span className="card-number">02 / FORMAT</span></div>
                 <h3>{isLiveEventRoute ? "Clear details." : "Solo or squad."}</h3><p>{isLiveEventRoute ? "Check the event format, timing, location and organiser instructions before you join." : "Choose the format set by your organiser. Team entries can include a captain and teammates."}</p>
-                <div className="card-footer"><span>Flexible team size</span><ArrowUpRightIcon /></div>
+                <div className="card-footer"><span>{isLiveEventRoute ? `Group size: ${eventData?.team_size || 1}` : "Flexible team size"}</span><ArrowUpRightIcon /></div>
               </article>
               <article className="event-card">
                 <div className="card-top"><span className="card-icon"><WalletCards size={20} /></span><span className="card-number">03 / ENTRY</span></div>
                 <h3>Clear entry<br />details.</h3><p>{isLiveEventRoute ? "The organiser sets the entry requirements and payment instructions for this event." : "Entry is free in this starter template. Your organiser shares the tournament details before you register."}</p>
-                <div className="card-footer"><span>Free entry · no payment required</span><ShieldCheck size={15} /></div>
+                <div className="card-footer"><span>{isLiveEventRoute && eventData?.entry_fee_minor > 0 ? `Entry fee · ₹${(eventData.entry_fee_minor / 100).toFixed(0)}` : "Free entry · no payment required"}</span><ShieldCheck size={15} /></div>
               </article>
             </div>
           </section>
@@ -260,7 +260,7 @@ function App() {
           <section className="register-wrap" id="registration">
             <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>{isLiveEventRoute ? "SAVE YOUR" : "CLAIM YOUR"}<br /><span className="gradient-text">{isLiveEventRoute ? "PLACE." : "SPOT."}</span></h2><p>{isLiveEventRoute ? "Enter your details to register for this tournament." : "Enter your details below. This is a preview of the registration flow for the eSports template."}</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
             <div className="register-panel">
-              <div className="panel-header"><div><span className="panel-label">PLAYER REGISTRATION</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
+              <div className="panel-header"><div><span className="panel-label">{isLiveEventRoute ? "EVENT REGISTRATION" : "PLAYER REGISTRATION"}</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
               {submitted ? (
                 <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>{liveConfirmation?.message || "Preview submission received in this browser session. No data has been sent to a server."}</p><div className="confirmation-code"><span>{liveConfirmation ? "CONFIRMATION REFERENCE" : "DEMO CONFIRMATION"}</span><strong>{liveConfirmation?.confirmation_reference || "ARENA-DEMO-001"}</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setLiveConfirmation(null); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); setPaymentScreenshot(null); }}>Register another player <ArrowRight size={16} /></button></div>
               ) : (
