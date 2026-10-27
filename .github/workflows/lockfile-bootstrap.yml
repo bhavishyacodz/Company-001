@@ -14,7 +14,6 @@ concurrency:
 
 jobs:
   create-lockfile:
-    if: hashFiles('package-lock.json') == ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -26,9 +25,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Check whether lockfile is missing
+        id: lockfile
+        shell: bash
+        run: |
+          if test -s package-lock.json; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "package-lock.json already exists; no change required."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Generate lockfile without running package scripts
+        if: steps.lockfile.outputs.present == 'false'
         run: npm install --package-lock-only --ignore-scripts
       - name: Commit lockfile if absent
+        if: steps.lockfile.outputs.present == 'false'
         run: |
           if test ! -s package-lock.json; then
             echo "npm did not generate a package-lock.json"
