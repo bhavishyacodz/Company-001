@@ -3,6 +3,7 @@ import { ArrowRight, Check, ExternalLink, Users } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
+import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
 
 const supabase = createClient(
   "https://zkzgkovwktljfuuuhivk.supabase.co",
@@ -169,6 +170,7 @@ export default function OwnerPanel({ onBack }) {
             ))}</div>
           )}
         </section>
+        <OrganizerAccessPanel currentUser={user} />
         <OwnerEventReview />
         <OwnerPaymentEvidence />
         <section className="owner-card"><div className="owner-section-head"><div><span className="panel-label">TENANT DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
