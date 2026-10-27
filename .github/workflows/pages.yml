@@ -41,7 +41,10 @@ jobs:
           invalid_code="$(curl --silent --show-error --output /tmp/consultation-invalid.json --write-out '%{http_code}' --request POST "$CONSULTATION_URL" --header "Origin: $SITE_ORIGIN" --header "apikey: $SUPABASE_PUBLISHABLE_KEY" --header 'Content-Type: application/json' --data '{"name":"x","email":"invalid","project_type":"unknown","requirements":"short"}')"
           test "$invalid_code" = "400"
           grep -q '"error":"Please check your name, email, project type and project details."' /tmp/consultation-invalid.json
-          echo "Consultation endpoint is reachable, CORS preflight works, and malformed input receives the expected validation error without creating a row."
+          blocked_code="$(curl --silent --show-error --output /tmp/consultation-blocked.json --write-out '%{http_code}' --request POST "$CONSULTATION_URL" --header 'Origin: https://untrusted.example' --header "apikey: $SUPABASE_PUBLISHABLE_KEY" --header 'Content-Type: application/json' --data '{}')"
+          test "$blocked_code" = "403"
+          grep -q '"error":"This website is not allowed to submit enquiries."' /tmp/consultation-blocked.json
+          echo "Consultation endpoint CORS, malformed-input rejection, and untrusted-origin rejection passed without creating a row."
       - name: Prepare SPA fallback
         run: cp dist/index.html dist/404.html
       - name: Upload build artifact
