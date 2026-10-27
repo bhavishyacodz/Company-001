@@ -751,3 +751,32 @@
 @media (prefers-reduced-motion: reduce) {
   .workspace-tabs button { transition: none; }
 }
+
+
+/* Section markers make the long event form easier to scan and complete. */
+.workspace-form-section-title {
+  display:grid;
+  gap:5px;
+  padding:14px 0 10px;
+  border-bottom:1px solid #2d3040;
+  margin-top:8px;
+}
+.workspace-form-section-title span {
+  color:#d7c5ff;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+.workspace-form-section-title p {
+  margin:0;
+  color:#9b9eb1;
+  font-size:12px;
+  line-height:1.55;
+  letter-spacing:0;
+  font-weight:400;
+}
+.workspace-form-section-title:first-child {margin-top:0}
+@media(max-width:700px) {
+  .workspace-form-section-title {padding:12px 0 9px;margin-top:4px}
+  .workspace-form-section-title p {font-size:13px}
+}
