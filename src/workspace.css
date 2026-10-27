@@ -334,3 +334,5 @@
 
 /* Direct canvas positioning controls */
 .workspace-canvas-drag-handle{display:inline-flex;align-items:center;gap:8px;margin:12px 0 6px;padding:7px 10px;border:1px dashed var(--preview-accent,#9a6bff);border-radius:7px;background:#171622;color:#e9e4ff;font-size:11px;font-weight:700;cursor:grab;touch-action:none;user-select:none}.workspace-canvas-drag-handle:active{cursor:grabbing}.workspace-canvas-drag-handle span{font-size:18px;line-height:1}
+
+.workspace-canvas-drag-handle-description{margin-top:4px;margin-bottom:8px}
