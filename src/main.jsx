@@ -157,8 +157,13 @@ function App() {
           <span className="brand-word">{isLiveEventRoute ? <>ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></> : <>COMPANY<span className="brand-period">-001</span><small>WEB & DIGITAL STUDIO</small></>}</span>
         </button>
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
-          {view === "site" ? <>
-            {isLiveEventRoute ? <><a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a></> : <><a href="#services" onClick={() => setMobileMenu(false)}>Services</a><a href="#process" onClick={() => setMobileMenu(false)}>Process</a><a href="#event-platform" onClick={() => setMobileMenu(false)}>Event platform</a></>}
+          {isLiveEventRoute ? <>
+            <a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a>
+          </> : ["site", "templates", "account", "owner"].includes(view) ? <>
+            <button className={view === "site" ? "nav-text active" : "nav-text"} onClick={() => { setView("site"); setMobileMenu(false); }}>Home</button>
+            <button className={view === "templates" ? "nav-text active" : "nav-text"} onClick={() => { setView("templates"); setMobileMenu(false); }}>Templates</button>
+            <a href={view === "site" ? "#services" : "/#services"} onClick={() => { setView("site"); setMobileMenu(false); }}>Services</a>
+            <a href={view === "site" ? "#process" : "/#process"} onClick={() => { setView("site"); setMobileMenu(false); }}>Process</a>
           </> : <>
             <button className="nav-text active" onClick={() => setView("organizer")}>Overview</button>
             <button className="nav-text" onClick={() => setView("customize")}>Customize</button>
@@ -172,7 +177,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("site")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={() => setView(signedInUser ? "organizer" : "account")} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
@@ -311,7 +316,34 @@ function App() {
 }
 
 
-function AccountPanel({ onBack }) {
+function TemplateGallery({ onUseTemplate }) {
+  const templates = [
+    { name: "eSports Tournament", category: "COMPETITION", icon: Gamepad2, theme: "template-theme-esports", description: "Player registrations, squads, game IDs, match rules and tournament details.", example: "Nexus Open Qualifiers" },
+    { name: "Garba & Navratri", category: "CULTURE", icon: Music2, theme: "template-theme-garba", description: "Pass registration, venue information, session timings and attendee notes.", example: "Rang Raas Garba Night" },
+    { name: "Sports Tournament", category: "SPORTS", icon: Trophy, theme: "template-theme-sports", description: "Team entries, player categories, fixtures, venue and competition rules.", example: "City Champions Cup" },
+    { name: "Workshop & Seminar", category: "LEARNING", icon: BookOpen, theme: "template-theme-workshop", description: "Seat reservations, agendas, speaker information and attendee instructions.", example: "Creative Skills Lab" },
+    { name: "Coaching & Classes", category: "EDUCATION", icon: GraduationCap, theme: "template-theme-coaching", description: "Course enquiries, batch selection, timings and enrolment details.", example: "Foundation Learning Batch" },
+    { name: "Cultural Event", category: "PERFORMANCE", icon: Palette, theme: "template-theme-cultural", description: "Performances, auditions, participant categories and event schedules.", example: "Rhythm & Culture Fest" },
+    { name: "Community Meetup", category: "COMMUNITY", icon: HeartHandshake, theme: "template-theme-community", description: "Meetups, club gatherings, volunteering and local community sessions.", example: "Local Creators Meetup" },
+  ];
+  return <main className="public-templates-shell">
+    <section className="public-templates-hero">
+      <div className="section-kicker">COMPANY-001 / PUBLIC TEMPLATE LIBRARY</div>
+      <h1>Find your event’s<br/><span className="gradient-text">starting point.</span></h1>
+      <p>Explore every theme before creating an account. Pick a layout that fits your event, then sign in to customise it and prepare your own event page.</p>
+      <div className="public-template-trust"><span><Globe2 size={15}/> Browse without signing in</span><span><ShieldCheck size={15}/> Your draft stays private</span><span><Sparkles size={15}/> 7 starting layouts</span></div>
+    </section>
+    <section className="public-template-grid" aria-label="Available event templates">
+      {templates.map((template, index) => { const Icon = template.icon; return <article className={"public-template-card " + template.theme} key={template.name}>
+        <div className="public-template-art"><span className="public-template-number">0{index + 1} / {template.category}</span><span className="public-template-symbol"><Icon size={34} strokeWidth={1.5}/></span><span className="public-template-art-caption">EVENT PAGE CONCEPT</span></div>
+        <div className="public-template-body"><h2>{template.name}</h2><p>{template.description}</p><div className="public-template-example"><span>STARTER EXAMPLE</span><strong>{template.example}</strong></div><button className="button button-primary full-width" onClick={onUseTemplate}>Use this template <ArrowRight size={15}/></button><small className="public-template-login-note">Sign in required to customise and save</small></div>
+      </article>; })}
+    </section>
+    <section className="public-template-bottom"><div><span className="section-kicker">READY TO MAKE IT YOURS?</span><h2>Choose a theme. Build your event.</h2><p>Creating an account is free. Live publishing still requires organiser approval.</p></div><button className="button button-primary" onClick={onUseTemplate}>Sign in to get started <ArrowRight size={15}/></button></section>
+  </main>;
+}
+
+function AccountPanel({ onBack, onOpenWorkspace }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -424,7 +456,7 @@ function AccountPanel({ onBack }) {
           <div className="account-signed-in">
             <div className="account-user"><span>{(user.email || "O").slice(0,1).toUpperCase()}</span><div><strong>{user.user_metadata?.display_name || user.email}</strong><small>{user.email}</small></div><button onClick={signOut}>Sign out</button></div>
             {application ? (
-              <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : application.status === "rejected" ? "pending" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. The owner workspace still needs to activate your organiser page." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p></div>
+              <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. Open your workspace to create and manage event drafts." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
             ) : (
               <form className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
