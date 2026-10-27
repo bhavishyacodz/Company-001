@@ -149,9 +149,10 @@ create policy payment_evidence_read_own_organizer_or_owner
   using (
     (select private.is_platform_owner())
     or exists (
-      select 1 from public.registrations r
-      where r.id = payment_evidence.registration_id
-        and (select private.can_access_event(r.event_id))
+      select 1 from public.organizers o
+      where o.id = payment_evidence.organizer_id
+        and o.owner_user_id = (select auth.uid())
+        and o.status = 'approved'
     )
   );
 
