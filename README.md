@@ -4,11 +4,11 @@ The first reusable template is a premium eSports tournament registration page wi
 
 ## Current state
 
-- Responsive public tournament landing page and registration-form preview.
-- Organiser workspace preview with sample registrations.
-- Local template customization preview (event title, organiser name, entry label and accent colour).
-- The current UI is explicitly in **preview mode**. Registration submissions and selected files stay in the browser session; they are not sent to a server.
-- Supabase schema is maintained under `supabase/migrations/`. Live authentication, registration writes, private screenshot uploads, review actions and payment verification still need secure integration and testing.
+- Responsive eSports tournament template and organiser workspace.
+- Supabase email/password sign-up and sign-in, plus organiser applications awaiting owner approval.
+- Published event routes use `/<organizer-slug>/<event-slug>` (on GitHub Pages, prefix `/Company-001/`). Public details load from Supabase.
+- Live registration endpoint validates published events, rate-limits requests, writes registrations server-side, and stores paid-event screenshots in private Storage. Organisers must independently verify transfers; a screenshot is not proof of payment.
+- The root page and organiser dashboard remain preview/sample-data views. The owner review workspace, organiser event creation/editing, live registration review UI, custom quote/payment flow, and production launch checks are still outstanding.
 
 ## Run locally
 
@@ -33,8 +33,9 @@ The UI works in preview mode without Supabase credentials. Do not add a Supabase
 2. Configure Supabase Auth redirect URLs for local and deployed origins.
 3. Create a private bucket for payment evidence with strict storage policies.
 4. Add a server-side registration endpoint with validation, abuse/rate limits and idempotency.
-5. Connect organiser login, approval workflow, event CRUD and private screenshot review.
-6. Test RLS, cross-organiser access denial, file access, mobile layouts and duplicate submissions.
-7. Configure and verify hosting before sharing a public production link.
+5. Build the owner approval workspace and organiser event CRUD; create an approved organiser and publish a test event.
+6. Connect authenticated registration review, private screenshot viewing and payment-status updates; test cross-organiser access denial and rate limits.
+7. In GitHub, enable **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow currently builds successfully, but GitHub's integration cannot enable Pages for this repository automatically.
+8. Verify the deployment URL and test the complete flow on mobile before sharing it publicly.
 
 Never treat a payment screenshot as proof that a transfer was received. The organiser must verify receipt independently.
