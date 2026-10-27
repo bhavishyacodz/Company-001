@@ -205,7 +205,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     (registrationFilter === "all" || r.payment_status === registrationFilter) &&
     (registrationStatusFilter === "all" || r.registration_status === registrationStatusFilter) &&
     (registrationEventFilter === "all" || r.event_id === registrationEventFilter) &&
-    [r.participant_name,r.participant_email,r.game_id,r.team_name,r.confirmation_reference,events.find(ev=>ev.id===r.event_id)?.title].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase())
+    [r.participant_name,r.participant_email,r.game_id,r.team_name,r.confirmation_reference,JSON.stringify(r.custom_fields || {}),events.find(ev=>ev.id===r.event_id)?.title].filter(Boolean).join(" ").toLowerCase().includes(search.trim().toLowerCase())
   );
   const visibleEvents = events.filter(ev =>
     (eventStatusFilter === "all" || ev.status === eventStatusFilter) &&
