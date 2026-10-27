@@ -21,6 +21,8 @@ export default function OwnerPanel({ onBack }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("pending");
+  const [consultationFilter, setConsultationFilter] = useState("all");
+  const [consultationSearch, setConsultationSearch] = useState("");
 
   const load = async () => {
     setLoading(true); setError("");
@@ -95,6 +97,13 @@ export default function OwnerPanel({ onBack }) {
   if (role !== "owner") return <main className="owner-shell"><section className="owner-card"><button className="account-back" onClick={onBack}>← Back to website</button><div className="section-kicker">COMPANY-001 / RESTRICTED</div><h1>Owner access required.</h1><p>Your signed-in account does not have the platform-owner role. This screen cannot grant owner access to itself.</p><p className="owner-muted">To bootstrap the first owner, set platform_role to owner for your own verified user in Supabase SQL Editor, using your Auth user UUID. Never expose service-role credentials in the website.</p></section></main>;
 
   const visibleApplications = applications.filter(a => filter === "all" || a.status === filter);
+  const normalizedConsultationSearch = consultationSearch.trim().toLowerCase();
+  const visibleConsultationRequests = consultationRequests.filter(request => {
+    const matchesStatus = consultationFilter === "all" || request.status === consultationFilter;
+    const searchable = [request.name, request.email, request.phone, request.requirements, request.project_type, request.id].filter(Boolean).join(" ").toLowerCase();
+    return matchesStatus && (!normalizedConsultationSearch || searchable.includes(normalizedConsultationSearch));
+  });
+  const newConsultationCount = consultationRequests.filter(request => request.status === "new").length;
   return (
     <main className="owner-shell">
       <div className="owner-wrap">
@@ -107,14 +116,23 @@ export default function OwnerPanel({ onBack }) {
         </div>
         <section className="owner-card">
           <div className="owner-section-head"><div><span className="panel-label">CUSTOM WEBSITE SERVICE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
-          <p className="owner-muted">Newest first · Up to 100 enquiries shown</p>
-          {loading ? <p className="owner-muted">Loading enquiries…</p> : consultationRequests.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No consultation enquiries yet.</strong><p>New submissions will appear here once the public form is connected and tested.</p></div> : <div className="owner-app-list">{consultationRequests.map(request => <article className="owner-app" key={request.id}>
+          <div className="owner-inbox-summary">
+            <div><strong>{consultationRequests.length}</strong><span>Total enquiries</span></div>
+            <div><strong>{newConsultationCount}</strong><span>Need first response</span></div>
+            <div><strong>{consultationRequests.filter(request => request.status === "quoted").length}</strong><span>Quote sent</span></div>
+          </div>
+          <div className="owner-inbox-controls">
+            <label>Search enquiries<input type="search" value={consultationSearch} onChange={event => setConsultationSearch(event.target.value)} placeholder="Name, email, project or reference" aria-label="Search consultation enquiries" /></label>
+            <label>Filter by status<select value={consultationFilter} onChange={event => setConsultationFilter(event.target.value)} aria-label="Filter consultation enquiries by status"><option value="all">All statuses</option><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label>
+          </div>
+          <p className="owner-muted">Newest first · Showing up to 100 recent enquiries. Use the status to track each step of follow-up.</p>
+          {loading ? <p className="owner-muted">Loading enquiries…</p> : consultationRequests.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No consultation enquiries yet.</strong><p>Once a customer submits the public form, their enquiry will appear here. This inbox is private to the platform owner.</p></div> : visibleConsultationRequests.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No matching enquiries.</strong><p>Try a different search or status filter.</p><button className="button button-secondary" onClick={() => { setConsultationSearch(""); setConsultationFilter("all"); }}>Clear filters</button></div> : <div className="owner-app-list">{visibleConsultationRequests.map(request => <article className="owner-app" key={request.id}>
             <div className="owner-app-top"><div><strong>{request.name}</strong><span>{request.email}{request.phone ? " · " + request.phone : ""}</span></div><span className={"status-chip " + (request.status === "closed" ? "approved" : "pending")}><span />{request.status.toUpperCase()}</span></div>
             <p><strong>Project:</strong> {({"business-website":"Business website","landing-page":"Landing page","web-app":"Web app","dashboard":"Dashboard","event-platform":"Event platform",other:"Other"}[request.project_type] || request.project_type)}</p>
             <p>{request.requirements}</p>
             {request.preferred_time ? <p><strong>Preferred contact time:</strong> {request.preferred_time}</p> : null}
             <small>Received {new Date(request.created_at).toLocaleString()} · Ref {request.id.slice(0,8).toUpperCase()}</small>
-            <div className="owner-app-actions"><label className="owner-muted">Status <select aria-label={"Status for enquiry from " + request.name} value={request.status} disabled={busyId === request.id} onChange={event => updateConsultationStatus(request,event.target.value)}><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
+            <div className="owner-app-actions"><a className="button button-secondary owner-email-link" href={"mailto:" + encodeURIComponent(request.email) + "?subject=" + encodeURIComponent("Your Company-001 project enquiry")}>Reply by email <ExternalLink size={13}/></a><label className="owner-muted">Status <select aria-label={"Status for enquiry from " + request.name} value={request.status} disabled={busyId === request.id} onChange={event => updateConsultationStatus(request,event.target.value)}><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
           </article>)}</div>}
         </section>
         <section className="owner-card">
