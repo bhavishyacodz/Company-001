@@ -28,6 +28,29 @@ jobs:
         run: npm install
       - name: Build site
         run: npm run build
+      - name: Smoke-test consultation endpoint (no database write)
+        env:
+          CONSULTATION_URL: https://zkzgkovwktljfuuuhivk.supabase.co/functions/v1/request-consultation
+          SITE_ORIGIN: https://company-001.pages.dev
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB
+        run: |
+          set -euo pipefail
+          preflight_code="$(curl --silent --show-error --dump-header /tmp/consultation-preflight-headers.txt --output /tmp/consultation-preflight.txt --write-out '%{http_code}' --request OPTIONS "$CONSULTATION_URL" --header "Origin: $SITE_ORIGIN" --header 'Access-Control-Request-Method: POST' --header 'Access-Control-Request-Headers: apikey,content-type')"
+          test "$preflight_code" = "204"
+          grep -qi "access-control-allow-origin: $SITE_ORIGIN" /tmp/consultation-preflight-headers.txt
+          untrusted_preflight_code="$(curl --silent --show-error --dump-header /tmp/consultation-untrusted-preflight-headers.txt --output /tmp/consultation-untrusted-preflight.txt --write-out '%{http_code}' --request OPTIONS "$CONSULTATION_URL" --header 'Origin: https://untrusted.example' --header 'Access-Control-Request-Method: POST' --header 'Access-Control-Request-Headers: apikey,content-type')"
+          test "$untrusted_preflight_code" = "204"
+          if grep -qi 'access-control-allow-origin: https://untrusted.example' /tmp/consultation-untrusted-preflight-headers.txt; then
+            echo "Untrusted origin must not receive matching CORS permission."
+            exit 1
+          fi
+          invalid_code="$(curl --silent --show-error --output /tmp/consultation-invalid.json --write-out '%{http_code}' --request POST "$CONSULTATION_URL" --header "Origin: $SITE_ORIGIN" --header "apikey: $SUPABASE_PUBLISHABLE_KEY" --header 'Content-Type: application/json' --data '{"name":"x","email":"invalid","project_type":"unknown","requirements":"short"}')"
+          test "$invalid_code" = "400"
+          grep -q '"error":"Please check your name, email, project type and project details."' /tmp/consultation-invalid.json
+          blocked_code="$(curl --silent --show-error --output /tmp/consultation-blocked.json --write-out '%{http_code}' --request POST "$CONSULTATION_URL" --header 'Origin: https://untrusted.example' --header "apikey: $SUPABASE_PUBLISHABLE_KEY" --header 'Content-Type: application/json' --data '{}')"
+          test "$blocked_code" = "403"
+          grep -q '"error":"This website is not allowed to submit enquiries."' /tmp/consultation-blocked.json
+          echo "Consultation endpoint trusted/untrusted CORS, malformed-input rejection, and untrusted-origin rejection passed without creating a row."
       - name: Prepare SPA fallback
         run: cp dist/index.html dist/404.html
       - name: Upload build artifact

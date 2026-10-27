@@ -13,6 +13,7 @@ export default function OwnerPanel({ onBack }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [consultationRequests, setConsultationRequests] = useState([]);
   const [organizers, setOrganizers] = useState([]);
   const [counts, setCounts] = useState({ events: 0, registrations: 0 });
   const [loading, setLoading] = useState(true);
@@ -20,6 +21,8 @@ export default function OwnerPanel({ onBack }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [filter, setFilter] = useState("pending");
+  const [consultationFilter, setConsultationFilter] = useState("all");
+  const [consultationSearch, setConsultationSearch] = useState("");
 
   const load = async () => {
     setLoading(true); setError("");
@@ -33,16 +36,19 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, registrationResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, registrationResult, consultationResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
-        supabase.from("registrations").select("id", { count: "exact", head: true })
+        supabase.from("registrations").select("id", { count: "exact", head: true }),
+        supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100)
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
       if (eventResult.error) throw eventResult.error;
       if (registrationResult.error) throw registrationResult.error;
+      if (consultationResult.error) throw consultationResult.error;
+      setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, registrations: registrationResult.count || 0 });
@@ -74,28 +80,67 @@ export default function OwnerPanel({ onBack }) {
     } finally { setBusyId(""); }
   };
 
+  const updateConsultationStatus = async (request, status) => {
+    if (!["new", "contacted", "qualified", "quoted", "closed"].includes(status) || request.status === status) return;
+    setBusyId(request.id); setError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("consultation_requests").update({ status }).eq("id", request.id);
+      if (updateError) throw updateError;
+      setConsultationRequests(current => current.map(item => item.id === request.id ? { ...item, status } : item));
+      setNotice("Enquiry status updated.");
+    } catch (e) {
+      setError(e.message || "Could not update enquiry status.");
+    } finally { setBusyId(""); }
+  };
+
   if (!user) return <main className="owner-shell"><section className="owner-card"><button className="account-back" onClick={onBack}>← Back to website</button><h1>Owner sign-in required.</h1><p>Sign in with your platform-owner account, then open the owner workspace.</p><button className="button button-primary" onClick={onBack}>Back to website <ArrowRight size={15} /></button></section></main>;
   if (role !== "owner") return <main className="owner-shell"><section className="owner-card"><button className="account-back" onClick={onBack}>← Back to website</button><div className="section-kicker">COMPANY-001 / RESTRICTED</div><h1>Owner access required.</h1><p>Your signed-in account does not have the platform-owner role. This screen cannot grant owner access to itself.</p><p className="owner-muted">To bootstrap the first owner, set platform_role to owner for your own verified user in Supabase SQL Editor, using your Auth user UUID. Never expose service-role credentials in the website.</p></section></main>;
 
   const visibleApplications = applications.filter(a => filter === "all" || a.status === filter);
+  const normalizedConsultationSearch = consultationSearch.trim().toLowerCase();
+  const visibleConsultationRequests = consultationRequests.filter(request => {
+    const matchesStatus = consultationFilter === "all" || request.status === consultationFilter;
+    const searchable = [request.name, request.email, request.phone, request.requirements, request.project_type, request.id].filter(Boolean).join(" ").toLowerCase();
+    return matchesStatus && (!normalizedConsultationSearch || searchable.includes(normalizedConsultationSearch));
+  });
+  const newConsultationCount = consultationRequests.filter(request => request.status === "new").length;
   return (
     <main className="owner-shell">
       <div className="owner-wrap">
-        <header className="owner-heading"><div><div className="section-kicker">COMPANY-001 / PRIVATE CONTROL ROOM</div><h1>Platform overview.</h1><p>Review organiser applications and keep the platform accountable.</p></div><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></header>
+        <header className="owner-heading"><div><div className="section-kicker">COMPANY-001 / PRIVATE CONTROL ROOM</div><h1>Platform overview.</h1><p>Organizer workspaces activate automatically. Review events before publication and manage project enquiries here.</p></div><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></header>
         <div className="owner-metrics">
-          <div className="owner-metric"><span>ORGANISER APPLICATIONS</span><strong>{applications.length}</strong><small>All recorded applications</small></div>
+          <div className="owner-metric"><span>ORGANIZER WORKSPACES</span><strong>{organizers.length}</strong><small>Active and suspended accounts</small></div>
           <div className="owner-metric"><span>APPROVED ORGANISERS</span><strong>{organizers.filter(o => o.status === "approved").length}</strong><small>Active organiser accounts</small></div>
           <div className="owner-metric"><span>EVENTS</span><strong>{counts.events}</strong><small>Database records</small></div>
           <div className="owner-metric"><span>REGISTRATIONS</span><strong>{counts.registrations}</strong><small>Participant records</small></div>
         </div>
         <section className="owner-card">
-          <div className="owner-section-head"><div><span className="panel-label">ACCESS CONTROL</span><h2>Organiser applications</h2><p>Approval creates an organiser workspace in one database transaction.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
-          <div className="owner-filters">{["pending","approved","rejected","all"].map(f => <button key={f} className={filter === f ? "active" : ""} onClick={() => setFilter(f)}>{f[0].toUpperCase()+f.slice(1)}</button>)}</div>
-          {loading ? <p className="owner-muted">Loading platform records…</p> : visibleApplications.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No applications in this view.</strong><p>New organiser requests will appear here when submitted.</p></div> : <div className="owner-app-list">{visibleApplications.map(app => <article className="owner-app" key={app.id}><div className="owner-app-top"><div><strong>{app.business_name}</strong><span>{app.contact_email} · {app.category}</span></div><span className={"status-chip " + (app.status === "approved" ? "approved" : "pending")}><span />{app.status.toUpperCase()}</span></div><p>{app.notes || "No extra notes provided."}</p><small>Submitted {new Date(app.created_at).toLocaleString()}</small>{app.status === "pending" ? <div className="owner-app-actions"><button className="button button-primary" disabled={busyId === app.id} onClick={() => review(app,"approved")}>{busyId === app.id ? "Working…" : "Approve & create workspace"} <Check size={14} /></button><button className="button button-secondary" disabled={busyId === app.id} onClick={() => review(app,"rejected")}>Reject</button></div> : app.decision_note ? <div className="owner-decision">Decision note: {app.decision_note}</div> : null}</article>)}</div>}
+          <div className="owner-section-head"><div><span className="panel-label">CUSTOM WEBSITE SERVICE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
+          <div className="owner-inbox-summary">
+            <div><strong>{consultationRequests.length}</strong><span>Total enquiries</span></div>
+            <div><strong>{newConsultationCount}</strong><span>Need first response</span></div>
+            <div><strong>{consultationRequests.filter(request => request.status === "quoted").length}</strong><span>Quote sent</span></div>
+          </div>
+          <div className="owner-inbox-controls">
+            <label>Search enquiries<input type="search" value={consultationSearch} onChange={event => setConsultationSearch(event.target.value)} placeholder="Name, email, project or reference" aria-label="Search consultation enquiries" /></label>
+            <label>Filter by status<select value={consultationFilter} onChange={event => setConsultationFilter(event.target.value)} aria-label="Filter consultation enquiries by status"><option value="all">All statuses</option><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label>
+          </div>
+          <p className="owner-muted">Newest first · Showing up to 100 recent enquiries. Use the status to track each step of follow-up.</p>
+          {loading ? <p className="owner-muted">Loading enquiries…</p> : consultationRequests.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No consultation enquiries yet.</strong><p>Once a customer submits the public form, their enquiry will appear here. This inbox is private to the platform owner.</p></div> : visibleConsultationRequests.length === 0 ? <div className="owner-empty"><Users size={23} /><strong>No matching enquiries.</strong><p>Try a different search or status filter.</p><button className="button button-secondary" onClick={() => { setConsultationSearch(""); setConsultationFilter("all"); }}>Clear filters</button></div> : <div className="owner-app-list">{visibleConsultationRequests.map(request => <article className="owner-app" key={request.id}>
+            <div className="owner-app-top"><div><strong>{request.name}</strong><span>{request.email}{request.phone ? " · " + request.phone : ""}</span></div><span className={"status-chip " + (request.status === "closed" ? "approved" : "pending")}><span />{request.status.toUpperCase()}</span></div>
+            <p><strong>Project:</strong> {({"business-website":"Business website","landing-page":"Landing page","web-app":"Web app","dashboard":"Dashboard","event-platform":"Event platform",other:"Other"}[request.project_type] || request.project_type)}</p>
+            <p>{request.requirements}</p>
+            {request.preferred_time ? <p><strong>Preferred contact time:</strong> {request.preferred_time}</p> : null}
+            <small>Received {new Date(request.created_at).toLocaleString()} · Ref {request.id.slice(0,8).toUpperCase()}</small>
+            <div className="owner-app-actions"><a className="button button-secondary owner-email-link" href={"mailto:" + encodeURIComponent(request.email) + "?subject=" + encodeURIComponent("Your Company-001 project enquiry")}>Reply by email <ExternalLink size={13}/></a><label className="owner-muted">Status <select aria-label={"Status for enquiry from " + request.name} value={request.status} disabled={busyId === request.id} onChange={event => updateConsultationStatus(request,event.target.value)}><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
+          </article>)}</div>}
+        </section>
+        <section className="owner-card">
+          <div className="owner-section-head"><div><span className="panel-label">ORGANIZER ONBOARDING</span><h2>Automatic workspace activation</h2><p>New organizer workspaces activate automatically after signup. Event publication still requires owner review.</p></div></div>
         </section>
         <OwnerEventReview />
         <OwnerPaymentEvidence />
-        <section className="owner-card"><div className="owner-section-head"><div><span className="panel-label">TENANT DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into approved, pending and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section className="owner-card"><div className="owner-section-head"><div><span className="panel-label">TENANT DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
         <p className="owner-muted">Signed in as {user.email}. Owner actions are checked by Supabase, not just by this screen.</p>

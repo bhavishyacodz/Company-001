@@ -15,7 +15,7 @@ const EVENT_TEMPLATES = [
 ];
 const getTemplate = (key) => EVENT_TEMPLATES.find((item) => item.key === key) || EVENT_TEMPLATES[0];
 
-export default function OrganizerWorkspace({ user, initialView = "organizer", onBack }) {
+export default function OrganizerWorkspace({ user, initialView = "organizer", initialTemplateKey = "esports-001", onBack }) {
   const [tab, setTab] = useState(initialView);
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
@@ -26,7 +26,8 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingStatus, setEditingStatus] = useState(null);
-  const [form, setForm] = useState({template_key:"esports-001",title:"",slug:"",game_title:"",description:"",rules:"",entry_fee:"0",team_size:"1",starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""});
+  const initialTemplate = getTemplate(initialTemplateKey);
+  const [form, setForm] = useState({template_key:initialTemplate.key,title:initialTemplate.title,slug:initialTemplate.key.replace(/-001$/,""),game_title:initialTemplate.gameTitle,description:initialTemplate.sampleDescription,rules:initialTemplate.sampleRules,entry_fee:"0",team_size:String(initialTemplate.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""});
   const [search, setSearch] = useState("");
   const [registrationFilter, setRegistrationFilter] = useState("all");
   const [openingEvidence, setOpeningEvidence] = useState("");
@@ -50,7 +51,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   };
   useEffect(() => { load(); }, [user.id]);
 
-  const resetForm = (templateKey = "esports-001") => { const template = getTemplate(templateKey); setEditingId(null); setEditingStatus(null); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
+  const resetForm = (templateKey = initialTemplateKey) => { const template = getTemplate(templateKey); setEditingId(null); setEditingStatus(null); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
   const editEvent = (ev) => {
     setEditingId(ev.id);
     setEditingStatus(ev.status);
@@ -127,7 +128,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
 
   const visibleRegs = registrations.filter(r => (registrationFilter === "all" || r.payment_status === registrationFilter) && [r.participant_name,r.participant_email,r.game_id,r.team_name,r.confirmation_reference].join(" ").toLowerCase().includes(search.toLowerCase()));
   if (loading) return <main className="workspace-shell"><p>Loading your workspace…</p></main>;
-  if (!organizer) return <main className="workspace-shell"><section className="workspace-card"><button className="account-back" onClick={onBack}><ArrowLeft size={14}/> Back</button><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Your real workspace starts after approval.</h1><p>Signed in as {user.email}. Submit an organiser application from your account page. After the platform owner approves it, this page will connect to your real events and registrations.</p><button className="button button-primary" onClick={onBack}>Return to website <ArrowRight size={14}/></button></section></main>;
+  if (!organizer) return <main className="workspace-shell"><section className="workspace-card"><button className="account-back" onClick={onBack}><ArrowLeft size={14}/> Back</button><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Your organiser workspace is not set up yet.</h1><p>Signed in as {user.email}. Open your account page and create your organiser workspace. Once it is created, your events and registrations will appear here.</p><button className="button button-primary" onClick={onBack}>Return to website <ArrowRight size={14}/></button></section></main>;
   return <main className="workspace-shell"><div className="workspace-wrap">
     <header className="workspace-heading"><div><div className="section-kicker">COMPANY-001 / EVENT MANAGEMENT</div><h1>{organizer.display_name}</h1><p>Organiser workspace · <code>{organizer.slug}</code> · {organizer.status} · 7 event templates</p></div><div className="workspace-heading-actions"><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14}/></button><button className="button button-secondary" onClick={load}><RefreshCw size={14}/> Refresh</button></div></header>
     <nav className="workspace-tabs"><button className={tab==="organizer"?"active":""} onClick={()=>setTab("organizer")}>Overview</button><button className={tab==="customize"?"active":""} onClick={()=>{resetForm();setTab("customize")}}>Create event</button><button className={tab==="registrations"?"active":""} onClick={()=>setTab("registrations")}>Registrations ({registrations.length})</button></nav>
