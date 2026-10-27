@@ -1,0 +1,162 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const admin = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "*")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+const jsonHeaders = (origin: string) => ({
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": allowedOrigins.includes("*") || allowedOrigins.includes(origin) ? origin || "*" : allowedOrigins[0] || "*",
+  "Vary": "Origin",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+});
+
+function reply(origin: string, status: number, body: Record<string, unknown>) {
+  return new Response(JSON.stringify(body), { status, headers: jsonHeaders(origin) });
+}
+const clean = (v: FormDataEntryValue | null, max: number) =>
+  typeof v === "string" ? v.trim().slice(0, max) : "";
+const validEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) && v.length <= 254;
+async function sha256(value: string) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function detectImage(bytes: Uint8Array) {
+  if (bytes.length >= 8 && bytes.slice(0, 8).join(",") === "137,80,78,71,13,10,26,10") return { ext: "png", type: "image/png" };
+  if (bytes.length >= 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return { ext: "jpg", type: "image/jpeg" };
+  if (bytes.length >= 12 && new TextDecoder().decode(bytes.slice(0, 4)) === "RIFF" && new TextDecoder().decode(bytes.slice(8, 12)) === "WEBP") return { ext: "webp", type: "image/webp" };
+  return null;
+}
+
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin") ?? "*";
+  if (req.method === "OPTIONS") return new Response("ok", { headers: jsonHeaders(origin) });
+  if (req.method !== "POST") return reply(origin, 405, { error: "Method not allowed." });
+  const contentLength = Number(req.headers.get("content-length") ?? "0");
+  if (contentLength > 4_000_000) return reply(origin, 413, { error: "Request is too large." });
+
+  let form: FormData;
+  try { form = await req.formData(); } catch { return reply(origin, 400, { error: "Invalid registration form." }); }
+
+  // Honeypot for basic automated submissions.
+  if (clean(form.get("website"), 200)) return reply(origin, 200, { ok: true });
+  const organizerSlug = clean(form.get("organizer_slug"), 50).toLowerCase();
+  const eventSlug = clean(form.get("event_slug"), 60).toLowerCase();
+  const participantName = clean(form.get("participant_name"), 120);
+  const participantEmail = clean(form.get("participant_email"), 254).toLowerCase();
+  const gameId = clean(form.get("game_id"), 100);
+  const teamName = clean(form.get("team_name"), 100);
+
+  if (!/^[a-z0-9][a-z0-9-]{1,48}[a-z0-9]$/.test(organizerSlug) ||
+      !/^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$/.test(eventSlug) ||
+      participantName.length < 2 || !validEmail(participantEmail)) {
+    return reply(origin, 400, { error: "Please check the required registration details." });
+  }
+
+  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    ?? req.headers.get("cf-connecting-ip")
+    ?? "unknown";
+  const ipHash = await sha256(forwarded + (Deno.env.get("RATE_LIMIT_PEPPER") ?? supabaseUrl));
+  const now = Date.now();
+  const windowStart = new Date(Math.floor(now / 600000) * 600000).toISOString();
+  const { data: allowed, error: limitError } = await admin.rpc("consume_registration_rate_limit", {
+    p_ip_hash: ipHash, p_window_start: windowStart, p_limit: 10,
+  });
+  if (limitError) {
+    console.error("rate_limit_check_failed");
+    return reply(origin, 503, { error: "Registration is temporarily unavailable. Please try again later." });
+  }
+  if (!allowed) return reply(origin, 429, { error: "Too many attempts. Please wait a few minutes and try again." });
+
+  const { data: event, error: eventError } = await admin
+    .from("events")
+    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, organizers!inner(slug,status)")
+    .eq("slug", eventSlug)
+    .eq("organizers.slug", organizerSlug)
+    .eq("status", "published")
+    .eq("organizers.status", "approved")
+    .maybeSingle();
+
+  if (eventError) {
+    console.error("event_lookup_failed");
+    return reply(origin, 503, { error: "Could not verify this event right now." });
+  }
+  if (!event) return reply(origin, 404, { error: "This registration page is not available." });
+  if ((event.category ?? "esports") === "esports" && gameId.length < 2) {\n    return reply(origin, 400, { error: "Enter your in-game ID to register for this eSports event." });\n  }\n  if (event.registration_closes_at && new Date(event.registration_closes_at).getTime() <= now) {
+    return reply(origin, 409, { error: "Registration for this event has closed." });
+  }
+
+  const fee = Number(event.entry_fee_minor ?? 0);
+  const fileEntry = form.get("payment_screenshot");
+  let imageBytes: Uint8Array | null = null;
+  let imageType: { ext: string; type: string } | null = null;
+  if (fee > 0) {
+    if (!(fileEntry instanceof File) || fileEntry.size < 1 || fileEntry.size > 3_000_000) {
+      return reply(origin, 400, { error: "Upload your payment screenshot (maximum 3 MB)." });
+    }
+    imageBytes = new Uint8Array(await fileEntry.arrayBuffer());
+    imageType = detectImage(imageBytes);
+    if (!imageType || fileEntry.type !== imageType.type) {
+      return reply(origin, 400, { error: "Use a valid PNG, JPG, or WEBP screenshot." });
+    }
+  }
+
+  const { data: registration, error: registrationError } = await admin
+    .from("registrations")
+    .insert({
+      event_id: event.id,
+      organizer_id: event.organizer_id,
+      participant_name: participantName,
+      participant_email: participantEmail,
+      game_id: gameId,
+      team_name: teamName,
+      payment_status: fee > 0 ? "under_review" : "not_required",
+      registration_status: "received",
+    })
+    .select("id, confirmation_reference")
+    .single();
+
+  if (registrationError || !registration) {
+    console.error("registration_insert_failed");
+    return reply(origin, 503, { error: "Could not save your registration. Please try again." });
+  }
+
+  if (imageBytes && imageType) {
+    const path = `${event.organizer_id}/${registration.id}/${crypto.randomUUID()}.${imageType.ext}`;
+    const { error: uploadError } = await admin.storage.from("payment-evidence")
+      .upload(path, imageBytes, { contentType: imageType.type, upsert: false });
+    if (uploadError) {
+      await admin.from("registrations").delete().eq("id", registration.id);
+      console.error("evidence_upload_failed");
+      return reply(origin, 503, { error: "We could not store the screenshot. Please try again." });
+    }
+    const { error: evidenceError } = await admin.from("payment_evidence").insert({
+      registration_id: registration.id,
+      organizer_id: event.organizer_id,
+      private_object_path: path,
+      review_status: "pending",
+    });
+    if (evidenceError) {
+      await admin.storage.from("payment-evidence").remove([path]);
+      await admin.from("registrations").delete().eq("id", registration.id);
+      console.error("evidence_record_failed");
+      return reply(origin, 503, { error: "We could not finish the registration. Please try again." });
+    }
+  }
+
+  return reply(origin, 201, {
+    ok: true,
+    confirmation_reference: registration.confirmation_reference,
+    event_title: event.title,
+    payment_status: fee > 0 ? "under_review" : "not_required",
+    message: fee > 0
+      ? "Registration received. The organiser will review the payment screenshot. This screenshot is not proof of payment."
+      : "Registration received successfully.",
+  });
+});
