@@ -678,3 +678,76 @@
     min-height:44px;
   }
 }
+
+
+/* Usability polish: clearer navigation and comfortable tap targets on phones. */
+.workspace-tabs button {
+  min-height: 42px;
+  padding: 11px 14px;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .16s ease,border-color .16s ease,color .16s ease;
+}
+.workspace-tabs button:focus-visible,
+.workspace-heading-actions .button:focus-visible,
+.workspace-event-actions .button:focus-visible {
+  outline: 2px solid #b8a0ff;
+  outline-offset: 3px;
+}
+.workspace-event-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workspace-event-actions .button {
+  min-height: 40px;
+  justify-content: center;
+}
+.workspace-event>div:first-child {
+  gap: 8px;
+}
+.workspace-event>div:first-child>span {
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+@media (max-width: 700px) {
+  .workspace-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 8px;
+    padding: 4px 2px 12px;
+    margin: 0 -2px 4px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .workspace-tabs button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    white-space: nowrap;
+    font-size: 13px;
+    padding: 12px 15px;
+  }
+  .workspace-event {
+    padding: 15px;
+    gap: 12px;
+  }
+  .workspace-event-actions {
+    display: grid;
+    grid-template-columns: minmax(0,1fr);
+    width: 100%;
+  }
+  .workspace-event-actions .button {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .workspace-heading-actions .button {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace-tabs button { transition: none; }
+}
