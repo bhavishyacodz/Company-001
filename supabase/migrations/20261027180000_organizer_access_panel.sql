@@ -111,10 +111,7 @@ create policy events_delete_own_or_owner
   on public.events for delete to authenticated
   using (
     (select private.is_platform_owner())
-    or (
-      (select private.can_edit_event(id))
-      and exists (select 1 from public.organizers o where o.id = organizer_id and o.status = 'approved')
-    )
+    or (select private.is_organizer_owner(organizer_id))
   );
 
 drop policy if exists registrations_read_own_organizer_or_owner on public.registrations;
@@ -176,6 +173,13 @@ begin
   if not (select private.is_platform_owner()) then
     if old.organizer_id is distinct from new.organizer_id then
       raise exception 'Only the platform owner can transfer an event between organisers'
+        using errcode = '42501';
+    end if;
+    -- A delegated editor may edit event content, but cannot delete the event,
+    -- change its publication status, or bypass the platform-owner review.
+    if old.status is distinct from new.status
+       and not (select private.is_organizer_owner(old.organizer_id)) then
+      raise exception 'Only the event organiser or platform owner can change event status'
         using errcode = '42501';
     end if;
     if new.status = 'published' and old.status is distinct from 'published' then
