@@ -143,7 +143,7 @@ function App() {
   if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
 
   return (
-    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined } : undefined}>
+    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined, "--event-hero-title-size": `${Math.max(42,Math.min(104,Number(eventData?.branding?.heroTitleSize)||72))}px`, "--event-hero-title-align": ["left","center","right"].includes(eventData?.branding?.heroTitleAlign) ? eventData.branding.heroTitleAlign : "left" } : undefined}>
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
@@ -184,7 +184,7 @@ function App() {
             <div className="hero-grid" />
             <div className="hero-content">
               <div className="eyebrow"><span className="live-pip" /> REGISTRATION OPEN <span className="eyebrow-line" /> SEASON 01</div>
-              <h1>{isLiveEventRoute ? <>{categoryPresentation.heroLine}<br /><span className="gradient-text">{categoryPresentation.heroAccent}</span></> : <>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</>}</h1>
+              <h1>{isLiveEventRoute ? (eventData?.title || `${categoryPresentation.heroLine} ${categoryPresentation.heroAccent}`) : <>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</>}</h1>
               <p className="hero-copy">{eventData?.description || (isLiveEventRoute ? "Review the event details and organiser instructions, then register your interest." : "One arena. One shot at glory. Join the open tournament built for the next generation of competitors.")}</p>
               <div className="hero-buttons">
                 <button className="button button-primary" onClick={openRegister}>{isLiveEventRoute ? categoryPresentation.cta : "Register for tournament"} <ArrowRight size={17} /></button>
