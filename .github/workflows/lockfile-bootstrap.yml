@@ -1,0 +1,46 @@
+name: Bootstrap npm lockfile
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: company-001-lockfile-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  create-lockfile:
+    if: hashFiles('package-lock.json') == ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Generate lockfile without running package scripts
+        run: npm install --package-lock-only --ignore-scripts
+      - name: Commit lockfile if absent
+        run: |
+          if test ! -s package-lock.json; then
+            echo "npm did not generate a package-lock.json"
+            exit 1
+          fi
+          node -e "const p=require('./package-lock.json'); if (p.lockfileVersion < 3) process.exit(1)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "No lockfile changes to commit."
+            exit 0
+          fi
+          git commit -m "build: add reproducible npm lockfile"
+          git push origin HEAD:main
