@@ -231,3 +231,7 @@
 .workspace-contrast-check>div{display:grid;gap:4px;min-width:0}
 .workspace-contrast-check strong{font-size:11px;color:#eeeaf7}
 .workspace-contrast-check small{font-size:10px;line-height:1.6;color:#a5a8ba}
+
+.workspace-slug-preview-label{margin-top:2px;color:#a5a8ba;font-size:9px;font-weight:700;letter-spacing:.02em}
+.workspace-slug-preview{display:block;min-width:0;max-width:100%;padding:10px 11px;border:1px solid #393047;border-radius:7px;background:#0b0d14;color:#d5c3ff;font-size:10px;line-height:1.6;overflow-wrap:anywhere;white-space:normal}
+.workspace-slug-preview-hint{color:#85889b;font-size:9px;line-height:1.5;font-weight:400;letter-spacing:0}
