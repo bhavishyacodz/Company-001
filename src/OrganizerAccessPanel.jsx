@@ -106,14 +106,14 @@ export default function OrganizerAccessPanel({ currentUser }) {
   const orgForEvent = (event) => organizers.find(item => item.id === event?.organizer_id);
   const activeGrants = grants.filter(grant => eventForId(grant.event_id));
   return <section className="owner-card">
-    <div className="owner-section-head"><div><span className="panel-label">ACCESS CONTROL</span><h2><UserRoundCog size={20} style={{ verticalAlign: "middle", marginRight: 8 }} />Organiser access panel</h2><p>Grant event-level viewer/editor access, suspend an organiser, or restore approved access. All changes are enforced by database policies.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
+    <div className="owner-section-head"><div><span className="panel-label">ACCESS CONTROL</span><h2><UserRoundCog size={20} style={{ verticalAlign: "middle", marginRight: 8 }} />Organiser access panel</h2><p>Grant event-level viewer/editor access, suspend an organiser, or restore approved access. Delegated users cannot open private payment screenshots or approve payments; those remain with the platform owner and the event’s own approved organiser.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
     {error ? <p role="alert" className="owner-error">{error}</p> : null}
     {notice ? <p role="status" className="owner-muted">{notice}</p> : null}
     {loading ? <p className="owner-muted">Loading access records…</p> : <>
       <div className="owner-access-form">
         <label>Approved organiser<select value={selectedUser} onChange={e => setSelectedUser(e.target.value)}><option value="">Choose organiser</option>{organizers.filter(o => o.status === "approved").map(o => <option key={o.id} value={o.owner_user_id}>{o.display_name} · {o.slug}</option>)}</select></label>
         <label>Event<select value={selectedEvent} onChange={e => setSelectedEvent(e.target.value)}><option value="">Choose event</option>{events.map(event => <option key={event.id} value={event.id}>{event.title} · {orgForEvent(event)?.display_name || "Organiser"} · {event.status}</option>)}</select></label>
-        <label>Permission<select value={accessLevel} onChange={e => setAccessLevel(e.target.value)}><option value="viewer">Viewer — view event and registrations</option><option value="editor">Editor — edit event and review registrations</option></select></label>
+        <label>Permission<select value={accessLevel} onChange={e => setAccessLevel(e.target.value)}><option value="viewer">Viewer — view event and registrations</option><option value="editor">Editor — edit event and view registrations (no payment approvals)</option></select></label>
         <button className="button button-primary" disabled={busy || !selectedUser || !selectedEvent} onClick={saveGrant}><Check size={14}/> Grant / update access</button>
       </div>
       <div className="owner-access-organizers"><h3>Organiser status</h3>{organizers.map(organizer => <article className="owner-app" key={organizer.id}>
