@@ -112,9 +112,15 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   const updatePayment = async (reg, status) => {
     setError(""); setNotice("");
     try {
-      const { error: updateError } = await supabase.from("registrations").update({payment_status:status,registration_status:status === "approved" ? "confirmed" : "received"}).eq("id",reg.id).eq("organizer_id",organizer.id);
+      if (reg.payment_status === "not_required") throw new Error("This registration does not require payment review.");
+      const { data, error: updateError } = await supabase.rpc("review_registration_payment", {
+        p_registration_id: reg.id,
+        p_decision: status,
+        p_review_note: ""
+      });
       if (updateError) throw updateError;
-      setNotice("Registration payment status updated. This does not independently verify a bank transfer.");
+      if (!data?.registration_id) throw new Error("The payment review did not return a confirmation.");
+      setNotice("Payment decision and evidence review status updated. Independently verify the actual transfer before approval.");
       await load();
     } catch(e) { setError(e.message || "Could not update registration."); }
   };
