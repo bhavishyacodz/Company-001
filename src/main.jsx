@@ -8,6 +8,7 @@ import {
   Zap, Settings2, ExternalLink
 } from "lucide-react";
 import "./styles.css";
+import OwnerPanel from "./OwnerPanel.jsx";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
@@ -21,6 +22,8 @@ const sampleRegistrations = [
 
 function App() {
   const [view, setView] = useState("site");
+  const [platformRole, setPlatformRole] = useState(null);
+  const [signedInUser, setSignedInUser] = useState(null);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -148,12 +151,13 @@ function App() {
         </nav>
         <div className="top-actions">
           <button className="icon-button" aria-label="Notifications"><Bell size={17} /></button>
-          <button className="avatar" onClick={() => setView("account")} aria-label="Sign in or create organiser account">N</button>
+          {platformRole === "owner" ? <button className="owner-shortcut" onClick={() => setView("owner")}><ShieldCheck size={14} /> OWNER</button> : null}
+          <button className="avatar" onClick={() => setView("account")} aria-label="Sign in or create organiser account">{signedInUser ? (signedInUser.email || "N").slice(0,1).toUpperCase() : "N"}</button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("site")} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("site")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "site" ? (
         <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
