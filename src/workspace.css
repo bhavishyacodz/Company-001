@@ -527,3 +527,98 @@
     box-shadow:0 8px 28px rgba(0,0,0,.35);
   }
 }
+
+
+/* Hard reset for the organiser editor on touch screens.
+   The builder must be a normal document flow, not a multi-column canvas. */
+@media (pointer: coarse) {
+  .workspace-shell .workspace-builder {
+    display:block!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    overflow:visible!important;
+    transform:none!important;
+  }
+  .workspace-shell .workspace-builder > * {
+    position:relative!important;
+    inset:auto!important;
+    float:none!important;
+    clear:both!important;
+    transform:none!important;
+    grid-area:auto!important;
+    grid-column:auto!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-sizing:border-box!important;
+  }
+  .workspace-shell .workspace-builder .workspace-section-head {
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    flex-wrap:wrap!important;
+    gap:12px!important;
+    margin-bottom:14px!important;
+  }
+  .workspace-shell .workspace-builder .workspace-setup-checks {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .workspace-shell .workspace-builder .workspace-builder-jumpnav {
+    position:relative!important;
+    top:auto!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+  }
+  .workspace-shell .workspace-builder .template-gallery {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .workspace-shell .workspace-builder .template-choice {
+    display:grid!important;
+    grid-template-columns:36px minmax(0,1fr)!important;
+    width:100%!important;
+    min-width:0!important;
+    align-items:center!important;
+    overflow-wrap:anywhere!important;
+  }
+  .workspace-shell .workspace-builder .template-choice-icon {grid-row:span 2!important}
+  .workspace-shell .workspace-builder .template-choice small,
+  .workspace-shell .workspace-builder .template-choice-action {grid-column:2!important}
+  .workspace-shell .workspace-builder .workspace-form {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:14px!important;
+    width:100%!important;
+    min-width:0!important;
+  }
+  .workspace-shell .workspace-builder .workspace-form > * {
+    grid-column:1!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .workspace-shell .workspace-builder .workspace-live-preview,
+  .workspace-shell .workspace-builder #workspace-builder-preview {
+    display:block!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+  .workspace-shell .workspace-builder #workspace-builder-preview * {
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    overflow-wrap:anywhere;
+  }
+  .workspace-shell .workspace-builder .workspace-canvas-layers,
+  .workspace-shell .workspace-builder .workspace-canvas-inspector {display:none!important}
+}
