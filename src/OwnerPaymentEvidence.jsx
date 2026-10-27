@@ -33,15 +33,18 @@ export default function OwnerPaymentEvidence() {
   useEffect(() => { load(); }, []);
 
   const openEvidence = async (id) => {
+    const popup = window.open("about:blank", "_blank");
+    if (!popup) { setError("Your browser blocked the new tab. Allow pop-ups for this site and try again."); return; }
+    popup.opener = null;
     setOpening(id);
     setError("");
     try {
       const { data, error: invokeError } = await db.functions.invoke("view-payment-evidence", { body: { evidenceId: id } });
       if (invokeError) throw invokeError;
       if (!data?.signedUrl) throw new Error(data?.error || "Could not open payment evidence.");
-      const popup = window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-      if (!popup) throw new Error("Your browser blocked the new tab. Allow pop-ups for this site and try again.");
+      popup.location.href = data.signedUrl;
     } catch (e) {
+      if (!popup.closed) popup.close();
       setError(e.message || "Could not open payment evidence.");
     } finally {
       setOpening("");
