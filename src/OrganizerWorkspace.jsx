@@ -15,7 +15,7 @@ const EVENT_TEMPLATES = [
 ];
 const getTemplate = (key) => EVENT_TEMPLATES.find((item) => item.key === key) || EVENT_TEMPLATES[0];
 
-export default function OrganizerWorkspace({ user, initialView = "organizer", onBack }) {
+export default function OrganizerWorkspace({ user, initialView = "organizer", initialTemplateKey = "esports-001", onBack }) {
   const [tab, setTab] = useState(initialView);
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
@@ -26,7 +26,8 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editingStatus, setEditingStatus] = useState(null);
-  const [form, setForm] = useState({template_key:"esports-001",title:"",slug:"",game_title:"",description:"",rules:"",entry_fee:"0",team_size:"1",starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""});
+  const initialTemplate = getTemplate(initialTemplateKey);
+  const [form, setForm] = useState({template_key:initialTemplate.key,title:initialTemplate.title,slug:initialTemplate.key.replace(/-001$/,""),game_title:initialTemplate.gameTitle,description:initialTemplate.sampleDescription,rules:initialTemplate.sampleRules,entry_fee:"0",team_size:String(initialTemplate.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""});
   const [search, setSearch] = useState("");
   const [registrationFilter, setRegistrationFilter] = useState("all");
   const [openingEvidence, setOpeningEvidence] = useState("");
@@ -50,7 +51,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   };
   useEffect(() => { load(); }, [user.id]);
 
-  const resetForm = (templateKey = "esports-001") => { const template = getTemplate(templateKey); setEditingId(null); setEditingStatus(null); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
+  const resetForm = (templateKey = initialTemplateKey) => { const template = getTemplate(templateKey); setEditingId(null); setEditingStatus(null); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
   const editEvent = (ev) => {
     setEditingId(ev.id);
     setEditingStatus(ev.status);
