@@ -5,7 +5,7 @@ import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard,
   Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
-  Zap, Settings2, ExternalLink
+  Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake
 } from "lucide-react";
 import "./styles.css";
 import OwnerPanel from "./OwnerPanel.jsx";
@@ -44,6 +44,17 @@ function App() {
   const routeParts = window.location.pathname.split("/").filter(Boolean);
   const routeSlugs = routeParts[0] === "Company-001" ? routeParts.slice(1) : routeParts;
   const isLiveEventRoute = routeSlugs.length === 2;
+  const categoryKey = (eventData?.category || "esports").toLowerCase();
+  const categoryPresentation = ({
+    esports: { label:"eSports tournament", cta:"Register for tournament", participant:"PLAYER NAME", idLabel:"GAME ID / UID", namePlaceholder:"Your in-game name", heroLine:"YOUR NEXT", heroAccent:"VICTORY", ticker:"TOURNAMENT DETAILS" },
+    garba: { label:"Garba / Navratri event", cta:"Register for Garba night", participant:"ATTENDEE NAME", idLabel:"PASS / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"CELEBRATE", heroAccent:"TOGETHER", ticker:"EVENT DETAILS" },
+    sports: { label:"Sports tournament", cta:"Register for tournament", participant:"PARTICIPANT NAME", idLabel:"PLAYER / TEAM ID (optional)", namePlaceholder:"Your full name", heroLine:"PLAY FOR", heroAccent:"THE WIN", ticker:"COMPETITION DETAILS" },
+    workshop: { label:"Workshop / seminar", cta:"Reserve your seat", participant:"ATTENDEE NAME", idLabel:"SESSION / TRACK (optional)", namePlaceholder:"Your full name", heroLine:"LEARN", heroAccent:"SOMETHING NEW", ticker:"SESSION DETAILS" },
+    coaching: { label:"Coaching / classes", cta:"Enquire about this batch", participant:"STUDENT NAME", idLabel:"COURSE / BATCH (optional)", namePlaceholder:"Student full name", heroLine:"YOUR NEXT", heroAccent:"STEP STARTS HERE", ticker:"BATCH DETAILS" },
+    cultural: { label:"Cultural event", cta:"Join the event", participant:"PARTICIPANT NAME", idLabel:"PERFORMANCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"MAKE IT", heroAccent:"MEMORABLE", ticker:"EVENT DETAILS" },
+    community: { label:"Community meetup", cta:"Join the meetup", participant:"ATTENDEE NAME", idLabel:"GROUP / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"MEET. SHARE.", heroAccent:"CONNECT.", ticker:"MEETUP DETAILS" },
+  })[categoryKey] || { label:"Event registration", cta:"Register for event", participant:"PARTICIPANT NAME", idLabel:"REFERENCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"YOUR NEXT", heroAccent:"CHAPTER STARTS HERE", ticker:"EVENT DETAILS" };
+  const HeroCategoryIcon = ({esports:Gamepad2,garba:Music2,sports:Trophy,workshop:BookOpen,coaching:GraduationCap,cultural:Palette,community:HeartHandshake})[categoryKey] || Gamepad2;
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
@@ -146,8 +157,8 @@ function App() {
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
           {view === "site" ? <>
             <a href="#overview" onClick={() => setMobileMenu(false)}>Overview</a>
-            <a href="#format" onClick={() => setMobileMenu(false)}>Tournament</a>
-            <a href="#rules" onClick={() => setMobileMenu(false)}>Rules</a>
+            <a href="#templates" onClick={() => setMobileMenu(false)}>Templates</a>
+            <a href="#rules" onClick={() => setMobileMenu(false)}>How it works</a>
           </> : <>
             <button className="nav-text active" onClick={() => setView("organizer")}>Overview</button>
             <button className="nav-text" onClick={() => setView("customize")}>Customize</button>
@@ -168,10 +179,10 @@ function App() {
             <div className="hero-grid" />
             <div className="hero-content">
               <div className="eyebrow"><span className="live-pip" /> REGISTRATION OPEN <span className="eyebrow-line" /> SEASON 01</div>
-              <h1>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</h1>
-              <p className="hero-copy">{eventData?.description || "One arena. One shot at glory. Join the open tournament built for the next generation of competitors."}</p>
+              <h1>{isLiveEventRoute ? <>{categoryPresentation.heroLine}<br /><span className="gradient-text">{categoryPresentation.heroAccent}</span></> : <>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</>}</h1>
+              <p className="hero-copy">{eventData?.description || (isLiveEventRoute ? "Review the event details and organiser instructions, then register your interest." : "One arena. One shot at glory. Join the open tournament built for the next generation of competitors.")}</p>
               <div className="hero-buttons">
-                <button className="button button-primary" onClick={openRegister}>Register for tournament <ArrowRight size={17} /></button>
+                <button className="button button-primary" onClick={openRegister}>{isLiveEventRoute ? categoryPresentation.cta : "Register for tournament"} <ArrowRight size={17} /></button>
                 <a className="button button-quiet" href="#format">Explore event <ArrowDownRight size={17} /></a>
               </div>
               <div className="hero-trust"><span><ShieldCheck size={15} /> Organiser-managed event</span><span><Zap size={15} /> Fast registration</span></div>
@@ -179,9 +190,9 @@ function App() {
             <div className="hero-art" aria-hidden="true">
               <div className="art-ring ring-one" /><div className="art-ring ring-two" /><div className="art-ring ring-three" />
               <div className="art-cross cross-one" /><div className="art-cross cross-two" />
-              <div className="art-core"><Swords size={96} strokeWidth={1.1} /></div>
-              <div className="art-label label-top"><span className="label-dot" /> OPEN QUALIFIERS</div>
-              <div className="art-label label-bottom"><Trophy size={16} /> COMPETE FOR THE CROWN</div>
+              <div className="art-core"><HeroCategoryIcon size={96} strokeWidth={1.1} /></div>
+              <div className="art-label label-top"><span className="label-dot" /> {isLiveEventRoute ? categoryPresentation.label.toUpperCase() : "OPEN QUALIFIERS"}</div>
+              <div className="art-label label-bottom">{isLiveEventRoute ? <HeroCategoryIcon size={16} /> : <Trophy size={16} />} {isLiveEventRoute ? "REGISTRATION OPEN" : "COMPETE FOR THE CROWN"}</div>
               <div className="art-coordinate">22°43' N<br />75°51' E</div>
             </div>
             <div className="hero-index"><span>01</span> / 04</div>
@@ -190,12 +201,28 @@ function App() {
           <section className="ticker" aria-label="Tournament highlights">
             <div><Trophy size={17} /><span>REWARDS</span><strong>Badges & recognition</strong></div>
             <i />
-            <div><Users size={17} /><span>FORMAT</span><strong>Squad & Solo</strong></div>
+            <div><Users size={17} /><span>FORMAT</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Solo, teams & more"}</strong></div>
             <i />
-            <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>30 NOV · 8:00 PM</strong></div>
+            <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>{isLiveEventRoute && eventData?.registration_closes_at ? new Date(eventData.registration_closes_at).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Check event details"}</strong></div>
             <i />
-            <div><Gamepad2 size={17} /><span>GAME</span><strong>Choose your game</strong></div>
+            <div><Gamepad2 size={17} /><span>EVENT TYPE</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Choose your format"}</strong></div>
           </section>
+
+          {!isLiveEventRoute ? <section className="section template-showcase" id="templates">
+            <div className="section-heading">
+              <div><div className="section-kicker">ONE PLATFORM · MANY POSSIBILITIES</div><h2>YOUR EVENT.<br /><span className="gradient-text">YOUR FORMAT.</span></h2></div>
+              <p>Company-001 is built for more than gaming. Start from a ready-made event layout and tailor it to your audience.</p>
+            </div>
+            <div className="showcase-grid">
+              <article className="showcase-card showcase-esports"><span className="showcase-icon"><Gamepad2 size={21}/></span><span className="showcase-tag">01 · COMPETITION</span><h3>eSports tournaments</h3><p>Player sign-ups, game IDs, squads, entry information and competition rules.</p><small>Example · Nexus Open Qualifiers</small></article>
+              <article className="showcase-card showcase-garba"><span className="showcase-icon"><Music2 size={21}/></span><span className="showcase-tag">02 · CULTURE</span><h3>Garba & Navratri</h3><p>Pass registrations, evening sessions, venue details and attendee instructions.</p><small>Example · Rang Raas Garba Night</small></article>
+              <article className="showcase-card showcase-sports"><span className="showcase-icon"><Trophy size={21}/></span><span className="showcase-tag">03 · SPORTS</span><h3>Sports tournaments</h3><p>Team entries, player categories, schedules, venue and match rules.</p><small>Example · City Champions Cup</small></article>
+              <article className="showcase-card showcase-workshop"><span className="showcase-icon"><BookOpen size={21}/></span><span className="showcase-tag">04 · LEARNING</span><h3>Workshops & seminars</h3><p>Reserve seats, share the agenda, and collect attendee contact details.</p><small>Example · Creative Skills Lab</small></article>
+              <article className="showcase-card showcase-coaching"><span className="showcase-icon"><GraduationCap size={21}/></span><span className="showcase-tag">05 · EDUCATION</span><h3>Coaching & classes</h3><p>Course enquiries, batch selection, session timings and enrolment details.</p><small>Example · Foundation Learning Batch</small></article>
+              <article className="showcase-card showcase-community"><span className="showcase-icon"><HeartHandshake size={21}/></span><span className="showcase-tag">06 · COMMUNITY</span><h3>Cultural & community events</h3><p>Showcases, meetups, auditions, volunteer groups and local gatherings.</p><small>Example · Rhythm & Culture Fest</small></article>
+            </div>
+            <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Explore organiser workspace <ArrowRight size={15}/></button></div>
+          </section> : null}
 
           <section className="section event-section" id="format">
             <div className="section-heading">
@@ -205,18 +232,18 @@ function App() {
             <div className="event-cards">
               <article className="event-card feature-card">
                 <div className="card-top"><span className="card-icon"><Gamepad2 size={20} /></span><span className="card-number">01 / GAME</span></div>
-                <h3>Your game.<br />Your arena.</h3><p>The organiser chooses the game and competition rules for each tournament.</p>
-                <div className="game-tags"><span>Mobile</span><span>PC</span><span>Console</span></div>
+                <h3>{isLiveEventRoute ? "Your event." : "Your game."}<br />{isLiveEventRoute ? "Your way." : "Your arena."}</h3><p>{isLiveEventRoute ? "Review the organiser’s event details, schedule and instructions before registering." : "The organiser chooses the game and competition rules for each tournament."}</p>
+                <div className="game-tags">{isLiveEventRoute ? <><span>{categoryPresentation.label}</span><span>{eventData?.game_title || "All welcome"}</span></> : <><span>Mobile</span><span>PC</span><span>Console</span></>}</div>
               </article>
               <article className="event-card">
                 <div className="card-top"><span className="card-icon"><Users size={20} /></span><span className="card-number">02 / FORMAT</span></div>
-                <h3>Solo or squad.</h3><p>Choose the format set by your organiser. Team entries can include a captain and teammates.</p>
-                <div className="card-footer"><span>Flexible team size</span><ArrowUpRightIcon /></div>
+                <h3>{isLiveEventRoute ? "Clear details." : "Solo or squad."}</h3><p>{isLiveEventRoute ? "Check the event format, timing, location and organiser instructions before you join." : "Choose the format set by your organiser. Team entries can include a captain and teammates."}</p>
+                <div className="card-footer"><span>{isLiveEventRoute ? `Group size: ${eventData?.team_size || 1}` : "Flexible team size"}</span><ArrowUpRightIcon /></div>
               </article>
               <article className="event-card">
                 <div className="card-top"><span className="card-icon"><WalletCards size={20} /></span><span className="card-number">03 / ENTRY</span></div>
-                <h3>Clear entry<br />details.</h3><p>Entry is free in this starter template. Your organiser shares the tournament details before you register.</p>
-                <div className="card-footer"><span>Free entry · no payment required</span><ShieldCheck size={15} /></div>
+                <h3>Clear entry<br />details.</h3><p>{isLiveEventRoute ? "The organiser sets the entry requirements and payment instructions for this event." : "Entry is free in this starter template. Your organiser shares the tournament details before you register."}</p>
+                <div className="card-footer"><span>{isLiveEventRoute && eventData?.entry_fee_minor > 0 ? `Entry fee · ₹${(eventData.entry_fee_minor / 100).toFixed(0)}` : "Free entry · no payment required"}</span><ShieldCheck size={15} /></div>
               </article>
             </div>
           </section>
@@ -231,14 +258,14 @@ function App() {
           </section>
 
           <section className="register-wrap" id="registration">
-            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>CLAIM YOUR<br /><span className="gradient-text">SPOT.</span></h2><p>{isLiveEventRoute ? "Enter your details to register for this tournament." : "Enter your details below. This is a preview of the registration flow for the eSports template."}</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
+            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>{isLiveEventRoute ? "SAVE YOUR" : "CLAIM YOUR"}<br /><span className="gradient-text">{isLiveEventRoute ? "PLACE." : "SPOT."}</span></h2><p>{isLiveEventRoute ? "Enter your details to register for this tournament." : "Enter your details below. This is a preview of the registration flow for the eSports template."}</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
             <div className="register-panel">
-              <div className="panel-header"><div><span className="panel-label">PLAYER REGISTRATION</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
+              <div className="panel-header"><div><span className="panel-label">{isLiveEventRoute ? "EVENT REGISTRATION" : "PLAYER REGISTRATION"}</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
               {submitted ? (
                 <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>{liveConfirmation?.message || "Preview submission received in this browser session. No data has been sent to a server."}</p><div className="confirmation-code"><span>{liveConfirmation ? "CONFIRMATION REFERENCE" : "DEMO CONFIRMATION"}</span><strong>{liveConfirmation?.confirmation_reference || "ARENA-DEMO-001"}</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setLiveConfirmation(null); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); setPaymentScreenshot(null); }}>Register another player <ArrowRight size={16} /></button></div>
               ) : (
                 <form className="registration-form" onSubmit={submitDemo}>
-                  <div className="form-grid"><label>PLAYER NAME<input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="Your in-game name" required /></label><label>EMAIL ADDRESS<input type="email" value={playerEmail} onChange={e => setPlayerEmail(e.target.value)} placeholder="you@example.com" required /></label><label>GAME ID / UID<input value={gameId} onChange={e => setGameId(e.target.value)} placeholder="Enter your player ID" required /></label><label>TEAM NAME <span className="optional">(optional)</span><input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Your squad name" /></label></div>
+                  <div className="form-grid"><label>{isLiveEventRoute ? categoryPresentation.participant : "PLAYER NAME"}<input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder={isLiveEventRoute ? categoryPresentation.namePlaceholder : "Your in-game name"} required /></label><label>EMAIL ADDRESS<input type="email" value={playerEmail} onChange={e => setPlayerEmail(e.target.value)} placeholder="you@example.com" required /></label><label>{isLiveEventRoute ? categoryPresentation.idLabel : "GAME ID / UID"}<input value={gameId} onChange={e => setGameId(e.target.value)} placeholder={isLiveEventRoute && categoryKey !== "esports" ? "Optional details" : "Enter your player ID"} required={!isLiveEventRoute || categoryKey === "esports"} /></label><label>TEAM NAME <span className="optional">(optional)</span><input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Your squad name" /></label></div>
                   <div className="payment-box"><div className="payment-title"><ShieldCheck size={17} /><span>ENTRY POLICY</span><strong>{eventData?.entry_fee_minor > 0 ? "₹" + (eventData.entry_fee_minor / 100).toFixed(0) : "FREE"}</strong></div>{eventData?.entry_fee_minor > 0 ? <><p>{eventData.payment_instructions || "Follow the organiser's payment instructions, then attach your screenshot for review."}</p>{eventData.payment_qr_public_url ? <img className="payment-qr" src={eventData.payment_qr_public_url} alt="Organiser payment QR code" /> : null}<label className="upload-area"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setPaymentScreenshot(e.target.files?.[0] || null)} required /><ImagePlus size={21} /><span><strong>{paymentScreenshot ? paymentScreenshot.name : "Attach payment screenshot"}</strong><small>PNG, JPG or WEBP · maximum 3 MB</small></span><span className="upload-action">{paymentScreenshot ? "Change" : "Browse"}</span></label></> : <p>This event is free to enter. No payment is collected.</p>}</div>
                   {submissionError ? <p className="form-error" role="alert">{submissionError}</p> : null}
                   <label className="consent-check"><input type="checkbox" required /><span>I confirm these details are accurate and agree to the event rules and privacy notice.</span></label>
@@ -249,7 +276,7 @@ function App() {
             </div>
           </section>
 
-          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>Template 001 · eSports Tournament</span><button className="footer-link" onClick={() => setView("organizer")}>Organiser workspace <ArrowRight size={14} /></button></footer>
+          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView(signedInUser ? "organizer" : "account")}>Organiser workspace <ArrowRight size={14} /></button></footer>
         </main>
       ) : (
         <main className="dashboard">
@@ -289,6 +316,7 @@ function AccountPanel({ onBack }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [organizerCategory, setOrganizerCategory] = useState("esports");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
@@ -359,9 +387,9 @@ function AccountPanel({ onBack }) {
       const { data, error } = await supabase.from("organizer_applications").insert({
         applicant_user_id: user.id,
         business_name: businessName.trim(),
-        category: "esports",
+        category: organizerCategory,
         contact_email: user.email,
-        notes: "Requested template: Template 001 · eSports",
+        notes: "Requested event category: " + organizerCategory,
         status: "pending",
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
@@ -380,10 +408,10 @@ function AccountPanel({ onBack }) {
   return (
     <main className="account-shell">
       <section className="account-card">
-        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to eSports template</button>
+        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to event templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
         <h1>{user ? "Your organiser account." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">Create an account, apply for organiser approval, and prepare your eSports registration page.</p>
+        <p className="account-lead">Create an account, apply for organiser approval, and prepare registration pages for your kind of event.</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -401,8 +429,9 @@ function AccountPanel({ onBack }) {
               <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : application.status === "rejected" ? "pending" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. The owner workspace still needs to activate your organiser page." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p></div>
             ) : (
               <form className="account-form" onSubmit={submitApplication}>
-                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your esports community" /></label>
-                <div className="account-template-note"><Gamepad2 size={17} /><span><strong>Template 001 · eSports</strong><small>You'll be able to request approval before publishing a live registration page.</small></span></div>
+                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
+                <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
+                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. You can create event drafts from the available templates after approval.</small></span></div>
                 <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Apply for organiser approval"} <ArrowRight size={16} /></button>
               </form>
             )}

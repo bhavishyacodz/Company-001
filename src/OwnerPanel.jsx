@@ -63,7 +63,7 @@ export default function OwnerPanel({ onBack }) {
       const { data, error: rpcError } = await supabase.rpc("review_organizer_application", {
         p_application_id: app.id,
         p_decision: decision,
-        p_decision_note: decision === "rejected" ? "Application declined by platform owner." : "Approved for Template 001 · eSports.",
+        p_decision_note: decision === "rejected" ? "Application declined by platform owner." : "Approved for category: " + (app.category || "esports") + ".",
         p_organizer_slug: decision === "approved" ? slug : ""
       });
       if (rpcError) throw rpcError;
