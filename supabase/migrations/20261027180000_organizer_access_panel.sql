@@ -162,6 +162,9 @@ create policy audit_logs_insert_owner_only
   with check ((select private.is_platform_owner()) and actor_user_id = (select auth.uid()));
 
 grant select, insert, update, delete on public.organizer_event_access to authenticated;
+-- Allow the existing owner-only organiser UPDATE policy to be exercised by the access panel.
+-- RLS and guard_organizer_access_status still restrict who can change status/ownership.
+grant update on public.organizers to authenticated;
 revoke all on function private.can_access_event(uuid) from public;
 revoke all on function private.can_edit_event(uuid) from public;
 grant execute on function private.can_access_event(uuid) to authenticated;
