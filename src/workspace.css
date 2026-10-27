@@ -336,3 +336,15 @@
 .workspace-canvas-drag-handle{display:inline-flex;align-items:center;gap:8px;margin:12px 0 6px;padding:7px 10px;border:1px dashed var(--preview-accent,#9a6bff);border-radius:7px;background:#171622;color:#e9e4ff;font-size:11px;font-weight:700;cursor:grab;touch-action:none;user-select:none}.workspace-canvas-drag-handle:active{cursor:grabbing}.workspace-canvas-drag-handle span{font-size:18px;line-height:1}
 
 .workspace-canvas-drag-handle-description{margin-top:4px;margin-bottom:8px}
+
+
+/* Touch-friendly fine positioning controls in the visual event editor. */
+.workspace-canvas-position-tools{display:grid;gap:8px;padding:11px;border:1px solid #383149;border-radius:9px;background:linear-gradient(145deg,#171522,#10111a)}
+.workspace-canvas-position-tools>span{color:#e4def5;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.workspace-canvas-position-tools>div{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.workspace-canvas-position-tools>div>.button{display:grid;place-items:center;min-height:42px;min-width:0;padding:7px;border-color:#49415f;background:#211d30;color:#f2edff;font-size:17px;line-height:1;touch-action:manipulation}
+.workspace-canvas-position-tools>div>.button:hover{border-color:#a88bff;background:#302744}
+.workspace-canvas-position-tools>div>.button:focus-visible{outline:2px solid #c4b5fd;outline-offset:2px}
+.workspace-canvas-position-tools>small{color:#a9a2bf;font-size:10px;line-height:1.55}
+@media(max-width:600px){.workspace-canvas-position-tools{padding:10px}.workspace-canvas-position-tools>div{gap:8px}.workspace-canvas-position-tools>div>.button{min-height:46px;font-size:19px}}
+@media(prefers-reduced-motion:reduce){.workspace-canvas-position-tools>div>.button{transition:none}}
