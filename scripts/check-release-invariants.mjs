@@ -60,8 +60,8 @@ const checks = [
     run: () => {
       const sql = read("supabase/migrations/202610270001_company001_esports_foundation.sql");
       return sql.includes("grant update (display_name) on public.profiles to authenticated;")
-        && sql.includes("id = (select auth.uid()) and platform_role = 'organizer'")
-        && sql.includes("id = (select auth.uid()) and platform_role = 'organizer'");
+        && sql.includes("using (id = (select auth.uid()))")
+        && sql.includes("with check (id = (select auth.uid()) and platform_role = 'organizer')");
     },
   },
   {
