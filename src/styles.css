@@ -234,3 +234,45 @@
 .company-form-message.success{border:1px solid #285d50;background:#102720;color:#a9f4d5}
 .company-form-privacy{margin:14px 0 0;color:#8996aa;font-size:11px;line-height:1.7}
 @media(max-width:680px){.company-consultation-section{padding:62px 6%}.company-consultation-section .company-section-heading{grid-template-columns:1fr;gap:14px}.company-consultation-form{padding:18px}.company-consultation-fields{grid-template-columns:1fr;gap:15px}.company-consultation-wide{grid-column:auto}}
+
+
+/* Plain-language guidance and clearer project-enquiry UX */
+.company-quick-guide{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:25px;padding:12px 14px;max-width:540px;border:1px solid #273348;border-radius:8px;background:#0e1420;color:#b9c5d9;font-size:10px}
+.company-quick-step{display:inline-flex;align-items:center;gap:7px}
+.company-quick-step b{display:grid;place-items:center;width:21px;height:21px;border-radius:50%;border:1px solid #4b5c7c;color:#dce6ff;font-size:10px}
+.company-quick-divider{color:#667896}
+.company-pricing-note{display:grid;grid-template-columns:48px minmax(0,1.1fr) minmax(240px,.9fr);align-items:center;gap:22px;padding:34px max(8vw,calc((100vw - 1180px)/2));border-top:1px solid #263044;border-bottom:1px solid #263044;background:linear-gradient(110deg,#111a29,#0d121c)}
+.company-pricing-icon{width:46px;height:46px;display:grid;place-items:center;border:1px solid #3c5278;border-radius:9px;background:#18253b;color:#b8ceff}
+.company-pricing-copy h2{margin:8px 0 9px;font-size:clamp(21px,2.7vw,31px);line-height:1.12;letter-spacing:-.035em}
+.company-pricing-copy p{margin:0;color:#a4afc1;font-size:11px;line-height:1.85;max-width:600px}
+.company-pricing-note>ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.company-pricing-note>ul li{display:flex;align-items:flex-start;gap:9px;color:#c2ccdc;font-size:10px;line-height:1.6}
+.company-pricing-note>ul svg{color:#a8c1ff;flex-shrink:0;margin-top:1px}
+.company-field-help{font-size:11px;line-height:1.6;color:#8f9db2;letter-spacing:normal;font-weight:400}
+.company-character-count{font-size:10px;color:#8f9db2;text-align:right;letter-spacing:normal;font-weight:500}
+.company-next-steps{margin-top:19px;padding:15px 17px;border:1px solid #29374b;border-radius:9px;background:#0c121d;color:#d9e2f2}
+.company-next-steps>strong{font-size:12px}
+.company-next-steps ol{margin:10px 0 0;padding-left:20px;display:grid;gap:7px;color:#a9b5c8;font-size:11px;line-height:1.65}
+.company-faq-section{padding:78px max(8vw,calc((100vw - 1180px)/2));border-top:1px solid #202735;background:#090d14}
+.company-faq-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.company-faq-grid details{border:1px solid #2a3446;border-radius:9px;background:#101722;padding:17px 18px}
+.company-faq-grid summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#e7edf8;font-size:12px;font-weight:700;line-height:1.6}
+.company-faq-grid summary::-webkit-details-marker{display:none}
+.company-faq-grid summary:after{content:"+";color:#a9c0ff;font-size:20px;font-weight:400}
+.company-faq-grid details[open] summary:after{content:"−"}
+.company-faq-grid details p{margin:12px 0 0;color:#a3afc1;font-size:11px;line-height:1.8}
+.company-faq-grid details:focus-within{border-color:#6f91d2}
+@media(max-width:760px){
+ .company-pricing-note{grid-template-columns:42px minmax(0,1fr);gap:14px;padding:28px 6%}
+ .company-pricing-icon{width:40px;height:40px}
+ .company-pricing-copy h2{font-size:24px}
+ .company-pricing-note>ul{grid-column:1/-1;padding-top:5px}
+ .company-faq-section{padding:58px 6%}
+ .company-faq-grid{grid-template-columns:1fr}
+ .company-quick-guide{gap:8px;font-size:9px}
+}
+@media(max-width:390px){
+ .company-quick-guide{align-items:flex-start;flex-direction:column}
+ .company-quick-divider{display:none}
+ .company-next-steps{padding:13px}
+}
