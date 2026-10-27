@@ -207,7 +207,7 @@ function App() {
             <div><Gamepad2 size={17} /><span>EVENT TYPE</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Choose your format"}</strong></div>
           </section>
 
-          <section className="section template-showcase" id="templates">
+          {!isLiveEventRoute ? <section className="section template-showcase" id="templates">
             <div className="section-heading">
               <div><div className="section-kicker">ONE PLATFORM · MANY POSSIBILITIES</div><h2>YOUR EVENT.<br /><span className="gradient-text">YOUR FORMAT.</span></h2></div>
               <p>Company-001 is built for more than gaming. Start from a ready-made event layout and tailor it to your audience.</p>
@@ -221,7 +221,7 @@ function App() {
               <article className="showcase-card showcase-community"><span className="showcase-icon"><HeartHandshake size={21}/></span><span className="showcase-tag">06 · COMMUNITY</span><h3>Cultural & community events</h3><p>Showcases, meetups, auditions, volunteer groups and local gatherings.</p><small>Example · Rhythm & Culture Fest</small></article>
             </div>
             <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Explore organiser workspace <ArrowRight size={15}/></button></div>
-          </section>
+          </section> : null}
 
           <section className="section event-section" id="format">
             <div className="section-heading">
