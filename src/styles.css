@@ -50,7 +50,7 @@
 .application-status>p{font-size:10px;line-height:1.7;color:#9b9eaf;margin:0}
 @media(max-width:700px){.account-shell{padding:32px 14px 60px}.account-card{padding:22px 18px}.account-card h1{font-size:35px}.account-user{align-items:flex-start;flex-wrap:wrap}.account-user>div{min-width:calc(100% - 60px)}}
 
-.owner-shortcut{display:inline-flex;align-items:center;gap:6px;border:1px solid #51446f;background:#201a30;color:#d9caff;border-radius:6px;padding:9px 11px;font-size:9px;font-weight:800;letter-spacing:.08em}
+.owner-shortcut{display:inline-flex;align-items:center;gap:7px;border:1px solid #f4cc65;background:linear-gradient(135deg,#ffe9a3 0%,#e9b83f 52%,#b87b12 100%);color:#241704;border-radius:8px;padding:10px 13px;font-size:10px;font-weight:900;letter-spacing:.08em;box-shadow:0 4px 18px #e9b83f38;transition:transform .18s ease,box-shadow .18s ease}.owner-shortcut:hover{transform:translateY(-1px);box-shadow:0 6px 22px #e9b83f55}.owner-shortcut:focus-visible{outline:2px solid #fff0b8;outline-offset:3px}.king-login{white-space:nowrap}
 .owner-shell{min-height:80vh;padding:42px 22px 80px;background:radial-gradient(ellipse at 15% 0%,#7550bb18,transparent 38%),#0a0b12;color:#f4f2fa}
 .owner-wrap{max-width:1160px;margin:0 auto;display:grid;gap:20px}
 .owner-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap}
