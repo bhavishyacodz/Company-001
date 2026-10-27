@@ -74,7 +74,7 @@ const checks = [
         && sql.includes("auth.uid() is null or not (select private.is_platform_owner())")
         && sql.includes("revoke all on function public.review_event_publication(uuid, text, text) from public, anon")
         && sql.includes("grant execute on function public.review_event_publication(uuid, text, text) to authenticated")
-        && sql.includes("create trigger enforce_event_publication_owner");
+        && sql.includes("create trigger guard_event_publication");
     },
   },
   {
