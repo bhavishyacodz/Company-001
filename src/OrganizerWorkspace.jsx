@@ -14,6 +14,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [editingStatus, setEditingStatus] = useState(null);
   const [form, setForm] = useState({title:"",slug:"",game_title:"",description:"",rules:"",entry_fee:"0",team_size:"1",starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""});
   const [search, setSearch] = useState("");
   const [registrationFilter, setRegistrationFilter] = useState("all");
@@ -37,9 +38,10 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
   };
   useEffect(() => { load(); }, [user.id]);
 
-  const resetForm = () => { setEditingId(null); setForm({title:"",slug:"",game_title:"",description:"",rules:"",entry_fee:"0",team_size:"1",starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
+  const resetForm = () => { setEditingId(null); setEditingStatus(null); setForm({title:"",slug:"",game_title:"",description:"",rules:"",entry_fee:"0",team_size:"1",starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:""}); };
   const editEvent = (ev) => {
     setEditingId(ev.id);
+    setEditingStatus(ev.status);
     setForm({title:ev.title || "",slug:ev.slug || "",game_title:ev.game_title || "",description:ev.description || "",rules:ev.rules || "",entry_fee:String((ev.entry_fee_minor || 0)/100),team_size:String(ev.team_size || 1),starts_at:ev.starts_at ? ev.starts_at.slice(0,16) : "",registration_closes_at:ev.registration_closes_at ? ev.registration_closes_at.slice(0,16) : "",payment_instructions:ev.payment_instructions || "",payment_qr_public_url:ev.payment_qr_public_url || ""});
     setTab("customize");
   };
@@ -52,9 +54,12 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
       if (!/^[a-z0-9][a-z0-9-]{1,58}[a-z0-9]$/.test(slug)) throw new Error("Event slug must be 3–60 characters using lowercase letters, numbers and hyphens.");
       const payload = {organizer_id:organizer.id,template_key:"esports-001",title:form.title.trim(),slug,category:"esports",game_title:form.game_title.trim(),team_format:"solo_or_squad",team_size:Math.max(1,Math.min(100,Number(form.team_size)||1)),entry_fee_minor:Math.round(Math.max(0,Number(form.entry_fee)||0)*100),currency:"INR",description:form.description.trim(),rules:form.rules.trim(),starts_at:form.starts_at ? new Date(form.starts_at).toISOString() : null,registration_closes_at:form.registration_closes_at ? new Date(form.registration_closes_at).toISOString() : null,payment_instructions:form.payment_instructions.trim(),payment_qr_public_url:form.payment_qr_public_url.trim(),status:"draft"};
       if (editingId) {
-        const { error: saveError } = await supabase.from("events").update({...payload,status:undefined}).eq("id",editingId).eq("organizer_id",organizer.id);
+        const nextStatus = editingStatus === "published" ? "pending_review" : editingStatus || "draft";
+        const { error: saveError } = await supabase.from("events").update({...payload,status:nextStatus}).eq("id",editingId).eq("organizer_id",organizer.id);
         if (saveError) throw saveError;
-        setNotice("Event draft saved. Publishing status was not changed.");
+        setNotice(editingStatus === "published"
+          ? "Changes saved. The event is temporarily unpublished and must pass owner review again."
+          : "Event changes saved. Publishing still requires owner approval.");
       } else {
         const { error: saveError } = await supabase.from("events").insert(payload);
         if (saveError) throw saveError;
