@@ -425,7 +425,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
-      setNotice("Application submitted. You can preview your template while we review it.");
+      setNotice("Your organiser workspace is active. You can now create event drafts.");
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
@@ -442,7 +442,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
         <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to event templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
         <h1>{user ? "Your organiser account." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">Create an account, apply for organiser approval, and prepare registration pages for your kind of event.</p>
+        <p className="account-lead">Create an account, set up your organiser workspace, and prepare registration pages for your kind of event.</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -457,19 +457,19 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           <div className="account-signed-in">
             <div className="account-user"><span>{(user.email || "O").slice(0,1).toUpperCase()}</span><div><strong>{user.user_metadata?.display_name || user.email}</strong><small>{user.email}</small></div><button onClick={signOut}>Sign out</button></div>
             {application ? (
-              <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. Open your workspace to create and manage event drafts." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
+              <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Setting up your organiser workspace…"}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
             ) : (
               <form className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. You can create event drafts from the available templates after approval.</small></span></div>
-                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Apply for organiser approval"} <ArrowRight size={16} /></button>
+                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. You can create event drafts from the available templates right away.</small></span></div>
+                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Create organiser workspace"} <ArrowRight size={16} /></button>
               </form>
             )}
           </div>
         )}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
-        <p className="account-footnote">Never share your password or payment credentials. Approval is required before a live event can be published.</p>
+        <p className="account-footnote">Never share your password or payment credentials. Live events still require owner publication review.</p>
       </section>
     </main>
   );
