@@ -392,3 +392,38 @@
   .workspace-website-canvas-mode #workspace-builder-preview .workspace-live-preview-hero{padding:18px}
   .workspace-website-canvas-mode .workspace-canvas-inspector .workspace-canvas-property-stack{grid-template-columns:minmax(0,1fr)!important}
 }
+
+
+/* Mobile recovery: never let the editor shrink into a desktop-width strip. */
+.workspace-shell,.workspace-wrap,.workspace-card,.workspace-builder{min-width:0;max-width:100%;box-sizing:border-box}
+.workspace-builder .workspace-form{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+.workspace-builder .workspace-form>*{min-width:0;max-width:100%;box-sizing:border-box}
+.workspace-builder #workspace-builder-preview{min-width:0;max-width:100%;width:100%;box-sizing:border-box}
+.workspace-builder .workspace-canvas-inspector,.workspace-builder .workspace-canvas-layers{min-width:0;max-width:100%;box-sizing:border-box}
+.workspace-builder input,.workspace-builder textarea,.workspace-builder select{max-width:100%;min-width:0;box-sizing:border-box}
+@media(max-width:700px){
+  .workspace-shell,.workspace-wrap{padding-left:10px!important;padding-right:10px!important}
+  .workspace-builder{padding:12px!important;overflow:hidden}
+  .workspace-builder .workspace-form,
+  .workspace-website-canvas-mode .workspace-form{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    width:100%!important;
+    max-width:100%!important;
+    gap:12px!important;
+  }
+  .workspace-builder .workspace-form>*,
+  .workspace-website-canvas-mode .workspace-form>*{
+    grid-column:1!important;
+    grid-row:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+  }
+  .workspace-builder #workspace-builder-preview{grid-column:1!important;grid-row:auto!important}
+  .workspace-builder .workspace-canvas-property-stack{grid-template-columns:minmax(0,1fr)!important}
+  .workspace-builder .workspace-live-preview-hero{padding:18px!important}
+  .workspace-builder .workspace-live-preview-hero h3{font-size:clamp(28px,8vw,54px)!important;overflow-wrap:anywhere}
+  .workspace-builder .workspace-form-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .workspace-builder .workspace-form-actions .button{flex:1 1 120px;min-width:0}
+}
