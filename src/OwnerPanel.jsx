@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
@@ -108,15 +108,25 @@ export default function OwnerPanel({ onBack }) {
   return (
     <main className="owner-shell">
       <div className="owner-wrap">
-        <header className="owner-heading"><div><div className="section-kicker">COMPANY-001 / PRIVATE CONTROL ROOM</div><h1>Platform overview.</h1><p>Review organiser applications and events before activation or publication, and manage project enquiries here.</p></div><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></header>
+        <header className="owner-heading"><div><div className="section-kicker owner-live-kicker"><span className="owner-live-dot" /> COMPANY-001 / KING CONTROL ROOM</div><h1>Good to have you back.</h1><p>Your platform command centre. Review activity, manage access, approve events and keep everything organised from one place.</p></div><div className="owner-heading-actions"><span className="owner-secure-label"><ShieldCheck size={14}/> OWNER ACCESS</span><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh data</button><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></div></header>
+        <nav className="owner-command-nav" aria-label="Owner dashboard sections">
+          <a href="#owner-overview"><LayoutDashboard size={16}/><span>Overview</span></a>
+          <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>
+          <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
+          <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
+          <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span></a>
+          <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
+          <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
+        </nav>
+        <section id="owner-overview" className="owner-overview-intro"><div><span className="panel-label">YOUR DAILY CHECKLIST</span><h2>Everything important, in one place.</h2><p>Use the shortcuts below instead of scrolling through the whole dashboard.</p></div><div className="owner-overview-status"><span className="owner-live-dot"/> <span>Secure owner session</span></div></section>
         <div className="owner-metrics">
           <div className="owner-metric"><span>ORGANIZER WORKSPACES</span><strong>{organizers.length}</strong><small>Active and suspended accounts</small></div>
           <div className="owner-metric"><span>APPROVED ORGANISERS</span><strong>{organizers.filter(o => o.status === "approved").length}</strong><small>Active organiser accounts</small></div>
           <div className="owner-metric"><span>EVENTS</span><strong>{counts.events}</strong><small>Database records</small></div>
           <div className="owner-metric"><span>REGISTRATIONS</span><strong>{counts.registrations}</strong><small>Participant records</small></div>
         </div>
-        <section className="owner-card">
-          <div className="owner-section-head"><div><span className="panel-label">CUSTOM WEBSITE SERVICE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
+        <section id="owner-enquiries" className="owner-card">
+          <div className="owner-section-head"><div><span className="panel-label">01 / CUSTOMER PIPELINE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
           <div className="owner-inbox-summary">
             <div><strong>{consultationRequests.length}</strong><span>Total enquiries</span></div>
             <div><strong>{newConsultationCount}</strong><span>Need first response</span></div>
@@ -136,9 +146,9 @@ export default function OwnerPanel({ onBack }) {
             <div className="owner-app-actions"><a className="button button-secondary owner-email-link" href={"mailto:" + encodeURIComponent(request.email) + "?subject=" + encodeURIComponent("Your Company-001 project enquiry")}>Reply by email <ExternalLink size={13}/></a><label className="owner-muted">Status <select aria-label={"Status for enquiry from " + request.name} value={request.status} disabled={busyId === request.id} onChange={event => updateConsultationStatus(request,event.target.value)}><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="quoted">Quoted</option><option value="closed">Closed</option></select></label></div>
           </article>)}</div>}
         </section>
-        <section className="owner-card">
+        <section id="owner-applications" className="owner-card">
           <div className="owner-section-head">
-            <div><span className="panel-label">ORGANISER ONBOARDING</span><h2>Organiser applications</h2><p>Review each application before creating an organiser workspace. Approval and rejection are enforced by Supabase.</p></div>
+            <div><span className="panel-label">02 / ORGANISER ONBOARDING</span><h2>Organiser applications</h2><p>Review each application before creating an organiser workspace. Approval and rejection are enforced by Supabase.</p></div>
             <label className="owner-muted">Filter applications
               <select value={filter} onChange={event => setFilter(event.target.value)} aria-label="Filter organiser applications">
                 <option value="pending">Pending review</option>
@@ -170,10 +180,10 @@ export default function OwnerPanel({ onBack }) {
             ))}</div>
           )}
         </section>
-        <OrganizerAccessPanel currentUser={user} />
-        <OwnerEventReview />
-        <OwnerPaymentEvidence />
-        <section className="owner-card"><div className="owner-section-head"><div><span className="panel-label">TENANT DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-access" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">03 / PERMISSIONS</span><h2>Access control</h2><p>Give organisers the right level of access, or revoke it when needed.</p></div><OrganizerAccessPanel currentUser={user} /></section>
+        <section id="owner-events" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">04 / CONTENT OPERATIONS</span><h2>Event publishing</h2><p>Review submitted events before they become visible to the public.</p></div><OwnerEventReview /></section>
+        <section id="owner-payments" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">05 / PAYMENT OPERATIONS</span><h2>Payment evidence</h2><p>Review submitted payment evidence securely.</p></div><OwnerPaymentEvidence /></section>
+        <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">06 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
         <p className="owner-muted">Signed in as {user.email}. Owner actions are checked by Supabase, not just by this screen.</p>
