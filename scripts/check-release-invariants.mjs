@@ -54,6 +54,38 @@ const checks = [
         && sql.includes("Only the platform owner can change organiser approval status");
     },
   },
+
+  {
+    name: "profile policies prevent client-side owner-role escalation",
+    run: () => {
+      const sql = read("supabase/migrations/202610270001_company001_esports_foundation.sql");
+      return sql.includes("grant update (display_name) on public.profiles to authenticated;")
+        && sql.includes("id = (select auth.uid()) and platform_role = 'organizer'")
+        && sql.includes("id = (select auth.uid()) and platform_role = 'organizer'");
+    },
+  },
+  {
+    name: "delegated event access is event-scoped and owner-managed",
+    run: () => {
+      const sql = read("supabase/migrations/20261027150621_organizer_access_panel.sql");
+      const accessPolicies = read("supabase/migrations/20261027161935_consolidate_organizer_event_access_policies.sql");
+      return sql.includes("a.event_id = e.id and a.user_id = (select auth.uid())")
+        && sql.includes("a.access_level = 'editor'")
+        && sql.includes("Only the platform owner can change organiser access status")
+        && accessPolicies.includes("using ((select private.is_platform_owner()))")
+        && accessPolicies.includes("with check ((select private.is_platform_owner()))");
+    },
+  },
+  {
+    name: "payment evidence remains private and rate-limit storage is server-only",
+    run: () => {
+      const sql = read("supabase/migrations/202610270003_registration_endpoint_and_private_evidence.sql");
+      return sql.includes("values ('payment-evidence', 'payment-evidence', false")
+        && sql.includes("bucket_id = 'payment-evidence'")
+        && sql.includes("revoke all on function public.consume_registration_rate_limit(text, timestamptz, integer) from public, anon, authenticated")
+        && sql.includes("to service_role");
+    },
+  },
 ];
 
 let failed = false;
