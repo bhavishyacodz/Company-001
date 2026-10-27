@@ -167,3 +167,31 @@ revoke all on function private.can_access_event(uuid) from public;
 revoke all on function private.can_edit_event(uuid) from public;
 grant execute on function private.can_access_event(uuid) to authenticated;
 grant execute on function private.can_edit_event(uuid) to authenticated;
+
+
+-- Delegated editors must not transfer event ownership or bypass manual publication review.
+create or replace function private.guard_delegated_event_update()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+begin
+  if not (select private.is_platform_owner()) then
+    if old.organizer_id is distinct from new.organizer_id then
+      raise exception 'Only the platform owner can transfer an event between organisers'
+        using errcode = '42501';
+    end if;
+    if new.status = 'published' and old.status is distinct from 'published' then
+      raise exception 'Events must pass platform-owner publication review'
+        using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists guard_delegated_event_update on public.events;
+create trigger guard_delegated_event_update
+before update on public.events
+for each row execute function private.guard_delegated_event_update();
