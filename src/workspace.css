@@ -29,3 +29,24 @@
 .workspace-custom-answers summary{cursor:pointer}
 @media(max-width:850px){.workspace-reg-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.workspace-event-toolbar,.workspace-reg-toolbar{grid-template-columns:1fr}.workspace-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* Payments workspace and data-backed organiser analytics. */
+.workspace-payment-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.workspace-payment-summary>div{display:grid;gap:8px;min-width:0;padding:14px;border:1px solid #2c3040;border-radius:8px;background:#0d1018}
+.workspace-payment-summary span{font-size:8px;font-weight:800;letter-spacing:.08em;color:#9699ad}
+.workspace-payment-summary strong{font-family:var(--display);font-size:24px;overflow-wrap:anywhere}
+.workspace-analytics-list{display:grid;gap:12px;margin-top:18px}
+.workspace-analytics-event{min-width:0;padding:16px;border:1px solid #2b2f3e;background:#0d1018;border-radius:9px}
+.workspace-analytics-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.workspace-analytics-top>div{display:grid;gap:6px;min-width:0}
+.workspace-analytics-top>div strong{font-size:13px;overflow-wrap:anywhere}
+.workspace-analytics-top>div span,.workspace-analytics-top>strong small{font-size:9px;color:#9295a8;text-transform:capitalize}
+.workspace-analytics-top>strong{font-size:15px;white-space:nowrap}
+.workspace-analytics-track{height:7px;margin:14px 0;background:#242837;border-radius:999px;overflow:hidden}
+.workspace-analytics-track span{display:block;height:100%;min-width:0;background:linear-gradient(90deg,#8e69e8,#c1a6ff);border-radius:inherit;transition:width .2s ease}
+.workspace-analytics-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.workspace-analytics-stats span{display:grid;gap:4px;font-size:9px;line-height:1.5;color:#9295a8}
+.workspace-analytics-stats strong{font-size:12px;color:#eeeaf7;overflow-wrap:anywhere}
+@media(max-width:760px){.workspace-payment-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-analytics-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.workspace-payment-summary>div{padding:11px}.workspace-payment-summary strong{font-size:21px}.workspace-analytics-top{flex-direction:column}.workspace-analytics-top>strong{white-space:normal}}
