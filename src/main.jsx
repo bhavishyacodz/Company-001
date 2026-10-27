@@ -14,7 +14,7 @@ import CompanyHome from "./CompanyHome.jsx";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
