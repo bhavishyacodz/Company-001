@@ -195,3 +195,31 @@ drop trigger if exists guard_delegated_event_update on public.events;
 create trigger guard_delegated_event_update
 before update on public.events
 for each row execute function private.guard_delegated_event_update();
+
+
+-- Prevent an organiser from self-approving or undoing an owner suspension through direct API calls.
+create or replace function private.guard_organizer_access_status()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $function$
+begin
+  if not (select private.is_platform_owner()) then
+    if old.status is distinct from new.status then
+      raise exception 'Only the platform owner can change organiser access status'
+        using errcode = '42501';
+    end if;
+    if old.owner_user_id is distinct from new.owner_user_id then
+      raise exception 'Only the platform owner can transfer organiser ownership'
+        using errcode = '42501';
+    end if;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists guard_organizer_access_status on public.organizers;
+create trigger guard_organizer_access_status
+before update on public.organizers
+for each row execute function private.guard_organizer_access_status();
