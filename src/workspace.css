@@ -622,3 +622,59 @@
   .workspace-shell .workspace-builder .workspace-canvas-layers,
   .workspace-shell .workspace-builder .workspace-canvas-inspector {display:none!important}
 }
+
+
+/* Existing-event editing should focus on that event, not the template catalogue. */
+.workspace-builder.editing-existing-event .template-gallery,
+.workspace-builder.editing-existing-event .template-sample-note,
+.workspace-builder.editing-existing-event .workspace-setup-progress,
+.workspace-builder.editing-existing-event .workspace-builder-jumpnav {
+  display:none!important;
+}
+.workspace-builder.editing-existing-event #workspace-builder-templates {display:none!important}
+.workspace-builder.editing-existing-event .workspace-section-head p {
+  max-width:680px;
+  font-size:13px;
+  line-height:1.65;
+}
+.workspace-builder.editing-existing-event .workspace-section-head h2 {
+  overflow-wrap:anywhere;
+}
+.workspace-builder.editing-existing-event .workspace-draft-state {
+  margin-top:14px;
+}
+.workspace-builder.editing-existing-event .workspace-form {
+  margin-top:16px;
+}
+.workspace-builder.editing-existing-event .workspace-form label {
+  line-height:1.5;
+}
+.workspace-builder.editing-existing-event .workspace-form label>input,
+.workspace-builder.editing-existing-event .workspace-form label>textarea,
+.workspace-builder.editing-existing-event .workspace-form label>select {
+  margin-top:7px;
+}
+@media (pointer:coarse) {
+  .workspace-builder.editing-existing-event .workspace-history-toolbar {
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .workspace-builder.editing-existing-event .workspace-form-actions {
+    position:sticky;
+    bottom:8px;
+    z-index:30;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding:10px;
+    border:1px solid #393149;
+    border-radius:12px;
+    background:rgba(15,15,24,.97);
+    box-shadow:0 8px 28px rgba(0,0,0,.35);
+  }
+  .workspace-builder.editing-existing-event .workspace-form-actions .button {
+    flex:1 1 120px;
+    min-height:44px;
+  }
+}
