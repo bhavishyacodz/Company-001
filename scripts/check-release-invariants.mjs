@@ -54,7 +54,29 @@ const checks = [
         && sql.includes("Only the platform owner can change organiser approval status");
     },
   },
-
+  {
+    name: "organiser application review RPC enforces owner authorization and blocks public execution",
+    run: () => {
+      const sql = read("supabase/migrations/202610270005_owner_application_review_rpc.sql");
+      return sql.includes("security definer")
+        && sql.includes("set search_path = ''")
+        && sql.includes("auth.uid() is null or not (select private.is_platform_owner())")
+        && sql.includes("revoke all on function public.review_organizer_application(uuid, text, text, text) from public, anon")
+        && sql.includes("grant execute on function public.review_organizer_application(uuid, text, text, text) to authenticated");
+    },
+  },
+  {
+    name: "event publication review RPC enforces owner authorization and blocks public execution",
+    run: () => {
+      const sql = read("supabase/migrations/202610270006_owner_event_publication_review.sql");
+      return sql.includes("security definer")
+        && sql.includes("set search_path = ''")
+        && sql.includes("auth.uid() is null or not (select private.is_platform_owner())")
+        && sql.includes("revoke all on function public.review_event_publication(uuid, text, text) from public, anon")
+        && sql.includes("grant execute on function public.review_event_publication(uuid, text, text) to authenticated")
+        && sql.includes("create trigger enforce_event_publication_owner");
+    },
+  },
   {
     name: "profile policies prevent client-side owner-role escalation",
     run: () => {
