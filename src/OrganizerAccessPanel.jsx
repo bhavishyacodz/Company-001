@@ -47,8 +47,12 @@ export default function OrganizerAccessPanel({ currentUser }) {
       actor_user_id: currentUser.id, organizer_id: organizerId || null,
       action, target_type: targetType, target_id: targetId, metadata
     });
-    if (logError) throw logError;
+    // The access change has already committed. Return audit failure separately so the UI
+    // refreshes the real state instead of incorrectly implying that the access change failed.
+    return logError ? (logError.message || "Audit log write failed.") : "";
   };
+  const noticeWithAuditWarning = (message, auditIssue) =>
+    auditIssue ? message + " Warning: the change succeeded, but its audit log could not be saved: " + auditIssue : message;
 
   const changeStatus = async (organizer, status) => {
     if (!["approved", "suspended"].includes(status) || organizer.status === status) return;
@@ -56,8 +60,8 @@ export default function OrganizerAccessPanel({ currentUser }) {
     try {
       const { error: updateError } = await supabase.from("organizers").update({ status, updated_at: new Date().toISOString() }).eq("id", organizer.id);
       if (updateError) throw updateError;
-      await logAction(status === "suspended" ? "organizer_access_suspended" : "organizer_access_restored", organizer.id, "organizer", organizer.id, { previous_status: organizer.status, status });
-      setNotice(status === "suspended" ? "Organiser suspended. Existing event grants remain saved but cannot be used while suspended." : "Organiser restored to approved access.");
+      const auditIssue = await logAction(status === "suspended" ? "organizer_access_suspended" : "organizer_access_restored", organizer.id, "organizer", organizer.id, { previous_status: organizer.status, status });
+      setNotice(noticeWithAuditWarning(status === "suspended" ? "Organiser suspended. Existing event grants remain saved but cannot be used while suspended." : "Organiser restored to approved access.", auditIssue));
       await load();
     } catch (e) { setError(e.message || "Could not update organiser access."); }
     finally { setBusy(false); }
@@ -77,8 +81,8 @@ export default function OrganizerAccessPanel({ currentUser }) {
         user_id: selectedUser, event_id: selectedEvent, access_level: accessLevel, granted_by: currentUser.id
       }, { onConflict: "user_id,event_id" });
       if (grantError) throw grantError;
-      await logAction("organizer_event_access_granted", event.organizer_id, "event", event.id, { user_id: selectedUser, access_level: accessLevel });
-      setNotice("Event access saved.");
+      const auditIssue = await logAction("organizer_event_access_granted", event.organizer_id, "event", event.id, { user_id: selectedUser, access_level: accessLevel });
+      setNotice(noticeWithAuditWarning("Event access saved.", auditIssue));
       await load();
     } catch (e) { setError(e.message || "Could not save event access."); }
     finally { setBusy(false); }
@@ -90,8 +94,8 @@ export default function OrganizerAccessPanel({ currentUser }) {
       const { error: deleteError } = await supabase.from("organizer_event_access").delete().eq("id", grant.id);
       if (deleteError) throw deleteError;
       const event = events.find(item => item.id === grant.event_id);
-      await logAction("organizer_event_access_revoked", event?.organizer_id || null, "event", grant.event_id, { user_id: grant.user_id });
-      setNotice("Event access revoked.");
+      const auditIssue = await logAction("organizer_event_access_revoked", event?.organizer_id || null, "event", grant.event_id, { user_id: grant.user_id });
+      setNotice(noticeWithAuditWarning("Event access revoked.", auditIssue));
       await load();
     } catch (e) { setError(e.message || "Could not revoke event access."); }
     finally { setBusy(false); }
