@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: event, error: eventError } = await admin
     .from("events")
-    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, organizers!inner(slug,status)")
+    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, branding, organizers!inner(slug,status)")
     .eq("slug", eventSlug)
     .eq("organizers.slug", organizerSlug)
     .eq("status", "published")
@@ -96,6 +96,21 @@ Deno.serve(async (req: Request) => {
   }
 
   const fee = Number(event.entry_fee_minor ?? 0);
+  const configuredFields = Array.isArray((event.branding as Record<string, unknown> | null)?.registrationFields)
+    ? ((event.branding as Record<string, unknown>).registrationFields as Array<Record<string, unknown>>).slice(0, 8)
+    : [];
+  const customFields: Record<string, string> = {};
+  for (const field of configuredFields) {
+    const fieldId = typeof field.id === "string" ? field.id : "";
+    const label = typeof field.label === "string" ? field.label.trim().slice(0, 80) : "";
+    const type = typeof field.type === "string" ? field.type : "text";
+    const required = field.required === true;
+    if (!/^[a-z0-9_-]{1,40}$/.test(fieldId) || !label) continue;
+    const value = clean(form.get("custom_" + fieldId), 500);
+    if (required && !value) return reply(origin, 400, { error: `Please complete: ${label}.` });
+    if (type === "email" && value && !validEmail(value)) return reply(origin, 400, { error: `Please enter a valid email for: ${label}.` });
+    customFields[fieldId] = value;
+  }
   const fileEntry = form.get("payment_screenshot");
   let imageBytes: Uint8Array | null = null;
   let imageType: { ext: string; type: string } | null = null;
@@ -119,6 +134,7 @@ Deno.serve(async (req: Request) => {
       participant_email: participantEmail,
       game_id: gameId,
       team_name: teamName,
+      custom_fields: customFields,
       payment_status: fee > 0 ? "under_review" : "not_required",
       registration_status: "received",
     })
