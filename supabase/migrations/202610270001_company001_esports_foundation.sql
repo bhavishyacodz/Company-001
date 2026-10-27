@@ -29,25 +29,8 @@ as $$
   );
 $$;
 
-create or replace function private.is_organizer_owner(p_organizer_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select exists (
-    select 1
-    from public.organizers o
-    where o.id = p_organizer_id
-      and o.owner_user_id = (select auth.uid())
-  );
-$$;
-
 revoke all on function private.is_platform_owner() from public;
-revoke all on function private.is_organizer_owner(uuid) from public;
 grant execute on function private.is_platform_owner() to authenticated;
-grant execute on function private.is_organizer_owner(uuid) to authenticated;
 
 create table public.organizer_applications (
   id uuid primary key default gen_random_uuid(),
@@ -75,6 +58,24 @@ create table public.organizers (
   unique (owner_user_id)
 );
 
+create or replace function private.is_organizer_owner(p_organizer_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select exists (
+    select 1
+    from public.organizers o
+    where o.id = p_organizer_id
+      and o.owner_user_id = (select auth.uid())
+  );
+$;
+
+revoke all on function private.is_organizer_owner(uuid) from public;
+grant execute on function private.is_organizer_owner(uuid) to authenticated;
+
 create table public.events (
   id uuid primary key default gen_random_uuid(),
   organizer_id uuid not null references public.organizers(id) on delete restrict,
@@ -99,7 +100,8 @@ create table public.events (
   published_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (organizer_id, slug)
+  unique (organizer_id, slug),
+  unique (id, organizer_id)
 );
 
 create table public.registrations (
