@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import OwnerPanel from "./OwnerPanel.jsx";
+import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
@@ -122,6 +123,8 @@ function App() {
       setCopied(false);
     }
   };
+
+  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} onBack={() => setView("site")} />;
 
   return (
     <div className={`app accent-${accent}`}>
