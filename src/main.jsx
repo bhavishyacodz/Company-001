@@ -24,6 +24,7 @@ const sampleRegistrations = [
 
 function App() {
   const [view, setView] = useState("site");
+  const [requestedTemplate, setRequestedTemplate] = useState("esports-001");
   const [platformRole, setPlatformRole] = useState(null);
   const [signedInUser, setSignedInUser] = useState(null);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -139,7 +140,7 @@ function App() {
     }
   };
 
-  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} onBack={() => setView("site")} />;
+  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
 
   return (
     <div className={`app accent-${accent}`}>
@@ -177,7 +178,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={() => setView(signedInUser ? "organizer" : "account")} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={(templateKey) => { setRequestedTemplate(templateKey); setView(platformRole === "owner" ? "owner" : "account"); }} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
@@ -336,10 +337,10 @@ function TemplateGallery({ onUseTemplate }) {
     <section className="public-template-grid" aria-label="Available event templates">
       {templates.map((template, index) => { const Icon = template.icon; return <article className={"public-template-card " + template.theme} key={template.name}>
         <div className="public-template-art"><span className="public-template-number">0{index + 1} / {template.category}</span><span className="public-template-symbol"><Icon size={34} strokeWidth={1.5}/></span><span className="public-template-art-caption">EVENT PAGE CONCEPT</span></div>
-        <div className="public-template-body"><h2>{template.name}</h2><p>{template.description}</p><div className="public-template-example"><span>STARTER EXAMPLE</span><strong>{template.example}</strong></div><button className="button button-primary full-width" onClick={onUseTemplate}>Use this template <ArrowRight size={15}/></button><small className="public-template-login-note">Sign in required to customise and save</small></div>
+        <div className="public-template-body"><h2>{template.name}</h2><p>{template.description}</p><div className="public-template-example"><span>STARTER EXAMPLE</span><strong>{template.example}</strong></div><button className="button button-primary full-width" onClick={() => onUseTemplate(template.name.toLowerCase().startsWith("esports") ? "esports-001" : template.name.toLowerCase().startsWith("garba") ? "garba-001" : template.name.toLowerCase().startsWith("sports") ? "sports-001" : template.name.toLowerCase().startsWith("workshop") ? "workshop-001" : template.name.toLowerCase().startsWith("coaching") ? "coaching-001" : template.name.toLowerCase().startsWith("cultural") ? "cultural-001" : "community-001")}>Use this template <ArrowRight size={15}/></button><small className="public-template-login-note">Sign in required to customise and save</small></div>
       </article>; })}
     </section>
-    <section className="public-template-bottom"><div><span className="section-kicker">READY TO MAKE IT YOURS?</span><h2>Choose a theme. Build your event.</h2><p>Creating an account is free. Live publishing still requires organiser approval.</p></div><button className="button button-primary" onClick={onUseTemplate}>Sign in to get started <ArrowRight size={15}/></button></section>
+    <section className="public-template-bottom"><div><span className="section-kicker">READY TO MAKE IT YOURS?</span><h2>Choose a theme. Build your event.</h2><p>Creating an account is free. Live publishing still requires organiser approval.</p></div><button className="button button-primary" onClick={() => onUseTemplate("esports-001")}>Sign in to get started <ArrowRight size={15}/></button></section>
   </main>;
 }
 
