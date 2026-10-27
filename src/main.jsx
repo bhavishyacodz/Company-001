@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
-  CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard,
+  CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard, MapPin, Mail, PhoneCall,
   Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake
 } from "lucide-react";
@@ -251,6 +251,7 @@ function App() {
                 <div className="card-footer"><span>{isLiveEventRoute && eventData?.entry_fee_minor > 0 ? `Entry fee · ₹${(eventData.entry_fee_minor / 100).toFixed(0)}` : "Free entry · no payment required"}</span><ShieldCheck size={15} /></div>
               </article>
             </div>
+            {isLiveEventRoute && (eventData?.branding?.venue || eventData?.branding?.contactEmail || eventData?.branding?.contactPhone) ? <div className="event-contact-strip">{eventData?.branding?.venue ? <div><MapPin size={17}/><span><small>VENUE / LOCATION</small><strong>{eventData.branding.venue}</strong></span></div> : null}{eventData?.branding?.contactEmail ? <a href={"mailto:" + eventData.branding.contactEmail}><Mail size={17}/><span><small>CONTACT EMAIL</small><strong>{eventData.branding.contactEmail}</strong></span></a> : null}{eventData?.branding?.contactPhone ? <a href={"tel:" + eventData.branding.contactPhone}><PhoneCall size={17}/><span><small>CONTACT PHONE</small><strong>{eventData.branding.contactPhone}</strong></span></a> : null}</div> : null}
           </section>
 
           <section className="section steps-section" id="rules">
