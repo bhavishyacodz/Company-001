@@ -160,7 +160,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       return '"' + text.replace(/"/g, '""') + '"';
     };
     const csv = [columns.map(([label]) => cell(label)).join(","), ...rows.map(row => columns.map(([,get]) => cell(get(row))).join(","))].join("\r\n");
-    const blob = new Blob(["\\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
