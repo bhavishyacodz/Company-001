@@ -109,6 +109,11 @@ Deno.serve(async (req: Request) => {
     const value = clean(form.get("custom_" + fieldId), 500);
     if (required && !value) return reply(origin, 400, { error: `Please complete: ${label}.` });
     if (type === "email" && value && !validEmail(value)) return reply(origin, 400, { error: `Please enter a valid email for: ${label}.` });
+    if (type === "select") {
+      const options = Array.isArray(field.options) ? field.options.filter((option): option is string => typeof option === "string").map((option) => option.trim().slice(0, 80)).filter(Boolean).slice(0, 20) : [];
+      if (options.length < 2) return reply(origin, 400, { error: `The organiser has not configured the choices for: ${label}.` });
+      if (value && !options.includes(value)) return reply(origin, 400, { error: `Choose a valid option for: ${label}.` });
+    }
     customFields[fieldId] = value;
   }
   const fileEntry = form.get("payment_screenshot");
