@@ -1,10 +1,30 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, Code2, Globe2, LayoutTemplate,
   CalendarDays, ShieldCheck, Sparkles, Workflow, Smartphone, Monitor
 } from "lucide-react";
 
 export default function CompanyHome({ onStart, onOrganiser }) {
+  const [consultation, setConsultation] = useState({ name: "", email: "", phone: "", project_type: "business-website", requirements: "", preferred_time: "", website: "" });
+  const [consultationState, setConsultationState] = useState({ busy: false, error: "", success: "" });
+  const submitConsultation = async (event) => {
+    event.preventDefault();
+    setConsultationState({ busy: true, error: "", success: "" });
+    try {
+      const response = await fetch("https://zkzgkovwktljfuuuhivk.supabase.co/functions/v1/request-consultation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB" },
+        body: JSON.stringify(consultation),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not send your enquiry. Please try again.");
+      setConsultationState({ busy: false, error: "", success: "Enquiry received" + (result.reference ? " · Reference " + result.reference : "") + ". We will review your project details." });
+      setConsultation({ name: "", email: "", phone: "", project_type: "business-website", requirements: "", preferred_time: "", website: "" });
+    } catch (error) {
+      setConsultationState({ busy: false, error: error.message || "Could not send your enquiry. Please try again.", success: "" });
+    }
+  };
+  const updateConsultation = (event) => setConsultation(current => ({ ...current, [event.target.name]: event.target.value }));
   return (
     <main className="company-home">
       <section className="company-hero" id="home">
@@ -80,6 +100,29 @@ export default function CompanyHome({ onStart, onOrganiser }) {
           <article><span>03</span><Code2 size={19}/><h3>Build & review</h3><p>Review progress against the agreed scope and provide feedback.</p></article>
           <article><span>04</span><Globe2 size={19}/><h3>Launch & handover</h3><p>Deploy the site and clarify access, ownership and any agreed support.</p></article>
         </div>
+      </section>
+
+
+      <section className="company-consultation-section" id="consultation">
+        <div className="company-section-heading">
+          <div><div className="company-kicker">START A PROJECT</div><h2>Tell us what you want to <em>build.</em></h2></div>
+          <p>Share the basics. We will review the idea before discussing scope, budget and timeline. Submitting this form does not commit you to a purchase.</p>
+        </div>
+        <form className="company-consultation-form" onSubmit={submitConsultation}>
+          <div className="company-consultation-fields">
+            <label>YOUR NAME<input name="name" value={consultation.name} onChange={updateConsultation} minLength={2} maxLength={100} autoComplete="name" required placeholder="Name" /></label>
+            <label>EMAIL ADDRESS<input name="email" type="email" value={consultation.email} onChange={updateConsultation} maxLength={254} autoComplete="email" required placeholder="you@example.com" /></label>
+            <label>PHONE (OPTIONAL)<input name="phone" type="tel" value={consultation.phone} onChange={updateConsultation} maxLength={40} autoComplete="tel" placeholder="Preferred contact number" /></label>
+            <label>WHAT DO YOU NEED?<select name="project_type" value={consultation.project_type} onChange={updateConsultation} required><option value="business-website">Business website</option><option value="landing-page">Landing page</option><option value="web-app">Web app / custom workflow</option><option value="dashboard">Dashboard or admin panel</option><option value="event-platform">Event platform</option><option value="other">Something else</option></select></label>
+            <label className="company-consultation-wide">PROJECT IDEA & MUST-HAVE FEATURES<textarea name="requirements" value={consultation.requirements} onChange={updateConsultation} minLength={15} maxLength={3000} required rows={5} placeholder="What should the website or tool do? Who will use it? Mention any essential features." /></label>
+            <label className="company-consultation-wide">PREFERRED TIME TO DISCUSS (OPTIONAL)<input name="preferred_time" value={consultation.preferred_time} onChange={updateConsultation} maxLength={160} placeholder="For example: weekday evenings, India time" /></label>
+            <label className="company-honeypot" aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" value={consultation.website} onChange={updateConsultation} /></label>
+          </div>
+          <button className="company-button primary" type="submit" disabled={consultationState.busy}>{consultationState.busy ? "Sending enquiry…" : "Send project enquiry"} <ArrowRight size={16}/></button>
+          {consultationState.error ? <p className="company-form-message error" role="alert">{consultationState.error}</p> : null}
+          {consultationState.success ? <p className="company-form-message success" role="status">{consultationState.success}</p> : null}
+          <p className="company-form-privacy">Your details are used to respond to this enquiry. Do not include passwords, payment details or other sensitive information.</p>
+        </form>
       </section>
 
       <section className="company-event-callout" id="event-platform">
