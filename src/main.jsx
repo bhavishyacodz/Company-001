@@ -316,6 +316,7 @@ function AccountPanel({ onBack }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [organizerCategory, setOrganizerCategory] = useState("esports");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
@@ -386,9 +387,9 @@ function AccountPanel({ onBack }) {
       const { data, error } = await supabase.from("organizer_applications").insert({
         applicant_user_id: user.id,
         business_name: businessName.trim(),
-        category: "esports",
+        category: organizerCategory,
         contact_email: user.email,
-        notes: "Requested template: Template 001 · eSports",
+        notes: "Requested event category: " + organizerCategory,
         status: "pending",
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
@@ -407,10 +408,10 @@ function AccountPanel({ onBack }) {
   return (
     <main className="account-shell">
       <section className="account-card">
-        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to eSports template</button>
+        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to event templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
         <h1>{user ? "Your organiser account." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">Create an account, apply for organiser approval, and prepare your eSports registration page.</p>
+        <p className="account-lead">Create an account, apply for organiser approval, and prepare registration pages for your kind of event.</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -428,8 +429,9 @@ function AccountPanel({ onBack }) {
               <div className="application-status"><span className="panel-label">ORGANISER APPLICATION</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : application.status === "rejected" ? "pending" : "pending")}><span />{application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your application is approved. The owner workspace still needs to activate your organiser page." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your application is waiting for owner review."}</p></div>
             ) : (
               <form className="account-form" onSubmit={submitApplication}>
-                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your esports community" /></label>
-                <div className="account-template-note"><Gamepad2 size={17} /><span><strong>Template 001 · eSports</strong><small>You'll be able to request approval before publishing a live registration page.</small></span></div>
+                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
+                <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
+                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. You can create event drafts from the available templates after approval.</small></span></div>
                 <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Apply for organiser approval"} <ArrowRight size={16} /></button>
               </form>
             )}
