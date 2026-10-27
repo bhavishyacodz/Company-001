@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
@@ -27,6 +27,40 @@ function App() {
   const [gameId, setGameId] = useState("");
   const [teamName, setTeamName] = useState("");
   const [copied, setCopied] = useState(false);
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState("");
+  const [liveConfirmation, setLiveConfirmation] = useState(null);
+  const [eventData, setEventData] = useState(null);
+  const routeParts = window.location.pathname.split("/").filter(Boolean);
+  const routeSlugs = routeParts[0] === "Company-001" ? routeParts.slice(1) : routeParts;
+  const isLiveEventRoute = routeSlugs.length === 2;
+  const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
+  const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
+  const supabaseUrl = "https://zkzgkovwktljfuuuhivk.supabase.co";
+  const supabasePublishableKey = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
+
+  useEffect(() => {
+    if (!isLiveEventRoute) return;
+    const query = new URLSearchParams({
+      select: "id,title,category,game_title,team_format,team_size,entry_fee_minor,prize_pool_label,description,rules,starts_at,registration_closes_at,payment_instructions,payment_qr_public_url,organizers!inner(slug,display_name,status)",
+      slug: "eq." + eventSlug,
+      "organizers.slug": "eq." + organizerSlug,
+      status: "eq.published",
+      "organizers.status": "eq.approved",
+    });
+    fetch(supabaseUrl + "/rest/v1/events?" + query.toString(), { headers: { apikey: supabasePublishableKey } })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Could not load this event.");
+        const rows = await response.json();
+        if (!rows.length) throw new Error("This event page is not published or is unavailable.");
+        const item = rows[0];
+        setEventData(item);
+        setEventName(item.title || "Tournament");
+        setOrganizerName(item.organizers?.display_name || "Event organiser");
+      })
+      .catch((error) => setSubmissionError(error.message || "Could not load this event."));
+  }, [isLiveEventRoute, organizerSlug, eventSlug]);
 
   const openRegister = () => {
     setRegisterOpen(true);
@@ -34,9 +68,43 @@ function App() {
     window.setTimeout(() => document.getElementById("registration")?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   };
 
-  const submitDemo = (event) => {
+  const submitDemo = async (event) => {
     event.preventDefault();
-    setSubmitted(true);
+    setSubmissionError("");
+    setLiveConfirmation(null);
+    if (!isLiveEventRoute) {
+      setSubmitted(true);
+      return;
+    }
+    if (!eventData) {
+      setSubmissionError("This event is not ready to accept registrations.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const form = new FormData(event.currentTarget);
+      form.set("organizer_slug", organizerSlug);
+      form.set("event_slug", eventSlug);
+      form.set("participant_name", playerName);
+      form.set("participant_email", playerEmail);
+      form.set("game_id", gameId);
+      form.set("team_name", teamName);
+      form.set("website", "");
+      if (paymentScreenshot) form.set("payment_screenshot", paymentScreenshot);
+      const response = await fetch(supabaseUrl + "/functions/v1/register-esports", {
+        method: "POST",
+        headers: { apikey: supabasePublishableKey },
+        body: form,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Registration failed. Please try again.");
+      setLiveConfirmation(result);
+      setSubmitted(true);
+    } catch (error) {
+      setSubmissionError(error.message || "Registration failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const copyDemoLink = async () => {
@@ -89,7 +157,7 @@ function App() {
             <div className="hero-content">
               <div className="eyebrow"><span className="live-pip" /> REGISTRATION OPEN <span className="eyebrow-line" /> SEASON 01</div>
               <h1>YOUR NEXT<br /><span className="gradient-text">VICTORY</span> STARTS HERE.</h1>
-              <p className="hero-copy">One arena. One shot at glory. Join the open tournament built for the next generation of competitors.</p>
+              <p className="hero-copy">{eventData?.description || "One arena. One shot at glory. Join the open tournament built for the next generation of competitors."}</p>
               <div className="hero-buttons">
                 <button className="button button-primary" onClick={openRegister}>Register for tournament <ArrowRight size={17} /></button>
                 <a className="button button-quiet" href="#format">Explore event <ArrowDownRight size={17} /></a>
@@ -151,18 +219,19 @@ function App() {
           </section>
 
           <section className="register-wrap" id="registration">
-            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>CLAIM YOUR<br /><span className="gradient-text">SPOT.</span></h2><p>Enter your details below. This is a preview of the registration flow for the eSports template.</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
+            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>CLAIM YOUR<br /><span className="gradient-text">SPOT.</span></h2><p>{isLiveEventRoute ? "Enter your details to register for this tournament." : "Enter your details below. This is a preview of the registration flow for the eSports template."}</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
             <div className="register-panel">
               <div className="panel-header"><div><span className="panel-label">PLAYER REGISTRATION</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
               {submitted ? (
-                <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>Preview submission received in this browser session. No data has been sent to a server.</p><div className="confirmation-code"><span>DEMO CONFIRMATION</span><strong>ARENA-DEMO-001</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); }}>Register another player <ArrowRight size={16} /></button></div>
+                <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>{liveConfirmation?.message || "Preview submission received in this browser session. No data has been sent to a server."}</p><div className="confirmation-code"><span>{liveConfirmation ? "CONFIRMATION REFERENCE" : "DEMO CONFIRMATION"}</span><strong>{liveConfirmation?.confirmation_reference || "ARENA-DEMO-001"}</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setLiveConfirmation(null); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); setPaymentScreenshot(null); }}>Register another player <ArrowRight size={16} /></button></div>
               ) : (
                 <form className="registration-form" onSubmit={submitDemo}>
                   <div className="form-grid"><label>PLAYER NAME<input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="Your in-game name" required /></label><label>EMAIL ADDRESS<input type="email" value={playerEmail} onChange={e => setPlayerEmail(e.target.value)} placeholder="you@example.com" required /></label><label>GAME ID / UID<input value={gameId} onChange={e => setGameId(e.target.value)} placeholder="Enter your player ID" required /></label><label>TEAM NAME <span className="optional">(optional)</span><input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Your squad name" /></label></div>
-                  <div className="payment-box"><div className="payment-title"><ShieldCheck size={17} /><span>ENTRY POLICY</span><strong>FREE</strong></div><p>This eSports starter is configured for free-entry competitions. No entry payment is collected in this preview.</p></div>
+                  <div className="payment-box"><div className="payment-title"><ShieldCheck size={17} /><span>ENTRY POLICY</span><strong>{eventData?.entry_fee_minor > 0 ? "₹" + (eventData.entry_fee_minor / 100).toFixed(0) : "FREE"}</strong></div>{eventData?.entry_fee_minor > 0 ? <><p>{eventData.payment_instructions || "Follow the organiser's payment instructions, then attach your screenshot for review."}</p>{eventData.payment_qr_public_url ? <img className="payment-qr" src={eventData.payment_qr_public_url} alt="Organiser payment QR code" /> : null}<label className="upload-area"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setPaymentScreenshot(e.target.files?.[0] || null)} required /><ImagePlus size={21} /><span><strong>{paymentScreenshot ? paymentScreenshot.name : "Attach payment screenshot"}</strong><small>PNG, JPG or WEBP · maximum 3 MB</small></span><span className="upload-action">{paymentScreenshot ? "Change" : "Browse"}</span></label></> : <p>This event is free to enter. No payment is collected.</p>}</div>
+                  {submissionError ? <p className="form-error" role="alert">{submissionError}</p> : null}
                   <label className="consent-check"><input type="checkbox" required /><span>I confirm these details are accurate and agree to the event rules and privacy notice.</span></label>
-                  <button className="button button-primary full-width" type="submit">Submit preview registration <ArrowRight size={17} /></button>
-                  <p className="form-disclaimer"><ShieldCheck size={13} /> Preview only. No payment is collected and no file is uploaded.</p>
+                  <button className="button button-primary full-width" type="submit" disabled={isSubmitting || (isLiveEventRoute && !eventData)}>{isSubmitting ? "Submitting…" : isLiveEventRoute ? "Submit registration" : "Submit preview registration"} <ArrowRight size={17} /></button>
+                  <p className="form-disclaimer"><ShieldCheck size={13} /> {isLiveEventRoute ? "Your registration is sent securely. Payment screenshots are private and must be verified by the organiser." : "Preview only. No payment is collected and no file is uploaded."}</p>
                 </form>
               )}
             </div>
