@@ -18,3 +18,14 @@
 @media(max-width:650px){.workspace-branding-fields,.workspace-custom-field-options{grid-template-columns:1fr}.workspace-builder-heading{align-items:flex-start;flex-direction:column}.workspace-builder-heading .button{width:100%}}
 
 .event-contact-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:22px;padding:16px;border:1px solid var(--border);border-radius:14px;background:rgba(12,15,24,.72)}.event-contact-strip>div,.event-contact-strip>a{display:flex;align-items:flex-start;gap:10px;min-width:0;color:var(--text);text-decoration:none}.event-contact-strip svg{flex:0 0 auto;color:var(--accent);margin-top:2px}.event-contact-strip span{display:grid;gap:5px;min-width:0}.event-contact-strip small{font-size:9px;letter-spacing:.13em;color:var(--muted)}.event-contact-strip strong{font-size:12px;overflow-wrap:anywhere;font-weight:600}.event-contact-strip a:hover strong{text-decoration:underline}
+
+/* Organiser workspace: searchable event directory and compact multi-filter controls. */
+.workspace-metrics{grid-template-columns:repeat(auto-fit,minmax(145px,1fr))}
+.workspace-event-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:9px;margin:18px 0 4px}
+.workspace-event-toolbar input,.workspace-event-toolbar select{width:100%;min-width:0;background:#0b0e15;border:1px solid #343849;border-radius:6px;padding:11px;color:#f4f2fa;font:inherit;font-size:11px}
+.workspace-event-toolbar input:focus-visible,.workspace-event-toolbar select:focus-visible,.workspace-reg-toolbar input:focus-visible,.workspace-reg-toolbar select:focus-visible{outline:2px solid #a78bfa;outline-offset:2px}
+.workspace-reg-toolbar{grid-template-columns:minmax(0,1.5fr) repeat(3,minmax(150px,1fr))}
+.workspace-event-actions .button:disabled,.workspace-reg-actions .button:disabled{opacity:.55;cursor:not-allowed}
+.workspace-custom-answers summary{cursor:pointer}
+@media(max-width:850px){.workspace-reg-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.workspace-event-toolbar,.workspace-reg-toolbar{grid-template-columns:1fr}.workspace-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
