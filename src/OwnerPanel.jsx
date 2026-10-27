@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
 import OwnerRegistrations from "./OwnerRegistrations.jsx";
+import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
 
 const supabase = createClient(
@@ -121,6 +122,7 @@ export default function OwnerPanel({ onBack }) {
           <a href="#owner-registrations"><ClipboardList size={16}/><span>Registrations</span><b>{counts.registrations}</b></a>
           <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
           <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
+          <a href="#owner-activity"><Activity size={16}/><span>Activity log</span></a>
         </nav>
         <section id="owner-overview" className="owner-overview-intro"><div><span className="panel-label">YOUR DAILY CHECKLIST</span><h2>Everything important, in one place.</h2><p>Use the shortcuts below instead of scrolling through the whole dashboard.</p></div><div className="owner-overview-status"><span className="owner-live-dot"/> <span>Secure owner session</span></div></section>
         <div className="owner-metrics">
@@ -190,6 +192,7 @@ export default function OwnerPanel({ onBack }) {
         <section id="owner-registrations" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">05 / PARTICIPANT OPERATIONS</span><h2>Registrations</h2><p>Find participants and check registration and payment status across events.</p></div><OwnerRegistrations /></section>
         <section id="owner-payments" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">06 / PAYMENT OPERATIONS</span><h2>Payment evidence</h2><p>Review submitted payment evidence securely.</p></div><OwnerPaymentEvidence /></section>
         <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-activity" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / AUDIT & ACCOUNTABILITY</span><h2>Activity log</h2><p>See recorded moderation and access-control history.</p></div><OwnerAuditLog /></section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
         <p className="owner-muted">Signed in as {user.email}. Owner actions are checked by Supabase, not just by this screen.</p>
