@@ -179,3 +179,48 @@
  .workspace-builder-jumpnav button{flex:1;padding-inline:7px}
 }
 @media(prefers-reduced-motion:reduce){.workspace-builder-jumpnav button{transition:none}}
+
+
+/* Clear draft-state feedback in the event builder */
+.workspace-draft-state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--workspace-border, #ded8ef);
+  border-radius: 12px;
+  background: var(--workspace-soft, #f8f6fc);
+  color: var(--workspace-text, #302747);
+  font-size: 13px;
+  font-weight: 700;
+}
+.workspace-draft-state-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: #2b9b70;
+}
+.workspace-draft-state small {
+  flex-basis: 100%;
+  margin-left: 16px;
+  color: var(--workspace-muted, #756d85);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.workspace-draft-state.is-dirty {
+  border-color: #e5b65b;
+  background: #fff8e9;
+}
+.workspace-draft-state.is-dirty .workspace-draft-state-dot {
+  background: #c78316;
+}
+@media (max-width: 600px) {
+  .workspace-draft-state {
+    padding: 11px 12px;
+    margin: 12px 0 16px;
+  }
+}
