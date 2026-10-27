@@ -81,14 +81,18 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", on
     } catch(e) { setError(e.message || "Could not submit event for review."); }
   };
   const openEvidence = async (evidenceId) => {
+    const popup = window.open("about:blank", "_blank");
+    if (!popup) { setError("Your browser blocked the new tab. Allow pop-ups for this site and try again."); return; }
+    popup.opener = null;
     setOpeningEvidence(evidenceId); setError(""); setNotice("");
     try {
       const { data, error: invokeError } = await supabase.functions.invoke("view-payment-evidence", { body: { evidenceId } });
       if (invokeError) throw invokeError;
       if (!data?.signedUrl) throw new Error(data?.error || "Could not open payment evidence.");
-      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      popup.location.href = data.signedUrl;
       setNotice("Opened a temporary private evidence link. It expires in 60 seconds.");
     } catch (e) {
+      if (!popup.closed) popup.close();
       setError(e.message || "Could not open payment evidence.");
     } finally { setOpeningEvidence(""); }
   };
