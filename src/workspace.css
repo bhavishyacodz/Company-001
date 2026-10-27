@@ -78,3 +78,16 @@
 
 .workspace-header-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px}
 @media(max-width:560px){.workspace-header-actions{width:100%;justify-content:stretch}.workspace-header-actions .button{flex:1;justify-content:center}}
+
+.workspace-color-presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.workspace-color-swatch{width:27px;height:27px;min-width:27px;border:2px solid rgba(255,255,255,.35);border-radius:50%;cursor:pointer;box-shadow:0 0 0 1px rgba(0,0,0,.35);transition:transform .15s ease,box-shadow .15s ease}
+.workspace-color-swatch:hover{transform:translateY(-1px)}
+.workspace-color-swatch.selected{outline:2px solid #fff;outline-offset:3px}
+.workspace-color-swatch:focus-visible{outline:2px solid #fff;outline-offset:4px}
+.workspace-registration-details{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.025)}
+.workspace-registration-details summary{font-size:12px;font-weight:650}
+.workspace-registration-details dl{gap:0}
+.workspace-registration-details dl div{padding:8px 0;border-bottom:1px solid var(--border)}
+.workspace-registration-details dl div:last-child{border-bottom:0}
+.workspace-registration-details dt{font-size:11px}
+.workspace-registration-details dd{font-size:12px;line-height:1.5}
