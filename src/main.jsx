@@ -143,7 +143,7 @@ function App() {
   if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
 
   return (
-    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3" } : undefined}>
+    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined } : undefined}>
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
