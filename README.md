@@ -8,7 +8,11 @@ The first reusable template is a premium eSports tournament registration page wi
 - Supabase email/password sign-up and sign-in, plus organiser applications awaiting owner approval.
 - Published event routes use `/<organizer-slug>/<event-slug>` (on GitHub Pages, prefix `/Company-001/`). Public details load from Supabase.
 - Live registration endpoint validates published events, rate-limits requests, writes registrations server-side, and stores paid-event screenshots in private Storage. Organisers must independently verify transfers; a screenshot is not proof of payment.
-- The root page and organiser dashboard remain preview/sample-data views. The owner review workspace, organiser event creation/editing, live registration review UI, custom quote/payment flow, and production launch checks are still outstanding.
+- Owner workspace now includes organiser application review and an event publication review queue. Owner decisions are checked inside Supabase functions.
+- Approved organisers can create/edit event drafts and view real registration records in the organiser workspace. Public publication is restricted to the platform owner.
+- Registration list has search/filter and manual payment-status actions. Private screenshot viewing through short-lived signed links is still outstanding.
+- Custom consultation booking, proposals/quotes, verified custom-project payment flow, custom form builder, and full production QA are not implemented yet.
+- Deployment is intentionally paused. GitHub Actions currently validates the Vite build and stores a temporary build artifact; it does not publish a public website.
 
 ## Run locally
 
@@ -33,9 +37,10 @@ The UI works in preview mode without Supabase credentials. Do not add a Supabase
 2. Configure Supabase Auth redirect URLs for local and deployed origins.
 3. Create a private bucket for payment evidence with strict storage policies.
 4. Add a server-side registration endpoint with validation, abuse/rate limits and idempotency.
-5. Build the owner approval workspace and organiser event CRUD; create an approved organiser and publish a test event.
-6. Connect authenticated registration review, private screenshot viewing and payment-status updates; test cross-organiser access denial and rate limits.
-7. In GitHub, enable **Settings → Pages → Build and deployment → Source: GitHub Actions**. The workflow currently builds successfully, but GitHub's integration cannot enable Pages for this repository automatically.
-8. Verify the deployment URL and test the complete flow on mobile before sharing it publicly.
+5. Bootstrap the first platform owner securely; do not grant owner access through the public client.
+6. Create an approved organiser, create a test event draft, submit it for review, and approve publication.
+7. Finish private screenshot viewing with short-lived signed URLs, and test cross-organiser access denial and rate limits.
+8. Finish the consultation, quote approval, and custom-project payment workflow.
+9. When ready to deploy, restore the GitHub Pages deployment steps, enable **Settings → Pages → Build and deployment → Source: GitHub Actions**, and verify the complete flow on mobile before sharing it publicly.
 
 Never treat a payment screenshot as proof that a transfer was received. The organiser must verify receipt independently.
