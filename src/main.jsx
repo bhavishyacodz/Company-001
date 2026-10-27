@@ -160,7 +160,7 @@ function App() {
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
           {isLiveEventRoute ? <>
             <a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a>
-          </> : ["site", "templates", "account", "owner"].includes(view) ? <>
+          </> : ["site", "templates", "account", "owner", "king-login"].includes(view) ? <>
             <button className={view === "site" ? "nav-text active" : "nav-text"} onClick={() => { setView("site"); setMobileMenu(false); }}>Home</button>
             <button className={view === "templates" ? "nav-text active" : "nav-text"} onClick={() => { setView("templates"); setMobileMenu(false); }}>Templates</button>
             <a href={view === "site" ? "#services" : "/#services"} onClick={() => { setView("site"); setMobileMenu(false); }}>Services</a>
@@ -172,13 +172,13 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button className="owner-shortcut king-login" onClick={() => setView(platformRole === "owner" ? "owner" : "account")} aria-label="King Login — owner dashboard sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button className="account-entry" onClick={() => setView("account")} aria-label="Sign in or create organiser account">{signedInUser ? "WORKSPACE" : "SIGN IN"} <ArrowRight size={14} /></button>
+          <button className="owner-shortcut king-login" onClick={() => setView(platformRole === "owner" ? "owner" : "king-login")} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
+          <button className="account-entry" onClick={() => setView("account")} aria-label="Organiser or user sign in">{signedInUser ? "MY ACCOUNT" : "ORGANISER LOGIN"} <ArrowRight size={14} /></button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={(templateKey) => { setRequestedTemplate(templateKey); setView(platformRole === "owner" ? "owner" : "account"); }} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={(templateKey) => { setRequestedTemplate(templateKey); setView(platformRole === "owner" ? "owner" : "account"); }} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
@@ -226,7 +226,7 @@ function App() {
               <article className="showcase-card showcase-coaching"><span className="showcase-icon"><GraduationCap size={21}/></span><span className="showcase-tag">05 · EDUCATION</span><h3>Coaching & classes</h3><p>Course enquiries, batch selection, session timings and enrolment details.</p><small>Example · Foundation Learning Batch</small></article>
               <article className="showcase-card showcase-community"><span className="showcase-icon"><HeartHandshake size={21}/></span><span className="showcase-tag">06 · COMMUNITY</span><h3>Cultural & community events</h3><p>Showcases, meetups, auditions, volunteer groups and local gatherings.</p><small>Example · Rhythm & Culture Fest</small></article>
             </div>
-            <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Explore organiser workspace <ArrowRight size={15}/></button></div>
+            <div className="showcase-cta"><div><strong>Have an event idea?</strong><span>Start with a template and customise the details for your audience.</span></div><button className="button button-primary" onClick={() => setView("account")}>Get started free <ArrowRight size={15}/></button></div>
           </section> : null}
 
           <section className="section event-section" id="format">
@@ -283,7 +283,7 @@ function App() {
             </div>
           </section>
 
-          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView(signedInUser ? "organizer" : "account")}>Organiser workspace <ArrowRight size={14} /></button></footer>
+          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Organiser login <ArrowRight size={14} /></button></footer>
         </main> : <CompanyHome onStart={() => document.getElementById("process")?.scrollIntoView({ behavior: "smooth" })} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
@@ -358,6 +358,60 @@ function TemplateGallery({ onUseTemplate }) {
       </section>
     </div> : null}
   </main>;
+}
+
+function KingLoginPanel({ onBack, onSuccess }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [noticeType, setNoticeType] = useState("error");
+
+  const authenticateOwner = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setNotice("");
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) throw error;
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("platform_role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.platform_role !== "owner") {
+        await supabase.auth.signOut();
+        throw new Error("This account does not have platform-owner access. Use Organiser Login instead.");
+      }
+      setNoticeType("success");
+      setNotice("Owner verified. Opening the private control panel…");
+      onSuccess();
+    } catch (error) {
+      setNoticeType("error");
+      setNotice(error.message || "Could not sign in to the owner panel.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="account-shell">
+      <section className="account-card">
+        <button className="account-back" type="button" onClick={onBack}><ArrowRight size={14} /> Back to website</button>
+        <div className="section-kicker">COMPANY-001 / RESTRICTED ACCESS</div>
+        <h1>King Login.</h1>
+        <p className="account-lead">Private platform-owner sign in. Only an account already assigned the owner role in Supabase can enter the control panel.</p>
+        <form className="account-form" onSubmit={authenticateOwner}>
+          <label>OWNER EMAIL<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="username" placeholder="Your owner email" /></label>
+          <label>PASSWORD<input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" placeholder="Your account password" /></label>
+          <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Verifying owner…" : "Sign in to control panel"} <ShieldCheck size={15} /></button>
+        </form>
+        {notice ? <p className={noticeType === "success" ? "account-notice" : "owner-alert"} role="status">{notice}</p> : null}
+        <p className="account-footnote">Owner access is verified against your Supabase profile. This page does not create owner accounts or store passwords.</p>
+      </section>
+    </main>
+  );
 }
 
 function AccountPanel({ onBack, onOpenWorkspace }) {
