@@ -1,7 +1,12 @@
 -- Consolidate organiser-event-access SELECT policies without changing permissions.
 -- Platform owners retain all CRUD access; assigned users can read only their own grants.
+-- Drop both legacy and replacement names so the migration is safely repeatable.
 drop policy if exists organizer_event_access_owner_manage on public.organizer_event_access;
 drop policy if exists organizer_event_access_user_read on public.organizer_event_access;
+drop policy if exists organizer_event_access_select on public.organizer_event_access;
+drop policy if exists organizer_event_access_insert_owner on public.organizer_event_access;
+drop policy if exists organizer_event_access_update_owner on public.organizer_event_access;
+drop policy if exists organizer_event_access_delete_owner on public.organizer_event_access;
 
 create policy organizer_event_access_select
   on public.organizer_event_access
