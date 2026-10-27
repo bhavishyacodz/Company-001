@@ -47,7 +47,7 @@ function App() {
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
-  useEffect(() => { supabase.auth.getSession().then(async ({ data }) => { const user = data.session?.user || null; setSignedInUser(user); if (user) { const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle(); setPlatformRole(profile?.platform_role || "organizer"); } else setPlatformRole(null); }); }, []);
+  useEffect(() => { const refresh = async (user) => { setSignedInUser(user || null); if (!user) { setPlatformRole(null); return; } const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle(); setPlatformRole(profile?.platform_role || "organizer"); }; supabase.auth.getSession().then(({ data }) => refresh(data.session?.user || null)); const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { window.setTimeout(() => refresh(session?.user || null), 0); }); return () => listener.subscription.unsubscribe(); }, []);
 
   useEffect(() => {
     if (!isLiveEventRoute) return;
