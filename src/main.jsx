@@ -391,7 +391,6 @@ function AccountPanel({ onBack }) {
         category: organizerCategory,
         contact_email: user.email,
         notes: "Requested event category: " + organizerCategory,
-        status: "pending",
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
