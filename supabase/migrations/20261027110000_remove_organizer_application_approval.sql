@@ -69,6 +69,7 @@ normalized as (
     applicant_user_id,
     business_name,
     id,
+    status,
     trim(both '-' from left(
       regexp_replace(lower(trim(business_name)), '[^a-z0-9]+', '-', 'g'),
       38
