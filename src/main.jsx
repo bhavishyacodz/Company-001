@@ -55,6 +55,7 @@ function App() {
     community: { label:"Community meetup", cta:"Join the meetup", participant:"ATTENDEE NAME", idLabel:"GROUP / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"MEET. SHARE.", heroAccent:"CONNECT.", ticker:"MEETUP DETAILS" },
   })[categoryKey] || { label:"Event registration", cta:"Register for event", participant:"PARTICIPANT NAME", idLabel:"REFERENCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"YOUR NEXT", heroAccent:"CHAPTER STARTS HERE", ticker:"EVENT DETAILS" };
   const HeroCategoryIcon = ({esports:Gamepad2,garba:Music2,sports:Trophy,workshop:BookOpen,coaching:GraduationCap,cultural:Palette,community:HeartHandshake})[categoryKey] || Gamepad2;
+  const registrationClosed = Boolean(isLiveEventRoute && eventData?.registration_closes_at && new Date(eventData.registration_closes_at).getTime() <= Date.now());
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
@@ -198,14 +199,14 @@ function App() {
             <div className="hero-index"><span>01</span> / 04</div>
           </section>
 
-          <section className="ticker" aria-label="Tournament highlights">
+          <section className="ticker" aria-label={isLiveEventRoute ? "Event highlights" : "Tournament highlights"}>
             <div><Trophy size={17} /><span>REWARDS</span><strong>Badges & recognition</strong></div>
             <i />
             <div><Users size={17} /><span>FORMAT</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Solo, teams & more"}</strong></div>
             <i />
             <div><CalendarDays size={17} /><span>REGISTRATION CLOSES</span><strong>{isLiveEventRoute && eventData?.registration_closes_at ? new Date(eventData.registration_closes_at).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}) : "Check event details"}</strong></div>
             <i />
-            <div><Gamepad2 size={17} /><span>EVENT TYPE</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Choose your format"}</strong></div>
+            <div>{isLiveEventRoute ? <HeroCategoryIcon size={17} /> : <Gamepad2 size={17} />}<span>EVENT TYPE</span><strong>{isLiveEventRoute ? categoryPresentation.label : "Choose your format"}</strong></div>
           </section>
 
           {!isLiveEventRoute ? <section className="section template-showcase" id="templates">
@@ -226,12 +227,12 @@ function App() {
 
           <section className="section event-section" id="format">
             <div className="section-heading">
-              <div><div className="section-kicker">THE MISSION</div><h2>BUILT FOR THE <span className="gradient-text">COMPETITIVE.</span></h2></div>
-              <p>Everything you need to know before you drop in. Read the details, lock your slot, and get ready to play.</p>
+              <div><div className="section-kicker">{isLiveEventRoute ? categoryPresentation.ticker : "THE MISSION"}</div><h2>{isLiveEventRoute ? <>MADE FOR <span className="gradient-text">{categoryPresentation.label.toUpperCase()}.</span></> : <>BUILT FOR THE <span className="gradient-text">COMPETITIVE.</span></>}</h2></div>
+              <p>{isLiveEventRoute ? "Review the organiser’s details, schedule, entry requirements and rules before registering." : "Everything you need to know before you drop in. Read the details, lock your slot, and get ready to play."}</p>
             </div>
             <div className="event-cards">
               <article className="event-card feature-card">
-                <div className="card-top"><span className="card-icon"><Gamepad2 size={20} /></span><span className="card-number">01 / GAME</span></div>
+                <div className="card-top"><span className="card-icon"><Gamepad2 size={20} /></span><span className="card-number">01 / {isLiveEventRoute ? "EVENT" : "GAME"}</span></div>
                 <h3>{isLiveEventRoute ? "Your event." : "Your game."}<br />{isLiveEventRoute ? "Your way." : "Your arena."}</h3><p>{isLiveEventRoute ? "Review the organiser’s event details, schedule and instructions before registering." : "The organiser chooses the game and competition rules for each tournament."}</p>
                 <div className="game-tags">{isLiveEventRoute ? <><span>{categoryPresentation.label}</span><span>{eventData?.game_title || "All welcome"}</span></> : <><span>Mobile</span><span>PC</span><span>Console</span></>}</div>
               </article>
@@ -249,27 +250,27 @@ function App() {
           </section>
 
           <section className="section steps-section" id="rules">
-            <div className="steps-copy"><div className="section-kicker">HOW TO ENTER</div><h2>THREE STEPS.<br /><span className="gradient-text">ONE SHOT.</span></h2><p>Simple from the first click to your registration confirmation.</p></div>
+            <div className="steps-copy"><div className="section-kicker">{isLiveEventRoute ? "HOW TO REGISTER" : "HOW TO ENTER"}</div><h2>{isLiveEventRoute ? <>THREE STEPS.<br /><span className="gradient-text">ONE EVENT.</span></> : <>THREE STEPS.<br /><span className="gradient-text">ONE SHOT.</span></>}</h2><p>Simple from the first click to your registration confirmation.</p></div>
             <div className="steps-list">
-              <div className="step-row"><span className="step-no">01</span><div><h3>Fill in your details</h3><p>Player name, contact details, game ID and team information.</p></div><Check size={18} /></div>
-              <div className="step-row"><span className="step-no">02</span><div><h3>Review tournament details</h3><p>Check the organiser's schedule and rules before joining.</p></div><Check size={18} /></div>
+              <div className="step-row"><span className="step-no">01</span><div><h3>Fill in your details</h3><p>{isLiveEventRoute ? "Enter your name and contact details, plus any event-specific information requested." : "Player name, contact details, game ID and team information."}</p></div><Check size={18} /></div>
+              <div className="step-row"><span className="step-no">02</span><div><h3>{isLiveEventRoute ? "Review event details" : "Review tournament details"}</h3><p>Check the organiser’s schedule, entry requirements and rules before joining.</p></div><Check size={18} /></div>
               <div className="step-row"><span className="step-no">03</span><div><h3>Submit and track</h3><p>Keep your confirmation reference and check your status later.</p></div><ArrowRight size={18} /></div>
             </div>
           </section>
 
           <section className="register-wrap" id="registration">
-            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>{isLiveEventRoute ? "SAVE YOUR" : "CLAIM YOUR"}<br /><span className="gradient-text">{isLiveEventRoute ? "PLACE." : "SPOT."}</span></h2><p>{isLiveEventRoute ? "Enter your details to register for this tournament." : "Enter your details below. This is a preview of the registration flow for the eSports template."}</p><div className="register-note"><ShieldCheck size={18} /><span>Your information should only be visible to the event organiser once the live platform is connected.</span></div></div>
+            <div className="register-intro"><div className="section-kicker">YOUR MOMENT IS NOW</div><h2>{isLiveEventRoute ? "SAVE YOUR" : "CLAIM YOUR"}<br /><span className="gradient-text">{isLiveEventRoute ? "PLACE." : "SPOT."}</span></h2><p>{isLiveEventRoute ? "Enter your details to " + categoryPresentation.cta.toLowerCase() + "." : "Enter your details below to preview the registration flow. No live registration is created from this homepage."}</p><div className="register-note"><ShieldCheck size={18} /><span>{isLiveEventRoute ? "Your details are sent to the organiser. Payment screenshots stay private while awaiting review." : "Live registrations are available on published event pages; this homepage form is preview-only."}</span></div></div>
             <div className="register-panel">
-              <div className="panel-header"><div><span className="panel-label">{isLiveEventRoute ? "EVENT REGISTRATION" : "PLAYER REGISTRATION"}</span><h3>{eventName}</h3></div><span className="open-badge"><span /> OPEN</span></div>
+              <div className="panel-header"><div><span className="panel-label">{isLiveEventRoute ? "EVENT REGISTRATION" : "PLAYER REGISTRATION"}</span><h3>{eventName}</h3></div><span className={"open-badge" + (registrationClosed ? " closed" : "")}><span /> {registrationClosed ? "CLOSED" : "OPEN"}</span></div>
               {submitted ? (
-                <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>{liveConfirmation?.message || "Preview submission received in this browser session. No data has been sent to a server."}</p><div className="confirmation-code"><span>{liveConfirmation ? "CONFIRMATION REFERENCE" : "DEMO CONFIRMATION"}</span><strong>{liveConfirmation?.confirmation_reference || "ARENA-DEMO-001"}</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setLiveConfirmation(null); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); setPaymentScreenshot(null); }}>Register another player <ArrowRight size={16} /></button></div>
+                <div className="success-state"><div className="success-icon"><Check size={26} /></div><h3>YOU'RE ON THE LIST.</h3><p>{liveConfirmation?.message || "Preview submission received in this browser session. No data has been sent to a server."}</p><div className="confirmation-code"><span>{liveConfirmation ? "CONFIRMATION REFERENCE" : "DEMO CONFIRMATION"}</span><strong>{liveConfirmation?.confirmation_reference || "ARENA-DEMO-001"}</strong></div><button className="button button-primary full-width" onClick={() => { setSubmitted(false); setLiveConfirmation(null); setPlayerName(""); setPlayerEmail(""); setGameId(""); setTeamName(""); setPaymentScreenshot(null); }}>{isLiveEventRoute && categoryKey !== "esports" ? "Register another attendee" : "Register another player"} <ArrowRight size={16} /></button></div>
               ) : (
                 <form className="registration-form" onSubmit={submitDemo}>
                   <div className="form-grid"><label>{isLiveEventRoute ? categoryPresentation.participant : "PLAYER NAME"}<input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder={isLiveEventRoute ? categoryPresentation.namePlaceholder : "Your in-game name"} required /></label><label>EMAIL ADDRESS<input type="email" value={playerEmail} onChange={e => setPlayerEmail(e.target.value)} placeholder="you@example.com" required /></label><label>{isLiveEventRoute ? categoryPresentation.idLabel : "GAME ID / UID"}<input value={gameId} onChange={e => setGameId(e.target.value)} placeholder={isLiveEventRoute && categoryKey !== "esports" ? "Optional details" : "Enter your player ID"} required={!isLiveEventRoute || categoryKey === "esports"} /></label><label>TEAM NAME <span className="optional">(optional)</span><input value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Your squad name" /></label></div>
                   <div className="payment-box"><div className="payment-title"><ShieldCheck size={17} /><span>ENTRY POLICY</span><strong>{eventData?.entry_fee_minor > 0 ? "₹" + (eventData.entry_fee_minor / 100).toFixed(0) : "FREE"}</strong></div>{eventData?.entry_fee_minor > 0 ? <><p>{eventData.payment_instructions || "Follow the organiser's payment instructions, then attach your screenshot for review."}</p>{eventData.payment_qr_public_url ? <img className="payment-qr" src={eventData.payment_qr_public_url} alt="Organiser payment QR code" /> : null}<label className="upload-area"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => setPaymentScreenshot(e.target.files?.[0] || null)} required /><ImagePlus size={21} /><span><strong>{paymentScreenshot ? paymentScreenshot.name : "Attach payment screenshot"}</strong><small>PNG, JPG or WEBP · maximum 3 MB</small></span><span className="upload-action">{paymentScreenshot ? "Change" : "Browse"}</span></label></> : <p>This event is free to enter. No payment is collected.</p>}</div>
                   {submissionError ? <p className="form-error" role="alert">{submissionError}</p> : null}
                   <label className="consent-check"><input type="checkbox" required /><span>I confirm these details are accurate and agree to the event rules and privacy notice.</span></label>
-                  <button className="button button-primary full-width" type="submit" disabled={isSubmitting || (isLiveEventRoute && !eventData)}>{isSubmitting ? "Submitting…" : isLiveEventRoute ? "Submit registration" : "Submit preview registration"} <ArrowRight size={17} /></button>
+                  <button className="button button-primary full-width" type="submit" disabled={isSubmitting || (isLiveEventRoute && (!eventData || registrationClosed))}>{isSubmitting ? "Submitting…" : registrationClosed ? "Registration closed" : isLiveEventRoute ? "Submit registration" : "Submit preview registration"} <ArrowRight size={17} /></button>
                   <p className="form-disclaimer"><ShieldCheck size={13} /> {isLiveEventRoute ? "Your registration is sent securely. Payment screenshots are private and must be verified by the organiser." : "Preview only. No payment is collected and no file is uploaded."}</p>
                 </form>
               )}
