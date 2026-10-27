@@ -136,7 +136,38 @@ export default function OwnerPanel({ onBack }) {
           </article>)}</div>}
         </section>
         <section className="owner-card">
-          <div className="owner-section-head"><div><span className="panel-label">ORGANIZER ONBOARDING</span><h2>Automatic workspace activation</h2><p>New organizer workspaces activate automatically after signup. Event publication still requires owner review.</p></div></div>
+          <div className="owner-section-head">
+            <div><span className="panel-label">ORGANISER ONBOARDING</span><h2>Organiser applications</h2><p>Review each application before creating an organiser workspace. Approval and rejection are enforced by Supabase.</p></div>
+            <label className="owner-muted">Filter applications
+              <select value={filter} onChange={event => setFilter(event.target.value)} aria-label="Filter organiser applications">
+                <option value="pending">Pending review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+                <option value="all">All applications</option>
+              </select>
+            </label>
+          </div>
+          <p className="owner-muted">Showing {visibleApplications.length} of {applications.length} recent applications · Newest first.</p>
+          {loading ? <p className="owner-muted">Loading organiser applications…</p> : visibleApplications.length === 0 ? (
+            <div className="owner-empty"><Users size={23} /><strong>No applications in this view.</strong><p>New applications will appear here after organisers submit the signup form.</p></div>
+          ) : (
+            <div className="owner-app-list">{visibleApplications.map(app => (
+              <article className="owner-app" key={app.id}>
+                <div className="owner-app-top">
+                  <div><strong>{app.business_name}</strong><span>{app.contact_email || "No contact email"} · {(app.category || "other").replace(/-/g, " ")}</span></div>
+                  <span className={"status-chip " + (app.status === "approved" ? "approved" : app.status === "pending" ? "pending" : "rejected")}><span />{app.status.replace(/_/g, " ").toUpperCase()}</span>
+                </div>
+                {app.notes ? <p>{app.notes}</p> : null}
+                <small>Submitted {new Date(app.created_at).toLocaleString()} · Ref {app.id.slice(0, 8).toUpperCase()}</small>
+                {app.status === "pending" ? (
+                  <div className="owner-app-actions">
+                    <button className="button button-primary" disabled={busyId === app.id} onClick={() => review(app, "approved")}>{busyId === app.id ? "Reviewing…" : "Approve organiser"} <Check size={14}/></button>
+                    <button className="button button-secondary" disabled={busyId === app.id} onClick={() => review(app, "rejected")}>{busyId === app.id ? "Reviewing…" : "Reject application"}</button>
+                  </div>
+                ) : app.decision_note ? <p className="owner-muted"><strong>Decision:</strong> {app.decision_note}</p> : null}
+              </article>
+            ))}</div>
+          )}
         </section>
         <OwnerEventReview />
         <OwnerPaymentEvidence />
