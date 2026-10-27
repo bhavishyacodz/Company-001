@@ -60,7 +60,7 @@ where status = 'pending';
 -- Ensure each existing applicant has a workspace, using their most recent application.
 with latest_application as (
   select distinct on (applicant_user_id)
-    applicant_user_id, business_name, id, created_at
+    applicant_user_id, business_name, id, created_at, status
   from public.organizer_applications
   order by applicant_user_id, created_at desc, id desc
 ),
@@ -83,6 +83,7 @@ ready as (
     coalesce(nullif(base_slug, ''), 'organizer') || '-' ||
       substr(replace(id::text, '-', ''), 1, 8) as organizer_slug
   from normalized
+  where status in ('pending', 'approved')
 )
 insert into public.organizers as existing_organizer (owner_user_id, display_name, slug, status)
 select applicant_user_id, business_name, organizer_slug, 'approved'
@@ -93,12 +94,12 @@ on conflict (owner_user_id) do update
     else existing_organizer.status
   end;
 
--- Clear pending/rejected states from the retired organizer-approval workflow.
+-- Activate pending applications only; preserve any explicit rejected records.
 update public.organizer_applications
 set status = 'approved',
     reviewed_by = null,
     reviewed_at = coalesce(reviewed_at, now()),
     decision_note = 'Workspace activated automatically; organizer application review is disabled.'
-where status <> 'approved';
+where status = 'pending';
 
 commit;
