@@ -150,3 +150,17 @@
 @media(prefers-reduced-motion:reduce){
   .workspace-form input,.workspace-form textarea,.workspace-form select,.workspace-custom-field,.template-choice{transition:none}
 }
+
+
+/* Live builder: render a realistic, non-interactive attendee form preview. */
+.workspace-preview-form{padding:18px;display:grid;gap:14px;background:#0d1018;border-top:1px solid #292d3b}
+.workspace-preview-form-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.workspace-preview-form-head strong{font-size:12px;color:#f1edf9}
+.workspace-preview-form-head small,.workspace-preview-form-empty{font-size:9px;color:#8f93a8;line-height:1.6}
+.workspace-preview-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.workspace-preview-form-grid label{display:grid;align-content:start;gap:7px;min-width:0;color:#b7b9c9;font-size:10px;line-height:1.5}
+.workspace-preview-form-grid label span{display:inline;color:#d6b8ff}
+.workspace-preview-form-grid input,.workspace-preview-form-grid select{width:100%;min-width:0;min-height:38px;padding:10px 11px;border:1px solid #303447;border-radius:7px;background:#12151f;color:#a3a6b8;font:inherit;font-size:10px;opacity:1;-webkit-text-fill-color:#a3a6b8}
+.workspace-preview-form-grid input:disabled,.workspace-preview-form-grid select:disabled{cursor:default;opacity:1}
+.workspace-preview-form-empty{padding:11px;border:1px dashed #303447;border-radius:7px}
+@media(max-width:560px){.workspace-preview-form{padding:14px}.workspace-preview-form-grid{grid-template-columns:1fr}}
