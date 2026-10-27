@@ -26,6 +26,8 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Check release security invariants
+        run: npm run test:release
       - name: Build site
         run: npm run build
       - name: Smoke-test consultation endpoint (no database write)
