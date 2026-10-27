@@ -22,6 +22,20 @@ const checks = [
     },
   },
   {
+    name: "payment-review RPC restricts execution and authorizes only owner or event organiser",
+    run: () => {
+      const sql = read("supabase/migrations/20261027160524_enforce_audited_registration_payment_updates.sql");
+      return sql.includes("security definer")
+        && sql.includes("set search_path = ''")
+        && sql.includes("if auth.uid() is null")
+        && sql.includes("private.is_platform_owner()")
+        && sql.includes("private.is_organizer_owner(v_registration.organizer_id)")
+        && sql.includes("revoke all on function public.review_registration_payment(uuid, text, text) from public, anon")
+        && sql.includes("grant execute on function public.review_registration_payment(uuid, text, text) to authenticated, service_role")
+        && sql.includes("insert into public.audit_logs");
+    },
+  },
+  {
     name: "payment approval requires evidence and approved payments cannot be downgraded",
     run: () => {
       const sql = read("supabase/migrations/20261027160524_enforce_audited_registration_payment_updates.sql");
