@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Check, RefreshCw, Shield, UserRoundCog } from "lucide-react";
+import "./organizer-access.css";
 
 const supabase = createClient(
   "https://zkzgkovwktljfuuuhivk.supabase.co",
