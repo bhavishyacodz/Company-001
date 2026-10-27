@@ -44,6 +44,16 @@ function App() {
   const routeParts = window.location.pathname.split("/").filter(Boolean);
   const routeSlugs = routeParts[0] === "Company-001" ? routeParts.slice(1) : routeParts;
   const isLiveEventRoute = routeSlugs.length === 2;
+  const categoryKey = (eventData?.category || "esports").toLowerCase();
+  const categoryPresentation = ({
+    esports: { label:"eSports tournament", cta:"Register for tournament", participant:"PLAYER NAME", idLabel:"GAME ID / UID", namePlaceholder:"Your in-game name", heroLine:"YOUR NEXT", heroAccent:"VICTORY", ticker:"TOURNAMENT DETAILS" },
+    garba: { label:"Garba / Navratri event", cta:"Register for Garba night", participant:"ATTENDEE NAME", idLabel:"PASS / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"CELEBRATE", heroAccent:"TOGETHER", ticker:"EVENT DETAILS" },
+    sports: { label:"Sports tournament", cta:"Register for tournament", participant:"PARTICIPANT NAME", idLabel:"PLAYER / TEAM ID (optional)", namePlaceholder:"Your full name", heroLine:"PLAY FOR", heroAccent:"THE WIN", ticker:"COMPETITION DETAILS" },
+    workshop: { label:"Workshop / seminar", cta:"Reserve your seat", participant:"ATTENDEE NAME", idLabel:"SESSION / TRACK (optional)", namePlaceholder:"Your full name", heroLine:"LEARN", heroAccent:"SOMETHING NEW", ticker:"SESSION DETAILS" },
+    coaching: { label:"Coaching / classes", cta:"Enquire about this batch", participant:"STUDENT NAME", idLabel:"COURSE / BATCH (optional)", namePlaceholder:"Student full name", heroLine:"YOUR NEXT", heroAccent:"STEP STARTS HERE", ticker:"BATCH DETAILS" },
+    cultural: { label:"Cultural event", cta:"Join the event", participant:"PARTICIPANT NAME", idLabel:"PERFORMANCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"MAKE IT", heroAccent:"MEMORABLE", ticker:"EVENT DETAILS" },
+    community: { label:"Community meetup", cta:"Join the meetup", participant:"ATTENDEE NAME", idLabel:"GROUP / SESSION (optional)", namePlaceholder:"Your full name", heroLine:"MEET. SHARE.", heroAccent:"CONNECT.", ticker:"MEETUP DETAILS" },
+  })[categoryKey] || { label:"Event registration", cta:"Register for event", participant:"PARTICIPANT NAME", idLabel:"REFERENCE / CATEGORY (optional)", namePlaceholder:"Your full name", heroLine:"YOUR NEXT", heroAccent:"CHAPTER STARTS HERE", ticker:"EVENT DETAILS" };
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
@@ -146,8 +156,8 @@ function App() {
         <nav className={mobileMenu ? "nav-links nav-open" : "nav-links"}>
           {view === "site" ? <>
             <a href="#overview" onClick={() => setMobileMenu(false)}>Overview</a>
-            <a href="#format" onClick={() => setMobileMenu(false)}>Tournament</a>
-            <a href="#rules" onClick={() => setMobileMenu(false)}>Rules</a>
+            <a href="#templates" onClick={() => setMobileMenu(false)}>Templates</a>
+            <a href="#rules" onClick={() => setMobileMenu(false)}>How it works</a>
           </> : <>
             <button className="nav-text active" onClick={() => setView("organizer")}>Overview</button>
             <button className="nav-text" onClick={() => setView("customize")}>Customize</button>
