@@ -1,29 +1,33 @@
 # Release audit follow-up — 2026-10-27
 
-## Verified observations
+## Latest verified build and deployment workflow
 
-- The Vite build workflow succeeded for commit `af9687a70f6ad2f75391275181b689dc56958ebb`: [run 40543037727](https://github.com/bhavishyacodz/Company-001/actions/runs/40543037727). All listed steps passed: dependency installation, six release-invariant checks, `vite build`, consultation endpoint smoke tests, SPA fallback preparation, and temporary artifact upload.
-- GitHub Pages' separate build-and-deployment workflow also succeeded for that commit: [run 40543037473](https://github.com/bhavishyacodz/Company-001/actions/runs/40543037473). This confirms that GitHub Pages deployment workflow completed successfully. It does not prove that Cloudflare Pages at `https://company-001.pages.dev/` was updated, nor does it substitute for end-to-end testing of the app on the intended production hostname.
-- `package.json` pins direct dependencies, but the repository does not contain `package-lock.json`. Dependency resolution in CI is therefore not fully reproducible. Do not switch to `npm ci` until a lockfile is generated and reviewed.
-- The overlapping SELECT policies on `public.organizer_event_access` were consolidated. The live database now has one SELECT policy and separate owner-only INSERT, UPDATE, and DELETE policies. The performance advisor no longer reports the overlapping-policy warning for this table.
-- Two foreign-key indexes for `organizer_event_access` have been created and their migration is present in the repository.
-- The live migration ledger records version `20261027161230` with the name `20261027162500_index_organizer_event_access_foreign_keys`, while the repository filename uses `20261027161230_index_organizer_event_access_foreign_keys.sql`. This naming discrepancy is documented; do not rewrite migration history or replay it just to rename it.
-- The three previously missing migration files have now been restored from their original GitHub commit diffs: `20261027084200_limit_registration_review_updates.sql`, `20261027085931_atomic_registration_payment_review.sql`, and `20261027091337_guard_payment_review_transitions.sql`. They were restored as source-history files only; they were not replayed against the live database.
-- The live security advisor reports leaked-password protection disabled and three authenticated-callable SECURITY DEFINER review RPCs. The RPCs deny `anon`, require internal owner/event-organiser authorization, and use an empty `search_path`; do not revoke access blindly because the owner dashboard uses these operations.
-- All six source-level release invariants passed in the recorded CI run. These checks complement, but do not replace, multi-user authorization tests.
-- A live read-only RLS audit confirmed RLS is enabled on the reviewed public tables. The `profiles` policies only allow self-insert as `organizer`, self-read (or owner-read), and self-update only while the resulting role remains `organizer`. Owner-only organiser creation, publication transitions, and review RPC authorization checks are present. This was a policy-definition review, not a full multi-user end-to-end test.
-- Inspection confirmed the three review RPCs deny `anon`, use an empty `search_path`, and check the platform owner or appropriate event organiser internally. Keep their authenticated grants only while required by the owner dashboard and continue testing authorization.
-- The performance advisor currently reports 12 unused indexes as informational findings. Do not remove them without query/workload evidence.
+- The latest Company-001 build workflow passed for commit `dd673b4953ee0c139d09d7bdc211a742ec8ae5ae`: [run 40549504977](https://github.com/bhavishyacodz/Company-001/actions/runs/40549504977). Verified steps include locked dependency installation, `npm audit --audit-level=low`, release security invariants, Vite build, consultation endpoint smoke tests (no database writes), SPA fallback preparation, and build artifact upload.
+- The GitHub Pages build-and-deployment workflow completed successfully for the same commit: [run 40549504535](https://github.com/bhavishyacodz/Company-001/actions/runs/40549504535). This is evidence that the GitHub Pages workflow succeeded; it does not prove that Cloudflare Pages at `https://company-001.pages.dev/` was updated or that the full production app passed end-to-end testing.
+- `package-lock.json` is now present and CI uses `npm ci`. The previous note saying the lockfile was missing is obsolete.
+- The latest UI-only change polished organiser event-builder focus states, keyboard focus visibility, custom-field editing feedback, reduced-motion behavior, and sticky draft actions. It does not change database schema or production data.
 
-## Safe next steps
+## Verified database and security observations
 
-1. Confirm the intended production hostname (Cloudflare Pages or GitHub Pages) and test that exact URL, including auth redirects and published event routes.
-2. Test RLS with owner, assigned organiser, unrelated authenticated user, and anonymous sessions in a non-production environment where possible.
-3. Generate and review a lockfile using the project's intended Node/npm versions; only then change CI to deterministic installation.
-4. Enable leaked-password protection in Supabase Auth settings.
-5. Compare the restored migration contents with the live schema and migration ledger before any future migration replay or fresh-project bootstrap.
-6. Only after hostname and auth tests pass, continue premium visual-editor development and plan any production release changes separately.
+- A live read-only audit confirmed RLS is enabled on all 10 reviewed public tables.
+- The `profiles` policies restrict self-insert to the `organizer` role and self-update so the resulting role remains `organizer`; owner access is separately controlled.
+- Owner-only organiser creation and event-publication transitions are guarded. Event registration access is limited by the event organiser/access grant or platform-owner authorization.
+- The overlapping SELECT policies on `public.organizer_event_access` were consolidated. Separate owner-only INSERT, UPDATE, and DELETE policies remain. Two foreign-key indexes for this table have been created.
+- The live migration ledger records version `20261027161230` with the name `20261027162500_index_organizer_event_access_foreign_keys`, while the repository filename uses `20261027161230_index_organizer_event_access_foreign_keys.sql`. This discrepancy is documented; do not rewrite migration history or replay the migration just to rename it.
+- Three historical migration files were restored from their original GitHub commit diffs: `20261027084200_limit_registration_review_updates.sql`, `20261027085931_atomic_registration_payment_review.sql`, and `20261027091337_guard_payment_review_transitions.sql`. They were restored as source-history files and were not replayed against the live database.
+- The live security advisor reports leaked-password protection disabled and three authenticated-callable SECURITY DEFINER review RPCs: `review_event_publication`, `review_organizer_application`, and `review_registration_payment`. Inspection found they deny `anon`, use an empty `search_path`, and enforce internal owner/event-organiser authorization. Do not revoke authenticated grants blindly because the dashboard depends on these operations.
+- Release-invariant checks passed in CI. They are source-level regression checks, not a substitute for multi-user authorization testing.
+- The performance advisor reported 12 unused indexes as informational findings. Do not remove them without workload evidence.
+
+## Outstanding release checks
+
+1. Verify the intended production hostname and confirm the latest UI is served there. GitHub Pages workflow success does not verify Cloudflare Pages deployment.
+2. Test auth redirects and published-event routes on the intended production hostname.
+3. Test authorization with owner, assigned organiser, unrelated authenticated user, and anonymous sessions in a safe test environment. Full multi-user end-to-end authorization testing has not been completed.
+4. Enable leaked-password protection in Supabase Auth settings; this dashboard setting has not been changed here.
+5. Compare restored migration source files against the live schema and migration ledger before any future migration replay or fresh-project bootstrap.
+6. Continue premium visual-editor work independently from release checks, and do not claim production release readiness until the outstanding checks are complete.
 
 ## Release safety
 
-GitHub Pages deployment workflow success is confirmed; Cloudflare Pages deployment and complete production end-to-end QA are not confirmed here. Preserve existing registrations, organiser accounts, payment evidence, and audit history. Never put Supabase service-role or secret keys in browser-exposed environment variables.
+No production registration, organiser account, payment-evidence object, or audit history was modified during the latest UI work. Preserve existing user data. Never put Supabase service-role or secret keys in browser-exposed environment variables.
