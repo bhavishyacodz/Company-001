@@ -24,36 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install dependencies
-        run: npm install
-      - name: Report dependency audit findings
-        # Informational for now: identify exact advisories before selecting safe upgrades.
-        run: |
-          npm audit --json > /tmp/npm-audit.json || true
-          node --input-type=module -e '
-            import fs from "node:fs";
-            try {
-              const report = JSON.parse(fs.readFileSync("/tmp/npm-audit.json", "utf8"));
-              const counts = report.metadata?.vulnerabilities ?? {};
-              console.log("Dependency audit totals:", JSON.stringify(counts));
-              for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
-                console.log(JSON.stringify({
-                  package: name,
-                  severity: item.severity,
-                  direct: item.isDirect,
-                  range: item.range,
-                  fixAvailable: item.fixAvailable,
-                  advisories: (item.via ?? []).filter(v => typeof v === "object").map(v => ({
-                    title: v.title,
-                    url: v.url,
-                    range: v.range
-                  }))
-                }));
-              }
-            } catch {
-              console.log("Dependency audit report unavailable or not valid JSON; inspect npm audit output in a follow-up run.");
-            }
-          '
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Enforce dependency audit
+        run: npm audit --audit-level=low
       - name: Check release security invariants
         run: npm run test:release
       - name: Build site
