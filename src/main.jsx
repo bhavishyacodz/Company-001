@@ -492,7 +492,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           });
           if (profileError && profileError.code !== "23505") throw profileError;
           setUser(data.user);
-          setNotice("Account created. Next, submit your organiser application.");
+          setNotice("Account created. Set up your workspace to start editing immediately.");
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
@@ -523,7 +523,8 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
-      setNotice("Application submitted. Your workspace will become available after platform-owner approval.");
+      setNotice("Workspace activated. Opening your template editor…");
+      if (data.status === "approved") onOpenWorkspace();
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
@@ -555,12 +556,12 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           <div className="account-signed-in">
             <div className="account-user"><span>{(user.email || "O").slice(0,1).toUpperCase()}</span><div><strong>{user.user_metadata?.display_name || user.email}</strong><small>{user.email}</small></div><button onClick={signOut}>Sign out</button></div>
             {application ? (
-              <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Setting up your organiser workspace…"}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
+              <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
             ) : (
               <form className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. After platform-owner approval, you can create event drafts from the available templates.</small></span></div>
+                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. Your workspace activates immediately, so you can pick a template and start editing.</small></span></div>
                 <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Create organiser workspace"} <ArrowRight size={16} /></button>
               </form>
             )}
