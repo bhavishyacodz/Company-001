@@ -401,6 +401,22 @@ const checks = [
     },
   },
   {
+    name: "user and owner login paths stay separate and route to role-appropriate dashboards",
+    run: () => {
+      const app = read("src/main.jsx");
+      const owner = read("src/OwnerPanel.jsx");
+      const workspace = read("src/OrganizerWorkspace.jsx");
+      return app.includes('if (initialRole === "owner")')
+        && app.includes('else if (initialRole === "organizer")')
+        && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
+        && app.includes('if (profile?.platform_role === "owner")')
+        && app.includes('onOpenWorkspace={() => setView("organizer")}')
+        && owner.includes('if (!user || role !== "owner")')
+        && owner.includes('supabase.auth.signOut()')
+        && workspace.includes('onClick={signOut}');
+    },
+  },
+  {
     name: "self-service account deletion reauthenticates and requires explicit confirmation",
     run: () => {
       const account = read("src/main.jsx");
