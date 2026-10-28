@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut, KeyRound } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
@@ -23,6 +23,10 @@ export default function OwnerPanel({ onBack }) {
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const [filter, setFilter] = useState("pending");
   const [consultationFilter, setConsultationFilter] = useState("all");
   const [consultationSearch, setConsultationSearch] = useState("");
@@ -68,6 +72,46 @@ export default function OwnerPanel({ onBack }) {
     setUser(null);
     setRole(null);
     onBack();
+  };
+
+  const changeOwnerPassword = async (event) => {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!user?.email || role !== "owner") {
+      setError("Only a verified owner session can change this password.");
+      return;
+    }
+    if (newPassword.length < 12) {
+      setError("Choose a new password with at least 12 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError("The new password and confirmation do not match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setError("Choose a new password that differs from your current password.");
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      });
+      if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setNotice("King Login password changed successfully. Use the new password next time you sign in.");
+    } catch (e) {
+      setError(e.message || "Could not change the password. Please try again.");
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -132,6 +176,7 @@ export default function OwnerPanel({ onBack }) {
           <a href="#owner-registrations"><ClipboardList size={16}/><span>Registrations</span><b>{counts.registrations}</b></a>
           <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
           <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
+          <a href="#owner-security"><KeyRound size={16}/><span>Login security</span></a>
           <a href="#owner-activity"><Activity size={16}/><span>Activity log</span></a>
         </nav>
         <section id="owner-overview" className="owner-overview-intro"><div><span className="panel-label">YOUR DAILY CHECKLIST</span><h2>Everything important, in one place.</h2><p>Use the shortcuts below instead of scrolling through the whole dashboard.</p></div><div className="owner-overview-status"><span className="owner-live-dot"/> <span>Secure owner session</span></div></section>
@@ -202,6 +247,7 @@ export default function OwnerPanel({ onBack }) {
         <section id="owner-registrations" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">05 / PARTICIPANT OPERATIONS</span><h2>Registrations</h2><p>Find participants and check registration and payment status across events.</p></div><OwnerRegistrations /></section>
         <section id="owner-payments" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">06 / PAYMENT OPERATIONS</span><h2>Payment evidence</h2><p>Review submitted payment evidence securely.</p></div><OwnerPaymentEvidence /></section>
         <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-security" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT SECURITY</span><h2>King Login password</h2><p>Change the password for your current owner account. Your current password is verified before the new one is saved.</p></div><div className="owner-card owner-security-card"><form className="account-form" onSubmit={changeOwnerPassword} autoComplete="off"><label>CURRENT PASSWORD<input type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required minLength={1} /></label><label>NEW PASSWORD<input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" required minLength={12} aria-describedby="owner-password-guidance" /></label><label>CONFIRM NEW PASSWORD<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required minLength={12} /></label><p id="owner-password-guidance" className="owner-muted">Use at least 12 characters. A unique passphrase is recommended. Do not reuse your website or email password.</p><button className="button button-primary" type="submit" disabled={changingPassword}>{changingPassword ? "Updating password…" : "Change King Login password"} <KeyRound size={14}/></button></form></div></section>
         <section id="owner-activity" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / AUDIT & ACCOUNTABILITY</span><h2>Activity log</h2><p>See recorded moderation and access-control history.</p></div><OwnerAuditLog /></section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
