@@ -74,6 +74,20 @@ const checks = [
     },
   },
   {
+    name: "saved sessions restore account routing and template selection avoids login loops",
+    run: () => {
+      const account = read("src/main.jsx");
+      return account.includes('storage: window.localStorage')
+        && account.includes('window.localStorage.getItem("company001:selected-template")')
+        && account.includes('data.session?.user && !isLiveEventRoute')
+        && account.includes('supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id)')
+        && account.includes('const handleUseTemplate = async (templateKey)')
+        && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
+        && account.includes('onBack={() => setView("templates")}')
+        && account.includes('onOpenWorkspace={() => setView("customize")}');
+    },
+  },
+  {
     name: "organiser approval status is owner-controlled",
     run: () => {
       const sql = read("supabase/migrations/20261027160359_enforce_owner_only_organizer_status.sql");
