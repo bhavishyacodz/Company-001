@@ -103,12 +103,14 @@ Deno.serve(async (req: Request) => {
   for (const field of configuredFields) {
     const fieldId = typeof field.id === "string" ? field.id : "";
     const label = typeof field.label === "string" ? field.label.trim().slice(0, 80) : "";
-    const type = typeof field.type === "string" ? field.type : "text";
+    const type = ["text", "email", "number", "tel", "date", "textarea", "select"].includes(String(field.type)) ? String(field.type) : "text";
     const required = field.required === true;
     if (!/^[a-z0-9_-]{1,40}$/.test(fieldId) || !label) continue;
     const value = clean(form.get("custom_" + fieldId), 500);
     if (required && !value) return reply(origin, 400, { error: `Please complete: ${label}.` });
     if (type === "email" && value && !validEmail(value)) return reply(origin, 400, { error: `Please enter a valid email for: ${label}.` });
+    if (type === "number" && value && !Number.isFinite(Number(value))) return reply(origin, 400, { error: `Please enter a valid number for: ${label}.` });
+    if (type === "date" && value && (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value) || Number.isNaN(Date.parse(value)))) return reply(origin, 400, { error: `Please enter a valid date for: ${label}.` });
     if (type === "select") {
       const options = Array.isArray(field.options) ? field.options.filter((option): option is string => typeof option === "string").map((option) => option.trim().slice(0, 80)).filter(Boolean).slice(0, 20) : [];
       if (options.length < 2) return reply(origin, 400, { error: `The organiser has not configured the choices for: ${label}.` });
