@@ -197,6 +197,18 @@ const checks = [
   },
 
   {
+    name: "event editor buttons declare explicit button types",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      const formStart = editor.indexOf('<form id="workspace-builder-form"');
+      const formEnd = editor.indexOf("</form>", formStart);
+      if (formStart < 0 || formEnd < 0) return false;
+      const formMarkup = editor.slice(formStart, formEnd);
+      const buttons = [...formMarkup.matchAll(/<button\b[^>]*>/g)].map(match => match[0]);
+      return buttons.length > 0 && buttons.every(button => /\btype\s*=/.test(button));
+    },
+  },
+  {
     name: "event setup checklist jumps to its matching field",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
