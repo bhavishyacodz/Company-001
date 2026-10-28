@@ -401,6 +401,27 @@ const checks = [
     },
   },
   {
+    name: "organiser accounts can securely change passwords from both profile settings and workspace security",
+    run: () => {
+      const account = read("src/main.jsx");
+      const workspace = read("src/OrganizerWorkspace.jsx");
+      const styles = read("src/styles.css");
+      const workspaceStyles = read("src/workspace.css");
+      return account.includes('id="account-password-title"')
+        && account.includes("supabase.auth.signInWithPassword({")
+        && account.includes("password: accountCurrentPassword")
+        && account.includes("supabase.auth.updateUser({ password: accountNewPassword })")
+        && account.includes("accountNewPassword.length < 12")
+        && account.includes("accountNewPassword !== accountConfirmPassword")
+        && workspace.includes('tab==="security"')
+        && workspace.includes("supabase.auth.updateUser({ password: newPassword })")
+        && workspace.includes("newPassword.length < 12")
+        && workspace.includes("newPassword !== confirmPassword")
+        && styles.includes(".account-password-form")
+        && workspaceStyles.includes(".workspace-password-form");
+    },
+  },
+  {
     name: "King Login password change requires owner role, current-password verification, and matching strong confirmation",
     run: () => {
       const owner = read("src/OwnerPanel.jsx");
