@@ -167,7 +167,12 @@ function App() {
   const handleUseTemplate = async (templateKey) => {
     setRequestedTemplate(templateKey);
     try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
-    if (!signedInUser || platformRole === "owner") {
+    if (platformRole === "owner") {
+      // Keep platform owners in their restricted admin area; they do not need an organiser workspace.
+      setView("owner");
+      return;
+    }
+    if (!signedInUser) {
       setView("account");
       return;
     }
