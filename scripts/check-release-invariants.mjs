@@ -197,6 +197,21 @@ const checks = [
   },
 
   {
+    name: "event setup checklist jumps to its matching field",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('target: "workspace-event-title"')
+        && editor.includes('target: "workspace-event-slug"')
+        && editor.includes('target: "workspace-event-description"')
+        && editor.includes('target: "workspace-event-rules"')
+        && editor.includes('target?.scrollIntoView({behavior:"smooth",block:"center"})')
+        && editor.includes('id="workspace-event-title"')
+        && editor.includes('id="workspace-event-slug"')
+        && editor.includes('id="workspace-event-description"')
+        && editor.includes('id="workspace-event-rules"');
+    },
+  },
+  {
     name: "event save errors scroll into view on mobile and desktop",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
