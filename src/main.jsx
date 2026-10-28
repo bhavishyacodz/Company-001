@@ -83,8 +83,8 @@ function App() {
         if (active) {
           const savedView = window.sessionStorage.getItem("company001:last-view");
           if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-          if (initialUser && !isLiveEventRoute) {
-            const { data: organizer } = await supabase.from("organizers").select("id").eq("owner_user_id", initialUser.id).maybeSingle();
+          if (data.session?.user && !isLiveEventRoute) {
+            const { data: organizer } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
             if (active) setView(initialRole === "owner" ? "owner" : organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
           }
         }
