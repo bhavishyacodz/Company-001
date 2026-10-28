@@ -1461,3 +1461,22 @@
     transition: none;
   }
 }
+
+
+/* Event artwork should never fall back to a blank white canvas. Keep the preview and exported page visually anchored to the chosen brand accent. */
+.workspace-shell .workspace-builder .workspace-live-preview{background:#10131e!important;color:#f5f3ff}
+.workspace-shell .workspace-builder .workspace-live-preview-hero{
+  color:#f8f6ff!important;
+  background:
+    radial-gradient(ellipse at 92% 0%,color-mix(in srgb,var(--preview-accent,#9a6bff),transparent 62%),transparent 58%),
+    radial-gradient(ellipse at 0% 100%,color-mix(in srgb,var(--preview-accent,#9a6bff),transparent 88%),transparent 55%),
+    linear-gradient(145deg,#20243a 0%,#121625 55%,#0d111c 100%)!important;
+  background-color:#121625!important;
+}
+.workspace-shell .workspace-builder .workspace-live-preview-head{background:#171b29!important;color:#f5f3ff}
+.workspace-shell .workspace-builder .workspace-live-preview-details,
+.workspace-shell .workspace-builder .workspace-live-preview-facts{background:transparent}
+@media(max-width:700px){
+ .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview{overflow:hidden}
+ .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-hero{min-height:260px}
+}
