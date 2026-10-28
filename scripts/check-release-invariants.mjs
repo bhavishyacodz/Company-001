@@ -197,6 +197,15 @@ const checks = [
   },
 
   {
+    name: "website-only toggle scrolls to the controls when leaving preview",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('id="workspace-builder-form"')
+        && editor.includes('document.getElementById(websiteOnlyMode ? "workspace-builder-form" : "workspace-builder-preview")?.scrollIntoView')
+        && editor.includes('websiteOnlyMode?"Back to editing controls":"Website-only view"');
+    },
+  },
+  {
     name: "editing an existing event opens its focused website canvas",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
