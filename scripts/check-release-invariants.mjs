@@ -113,6 +113,16 @@ const checks = [
     },
   },
   {
+    name: "website-only editor keeps layers and inspector visible on desktop and mobile",
+    run: () => {
+      const css = read("src/workspace.css");
+      return css.includes(".workspace-website-canvas-mode .workspace-form> :not(.workspace-canvas-layers):not(#workspace-builder-preview):not(.workspace-canvas-inspector):not(.workspace-form-actions)")
+        && css.includes(".workspace-website-canvas-mode .workspace-canvas-layers{grid-column:1;grid-row:1}")
+        && css.includes(".workspace-website-canvas-mode .workspace-canvas-inspector{grid-column:3;grid-row:1}")
+        && css.includes("@media(max-width:650px)");
+    },
+  },
+  {
     name: "registration form builder rejects duplicate or incomplete custom fields",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
