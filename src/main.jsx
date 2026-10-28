@@ -67,25 +67,25 @@ function App() {
   useEffect(() => {
     let active = true;
     const refresh = async (user) => {
-      if (!active) return;
+      if (!active) return null;
       setSignedInUser(user || null);
-      if (!user) { setPlatformRole(null); return; }
+      if (!user) { setPlatformRole(null); return null; }
       const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      if (active) setPlatformRole(profile?.platform_role || "organizer");
+      const role = profile?.platform_role || "organizer";
+      if (active) setPlatformRole(role);
+      return role;
     };
     supabase.auth.getSession()
       .then(async ({ data, error }) => {
         if (error) throw error;
-        await refresh(data.session?.user || null);
+        const initialUser = data.session?.user || null;
+        const initialRole = await refresh(initialUser);
         if (active) {
           const savedView = window.sessionStorage.getItem("company001:last-view");
-          if (!data.session?.user && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-          if (data.session?.user && !isLiveEventRoute) {
-            const [{ data: profile }, { data: organizer }] = await Promise.all([
-              supabase.from("profiles").select("platform_role").eq("id", data.session.user.id).maybeSingle(),
-              supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle(),
-            ]);
-            if (active) setView(profile?.platform_role === "owner" ? "owner" : organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
+          if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
+          if (initialUser && !isLiveEventRoute) {
+            const { data: organizer } = await supabase.from("organizers").select("id").eq("owner_user_id", initialUser.id).maybeSingle();
+            if (active) setView(initialRole === "owner" ? "owner" : organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
           }
         }
       })
@@ -224,8 +224,8 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button className="owner-shortcut king-login" onClick={() => setView(platformRole === "owner" ? "owner" : "king-login")} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button className="account-entry" onClick={() => setView("account")} aria-label="Organiser or user sign in">{signedInUser ? "MY ACCOUNT" : "ORGANISER LOGIN"} <ArrowRight size={14} /></button>
+          <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
+          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); setView("account"); }} aria-label="Organiser or user sign in">{signedInUser ? "MY ACCOUNT" : "ORGANISER LOGIN"} <ArrowRight size={14} /></button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
