@@ -212,6 +212,17 @@ const checks = [
     },
   },
   {
+    name: "workspace errors automatically scroll into view and receive focus",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('useEffect(() => {\n    if (!error) return;')
+        && editor.includes('document.getElementById("workspace-alert")')
+        && editor.includes('alert?.scrollIntoView({ behavior: "smooth", block: "center" })')
+        && editor.includes('alert?.focus({ preventScroll: true })')
+        && editor.includes('}, [error]);');
+    },
+  },
+  {
     name: "event save errors scroll into view on mobile and desktop",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
