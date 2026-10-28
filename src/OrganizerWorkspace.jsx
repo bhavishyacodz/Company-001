@@ -217,7 +217,21 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         if (saveError) throw saveError;
         setNotice("Event draft created in Supabase.");
       }
-      resetForm(); await load(); setTab("organizer");
+      if (editingId) {
+        // Keep the organiser in the selected site's editor after saving, rather than
+        // unexpectedly throwing them back to the dashboard.
+        try {
+          window.sessionStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({
+            eventId: editingId, tab: "customize", websiteOnlyMode: true,
+            selectedElement: selectedCanvasElement
+          }));
+        } catch { /* Session persistence is optional. */ }
+        setIsDirty(false);
+        await load();
+        setTab("customize");
+      } else {
+        resetForm(); await load(); setTab("organizer");
+      }
     } catch(e) { setError(e.message || "Could not save event."); }
     finally { setSaving(false); }
   };
