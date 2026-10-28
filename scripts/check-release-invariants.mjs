@@ -361,6 +361,17 @@ const checks = [
         && editor.includes("title,slug");
     },
   },
+  {
+    name: "entry fee and team size are validated instead of silently clamped",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes("const entryFee = Number(form.entry_fee);")
+        && editor.includes('if (!Number.isFinite(entryFee) || entryFee < 0) throw new Error("Enter a valid entry fee of ₹0 or more.");')
+        && editor.includes("const teamSize = Number(form.team_size);")
+        && editor.includes('if (!Number.isInteger(teamSize) || teamSize < 1 || teamSize > 100) throw new Error("Team size must be a whole number between 1 and 100.");')
+        && editor.includes("team_size:teamSize,entry_fee_minor:Math.round(entryFee*100)");
+    },
+  },
   ];
 
 let failed = false;
