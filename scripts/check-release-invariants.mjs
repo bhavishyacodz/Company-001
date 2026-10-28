@@ -373,6 +373,22 @@ const checks = [
     },
   },
   {
+    name: "event cover images are HTTPS-validated, persisted, and rendered in preview and public pages",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      const app = read("src/main.jsx");
+      const styles = read("src/workspace.css");
+      return editor.includes('safePublicImageUrl(form.hero_background_url, "Hero background image URL")')
+        && editor.includes('heroBackgroundUrl:safeHeroBackgroundUrl')
+        && editor.includes('value={form.hero_background_url}')
+        && editor.includes('value={form.hero_overlay}')
+        && editor.includes('has-custom-background')
+        && app.includes('eventData?.branding?.heroBackgroundUrl')
+        && app.includes('backgroundSize: "cover"')
+        && styles.includes('.workspace-live-preview-hero.has-custom-background');
+    },
+  },
+  {
     name: "self-service account deletion reauthenticates and requires explicit confirmation",
     run: () => {
       const account = read("src/main.jsx");
