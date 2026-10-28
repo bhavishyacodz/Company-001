@@ -113,6 +113,18 @@ const checks = [
     },
   },
   {
+    name: "registration form builder rejects duplicate or incomplete custom fields",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      const endpoint = read("supabase/functions/register-esports/index.ts");
+      return editor.includes("A registration form can have at most 8 custom fields.")
+        && editor.includes("Two custom fields share the same internal ID.")
+        && editor.includes("Custom field labels must be unique")
+        && endpoint.includes("customFields[fieldId] = value")
+        && endpoint.includes("Please complete: ${label}.");
+    },
+  },
+  {
     name: "payment evidence remains private and rate-limit storage is server-only",
     run: () => {
       const sql = read("supabase/migrations/202610270003_registration_endpoint_and_private_evidence.sql");
