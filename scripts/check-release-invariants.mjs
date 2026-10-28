@@ -202,7 +202,7 @@ const checks = [
       const editor = read("src/OrganizerWorkspace.jsx");
       return editor.includes('id="workspace-builder-form"')
         && editor.includes('document.getElementById(websiteOnlyMode ? "workspace-builder-form" : "workspace-builder-preview")?.scrollIntoView')
-        && editor.includes('websiteOnlyMode ? "Back to editing controls" : "Website-only view"');
+        && editor.includes('websiteOnlyMode?"Back to editing controls":"Website-only view"');
     },
   },
   {
