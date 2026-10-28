@@ -216,14 +216,16 @@ const checks = [
     },
   },
   {
-    name: "mobile focused editor shows selected-element controls before the long preview",
+    name: "mobile focused editor places selected-element controls before the long preview",
     run: () => {
       const styles = read("src/workspace.css");
-      const mobileEditor = styles.slice(styles.lastIndexOf("keep selected-element controls reachable before the long page preview"));
+      const mobileEditor = styles.slice(styles.lastIndexOf("place selected-element controls before the long page preview"));
+      const inspector = mobileEditor.indexOf(".workspace-canvas-inspector");
+      const preview = mobileEditor.indexOf("#workspace-builder-preview");
       return mobileEditor.includes("@media (max-width: 700px)")
-        && mobileEditor.indexOf(".workspace-canvas-inspector") < mobileEditor.indexOf("#workspace-builder-preview")
-        && mobileEditor.includes("order: 1;")
-        && mobileEditor.includes("order: 2;");
+        && inspector >= 0 && preview > inspector
+        && mobileEditor.includes("grid-row: 2 !important;")
+        && mobileEditor.includes("grid-row: 3 !important;");
     },
   }
 ];
