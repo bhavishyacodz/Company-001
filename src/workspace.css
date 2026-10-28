@@ -1246,3 +1246,20 @@
     grid-row: 4 !important;
   }
 }
+
+
+/* On narrow screens, keep selected-element controls reachable before the long page preview. */
+@media (max-width: 700px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    order: 0;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    order: 1;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    order: 2;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+    order: 3;
+  }
+}
