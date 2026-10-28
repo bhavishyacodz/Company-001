@@ -214,7 +214,18 @@ const checks = [
         && editor.includes('if (persist) {')
         && editor.includes('setForm(savedEditor.formDraft);');
     },
-  },
+  },,
+  {
+    name: "mobile focused editor shows selected-element controls before the long preview",
+    run: () => {
+      const styles = read("src/workspace.css");
+      const mobileEditor = styles.slice(styles.lastIndexOf("keep selected-element controls reachable before the long page preview"));
+      return mobileEditor.includes("@media (max-width: 700px)")
+        && mobileEditor.indexOf(".workspace-canvas-inspector") < mobileEditor.indexOf("#workspace-builder-preview")
+        && mobileEditor.includes("order: 1;")
+        && mobileEditor.includes("order: 2;");
+    },
+  }
 ];
 
 let failed = false;
