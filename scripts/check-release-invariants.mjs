@@ -373,6 +373,18 @@ const checks = [
     },
   },
   {
+    name: "event cover crop position is validated, persisted, and consistent between preview and public page",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      const app = read("src/main.jsx");
+      const styles = read("src/workspace.css");
+      return editor.includes('value={form.hero_background_position}')
+        && editor.includes('heroBackgroundPosition:["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(form.hero_background_position)?form.hero_background_position:"center center"')
+        && app.includes('eventData?.branding?.heroBackgroundPosition')
+        && styles.includes('var(--preview-background-position,center center)/cover');
+    },
+  },
+  {
     name: "event cover images are HTTPS-validated, persisted, and rendered in preview and public pages",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
