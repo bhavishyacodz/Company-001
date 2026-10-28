@@ -183,7 +183,21 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       if (startsAt && Number.isNaN(startsAt.getTime())) throw new Error("Enter a valid event start date and time.");
       if (closesAt && Number.isNaN(closesAt.getTime())) throw new Error("Enter a valid registration closing date and time.");
       if (startsAt && closesAt && closesAt.getTime() > startsAt.getTime()) throw new Error("Registration must close before the event starts.");
-      for (const field of form.custom_fields) {
+      if (form.custom_fields.length > 8) throw new Error("A registration form can have at most 8 custom fields.");
+      const fieldIds = new Set();
+      const fieldLabels = new Set();
+      for (const [index, field] of form.custom_fields.entries()) {
+        const fieldLabel = String(field.label || "").trim();
+        if (!fieldLabel) throw new Error("Add a label for custom field " + (index + 1) + " or remove that field.");
+        if (fieldLabel.length > 80) throw new Error("Custom field labels can be at most 80 characters.");
+        const fieldId = String(field.id || ("field_" + (index + 1))).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+        if (!fieldId) throw new Error("Custom field " + (index + 1) + " needs a valid field ID. Remove and add it again.");
+        if (fieldIds.has(fieldId)) throw new Error("Two custom fields share the same internal ID. Remove the duplicate field and add it again.");
+        fieldIds.add(fieldId);
+        const normalisedLabel = fieldLabel.toLocaleLowerCase();
+        if (fieldLabels.has(normalisedLabel)) throw new Error("Custom field labels must be unique so attendees can understand the form.");
+        fieldLabels.add(normalisedLabel);
+        if (!["text", "email", "number", "tel", "date", "textarea", "select"].includes(field.type || "text")) throw new Error("Choose a valid answer type for " + fieldLabel + ".");
         if (field.type === "select") {
           const options = String(field.options || "").split(/[\n,]/).map(option => option.trim()).filter(Boolean);
           if (options.length < 2) throw new Error("Each dropdown field needs at least two comma-separated choices.");
