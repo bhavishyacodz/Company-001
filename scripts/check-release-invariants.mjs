@@ -171,6 +171,20 @@ const checks = [
         && sql.includes("to service_role");
     },
   },
+  {
+    name: "signed-in account has a responsive profile overview and clear account actions",
+    run: () => {
+      const account = read("src/main.jsx");
+      const css = read("src/styles.css");
+      return account.includes('className="profile-overview"')
+        && account.includes('MEMBER SINCE')
+        && account.includes('Browse templates')
+        && account.includes('onClick={signOut}')
+        && css.includes(".profile-overview-meta")
+        && css.includes("@media(max-width:480px)");
+    },
+  },
+
 ];
 
 let failed = false;

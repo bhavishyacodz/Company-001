@@ -560,7 +560,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
         <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
         <h1>{user ? "Your profile & workspace." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">{user ? "Your sign-in is saved on this device. Open your workspace, choose a template, or manage your account here." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
+        <p className="account-lead">{user ? "Your account details, workspace status, and template shortcuts are all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -573,7 +573,26 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           </>
         ) : (
           <div className="account-signed-in">
-            <div className="account-user"><span>{(user.email || "O").slice(0,1).toUpperCase()}</span><div><strong>{user.user_metadata?.display_name || user.email}</strong><small>{user.email}</small></div><button onClick={signOut}>Sign out</button></div>
+            <section className="profile-overview" aria-label="Account overview">
+              <div className="profile-overview-top">
+                <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>
+                <div className="profile-overview-identity">
+                  <span className="panel-label">YOUR ACCOUNT</span>
+                  <strong>{user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer"}</strong>
+                  <small>{user.email}</small>
+                </div>
+                <span className="profile-live-pill"><span /> SIGNED IN</span>
+              </div>
+              <div className="profile-overview-meta">
+                <div><small>ACCOUNT TYPE</small><strong>Organiser</strong></div>
+                <div><small>MEMBER SINCE</small><strong>{user.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "Recently"}</strong></div>
+                <div><small>SESSION</small><strong>Saved on this device</strong></div>
+              </div>
+              <div className="profile-overview-actions">
+                <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
+                <button className="profile-signout" onClick={signOut}>Sign out</button>
+              </div>
+            </section>
             {application ? (
               <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
             ) : (
