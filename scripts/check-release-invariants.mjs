@@ -216,19 +216,24 @@ const checks = [
     },
   },
   {
-    name: "mobile focused editor places selected-element controls before the long preview",
+    name: "mobile focused editor uses one clear grid order for layers, controls, preview, and actions",
     run: () => {
       const styles = read("src/workspace.css");
-      const mobileEditor = styles.slice(styles.lastIndexOf("place selected-element controls before the long page preview"));
-      const inspector = mobileEditor.indexOf(".workspace-canvas-inspector");
+      const mobileStart = styles.lastIndexOf("@media (max-width: 700px)");
+      const mobileEditor = styles.slice(mobileStart);
+      const layers = mobileEditor.indexOf(".workspace-canvas-layers");
+      const inspector = mobileEditor.indexOf(".workspace-canvas-inspector {");
       const preview = mobileEditor.indexOf("#workspace-builder-preview");
-      return mobileEditor.includes("@media (max-width: 700px)")
-        && inspector >= 0 && preview > inspector
+      const actions = mobileEditor.indexOf(".workspace-form-actions");
+      return mobileStart >= 0
+        && layers >= 0 && inspector > layers && preview > inspector && actions > preview
+        && mobileEditor.includes("grid-row: 1 !important;")
         && mobileEditor.includes("grid-row: 2 !important;")
-        && mobileEditor.includes("grid-row: 3 !important;");
+        && mobileEditor.includes("grid-row: 3 !important;")
+        && mobileEditor.includes("grid-row: 4 !important;")
+        && !styles.includes("place selected-element controls before the long page preview");
     },
-  }
-];
+  }];
 
 let failed = false;
 for (const check of checks) {
