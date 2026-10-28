@@ -1227,16 +1227,16 @@
     max-height: none !important;
     overflow: visible !important;
   }
-  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
-    grid-column: 1 !important;
-    grid-row: 2 !important;
-  }
   .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
     grid-column: 1 !important;
-    grid-row: 3 !important;
+    grid-row: 2 !important;
     position: static !important;
     max-height: none !important;
     overflow: visible !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
   }
   .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector-fields {
     grid-template-columns: minmax(0, 1fr) !important;
@@ -1247,19 +1247,3 @@
   }
 }
 
-
-/* On narrow screens, place selected-element controls before the long page preview. */
-@media (max-width: 700px) {
-  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
-    grid-row: 1 !important;
-  }
-  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
-    grid-row: 2 !important;
-  }
-  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
-    grid-row: 3 !important;
-  }
-  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
-    grid-row: 4 !important;
-  }
-}
