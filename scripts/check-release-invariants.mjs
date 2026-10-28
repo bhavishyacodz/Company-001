@@ -321,7 +321,20 @@ const checks = [
         && mobileEditor.includes("grid-row: 4 !important;")
         && !styles.includes("place selected-element controls before the long page preview");
     },
-  }];
+  },
+  {
+    name: "event draft saves and review submissions prevent rapid duplicate requests",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes("const savingLock = useRef(false);")
+        && editor.includes("if (savingLock.current) return;")
+        && editor.includes("savingLock.current = true;")
+        && editor.includes("finally { savingLock.current = false; setSaving(false); }")
+        && editor.includes("const saveEvent = async (event) =>")
+        && editor.includes("const requestReview = async (ev) =>");
+    },
+  },
+  ];
 
 let failed = false;
 for (const check of checks) {
