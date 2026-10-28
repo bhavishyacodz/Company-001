@@ -27,6 +27,7 @@ function App() {
   const [requestedTemplate, setRequestedTemplate] = useState("esports-001");
   const [platformRole, setPlatformRole] = useState(null);
   const [signedInUser, setSignedInUser] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -63,7 +64,31 @@ function App() {
 
   useEffect(() => { try { if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view]);
 
-  useEffect(() => { const refresh = async (user) => { setSignedInUser(user || null); if (!user) { setPlatformRole(null); return; } const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle(); setPlatformRole(profile?.platform_role || "organizer"); }; supabase.auth.getSession().then(({ data }) => refresh(data.session?.user || null)); const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => { window.setTimeout(() => refresh(session?.user || null), 0); }); return () => listener.subscription.unsubscribe(); }, []);
+  useEffect(() => {
+    let active = true;
+    const refresh = async (user) => {
+      if (!active) return;
+      setSignedInUser(user || null);
+      if (!user) { setPlatformRole(null); return; }
+      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
+      if (active) setPlatformRole(profile?.platform_role || "organizer");
+    };
+    supabase.auth.getSession()
+      .then(async ({ data, error }) => {
+        if (error) throw error;
+        await refresh(data.session?.user || null);
+        if (active) {
+          const savedView = window.sessionStorage.getItem("company001:last-view");
+          if (!data.session?.user && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
+        }
+      })
+      .catch(() => { if (active) setSignedInUser(null); })
+      .finally(() => { if (active) setAuthReady(true); });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => { if (active) refresh(session?.user || null); }, 0);
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, []);
 
   useEffect(() => {
     if (!isLiveEventRoute) return;
@@ -142,6 +167,7 @@ function App() {
     }
   };
 
+  if (!authReady && ["organizer", "registrations", "customize"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Restoring your workspace…</h1><p>Checking your saved sign-in before opening your dashboard.</p></section></main>;
   if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
 
   return (
