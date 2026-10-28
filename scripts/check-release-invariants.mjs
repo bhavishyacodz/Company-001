@@ -338,7 +338,7 @@ const checks = [
     name: "save and review errors focus the accessible alert before scrolling",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
-      return (editor.match(/alert\\?\\.focus\\(\\{ preventScroll: true \\}\\)/g) || []).length >= 2
+      return editor.split("alert?.focus({ preventScroll: true })").length >= 3
         && editor.includes('role="alert" tabIndex={-1}');
     },
   },
