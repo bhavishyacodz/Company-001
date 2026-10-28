@@ -61,6 +61,19 @@ const checks = [
     },
   },
   {
+    name: "new organiser workspaces activate immediately without owner-role escalation",
+    run: () => {
+      const sql = read("supabase/migrations/20261028050000_instant_organizer_workspace.sql");
+      const account = read("src/main.jsx");
+      return sql.includes("create trigger organizer_applications_auto_activate")
+        && sql.includes("status = 'approved'")
+        && sql.includes("revoke all on function public.auto_activate_organizer_application() from public, anon, authenticated")
+        && sql.includes("if current_user = 'postgres' then")
+        && account.includes("Workspace activated. Opening your template editor")
+        && account.includes("Your workspace activates immediately");
+    },
+  },
+  {
     name: "organiser approval status is owner-controlled",
     run: () => {
       const sql = read("supabase/migrations/20261027160359_enforce_owner_only_organizer_status.sql");
