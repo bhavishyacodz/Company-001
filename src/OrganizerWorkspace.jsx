@@ -118,8 +118,9 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
 
   const resetForm = (templateKey = initialTemplateKey) => { try { window.sessionStorage.removeItem(`company001:editor:${user.id}`); } catch { /* Session persistence is optional. */ } setWebsiteOnlyMode(false); const template = getTemplate(templateKey); setUndoStack([]); setRedoStack([]); setEditingId(null); setEditingStatus(null); setIsDirty(false); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:"",primary_color:template.defaultColor || "#9a6bff",font_family:"Inter",logo_url:"",venue:"",contact_email:"",contact_phone:"",page_sections:["highlights","details","steps"],hero_title_size:72,hero_title_align:"left",hero_title_color:"#ffffff",hero_title_x:0,hero_title_y:0,description_x:0,description_y:0,custom_fields:[]}); };
   const editEvent = (ev) => {
-    try { window.sessionStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({eventId:ev.id,tab:"customize",websiteOnlyMode:false,selectedElement:"title"})); } catch { /* Session persistence is optional. */ }
-    setWebsiteOnlyMode(false);
+    // Open an existing event directly in its focused website canvas, not the general template/setup view.
+    try { window.sessionStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({eventId:ev.id,tab:"customize",websiteOnlyMode:true,selectedElement:"title"})); } catch { /* Session persistence is optional. */ }
+    setWebsiteOnlyMode(true);
     setUndoStack([]); setRedoStack([]); setIsDirty(false);
     setEditingId(ev.id);
     setEditingStatus(ev.status);
