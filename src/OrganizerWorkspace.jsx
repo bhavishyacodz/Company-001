@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Gamepad2, Music2, Trophy, GraduationCap, Palette, UsersRound, BookOpen, Copy, Undo2, Redo2 } from "lucide-react";
 import "./workspace.css";
@@ -38,6 +38,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const savingLock = useRef(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [editingId, setEditingId] = useState(null);
@@ -185,7 +186,10 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     }
   };
   const saveEvent = async (event) => {
-    event.preventDefault(); setSaving(true); setError(""); setNotice("");
+    event.preventDefault();
+    if (savingLock.current) return;
+    savingLock.current = true;
+    setSaving(true); setError(""); setNotice("");
     try {
       if (!organizer || organizer.status !== "approved") throw new Error("Your organiser account must be approved before creating events.");
       const slug = form.slug.toLowerCase().trim().replace(/[^a-z0-9-]+/g,"-").replace(/^-+|-+$/g,"");
@@ -260,10 +264,11 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       }
       window.requestAnimationFrame(() => document.getElementById("workspace-notice")?.scrollIntoView({ behavior: "smooth", block: "center" }));
     } catch(e) { setError(e.message || "Could not save event."); }
-    finally { setSaving(false); }
+    finally { savingLock.current = false; setSaving(false); }
   };
   const requestReview = async (ev) => {
-    if (saving) return;
+    if (savingLock.current) return;
+    savingLock.current = true;
     setSaving(true); setError(""); setNotice("");
     try {
       if (ev.status !== "draft" && ev.status !== "closed") throw new Error("Only a draft or closed event can be submitted for review.");
@@ -272,7 +277,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       setNotice("Submitted for platform review. It is not public until approved by the platform owner.");
       await load();
     } catch(e) { setError(e.message || "Could not submit event for review."); }
-    finally { setSaving(false); }
+    finally { savingLock.current = false; setSaving(false); }
   };
   const openEvidence = async (evidenceId) => {
     const popup = window.open("about:blank", "_blank");
