@@ -206,6 +206,15 @@ const checks = [
     },
   },
   {
+    name: "organizer workspace controls show visible keyboard focus",
+    run: () => {
+      const styles = read("src/workspace.css");
+      return styles.includes(".workspace-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible")
+        && styles.includes("outline: 3px solid #c9b5ff;")
+        && styles.includes("outline-offset: 3px;");
+    },
+  },
+  {
     name: "event editor buttons declare explicit button types",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
