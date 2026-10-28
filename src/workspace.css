@@ -1141,3 +1141,108 @@
 
 /* Advanced registration form builder */
 .workspace-fields-builder{scroll-margin-top:24px}.workspace-fields-builder .workspace-builder-heading p{max-width:560px}.workspace-custom-field{position:relative}.workspace-custom-field>label,.workspace-custom-field-options>label{min-width:0}.workspace-custom-field-options{align-items:start}.workspace-custom-field-options>label:not(.workspace-required-toggle){display:grid;gap:7px}.workspace-custom-field-options input,.workspace-custom-field-options select{width:100%;min-width:0}.workspace-custom-field-options .workspace-field-options-label{grid-column:1/-1}.workspace-field-help-preview,.custom-field-help{display:block;margin-top:5px;color:#9699ad;font-size:12px;line-height:1.5;font-weight:400}.custom-registration-fields textarea,.workspace-preview-form textarea{width:100%;resize:vertical;min-height:92px;border:1px solid var(--border,#343849);border-radius:8px;background:#0b0e15;color:#f4f2fa;padding:12px;font:inherit}.custom-registration-fields textarea:focus{outline:2px solid var(--accent,#9a6bff);outline-offset:2px}.workspace-custom-field-options label{overflow-wrap:anywhere}@media(max-width:640px){.workspace-fields-builder{padding:14px}.workspace-custom-field-options{grid-template-columns:minmax(0,1fr)}.workspace-custom-field-options .workspace-field-options-label{grid-column:auto}.workspace-custom-field-top{align-items:flex-start;gap:10px}.workspace-field-actions{flex-wrap:wrap}.custom-registration-fields textarea{font-size:16px}}
+
+/* Final alignment correction: the contextual inspector must occupy the right column on desktop.
+   Keep explicit grid placement here because older editor overrides are retained above. */
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+  display: grid !important;
+  grid-template-columns: 180px minmax(0, 1fr) 280px !important;
+  align-items: start !important;
+  justify-items: stretch !important;
+  gap: 16px !important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form > * {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  justify-self: stretch !important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector-fields {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  min-width: 0 !important;
+}
+@media (max-width: 1100px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+    grid-template-columns: minmax(145px, 180px) minmax(0, 1fr) !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+    grid-column: 1 / -1 !important;
+    grid-row: 3 !important;
+  }
+}
+@media (max-width: 700px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+    position: static !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector-fields {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+    grid-column: 1 !important;
+    grid-row: 4 !important;
+  }
+}
