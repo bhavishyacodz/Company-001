@@ -1247,3 +1247,9 @@
   }
 }
 
+
+/* Keep keyboard navigation visible across organizer tabs, forms, and editor controls. */
+.workspace-shell :is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #c9b5ff;
+  outline-offset: 3px;
+}
