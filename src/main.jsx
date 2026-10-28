@@ -85,7 +85,7 @@ function App() {
               supabase.from("profiles").select("platform_role").eq("id", data.session.user.id).maybeSingle(),
               supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle(),
             ]);
-            if (active) setView(profile?.platform_role === "owner" ? "owner" : organizer ? "organizer" : "account");
+            if (active) setView(profile?.platform_role === "owner" ? "owner" : organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
           }
         }
       })
