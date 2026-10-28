@@ -334,7 +334,6 @@ const checks = [
         && editor.includes("const requestReview = async (ev) =>");
     },
   },
-  },
   {
     name: "event titles are validated after trimming before save",
     run: () => {
