@@ -791,3 +791,63 @@
   .workspace-form-section-title {padding:12px 0 9px;margin-top:4px}
   .workspace-form-section-title p {font-size:13px}
 }
+
+/* Final editor layout override: keep the layer list and properties panel visible.
+   Earlier responsive rules hid these panels, leaving the canvas without its editing controls. */
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+  display:grid!important;
+  grid-template-columns:170px minmax(0,1fr) 250px!important;
+  align-items:start!important;
+  gap:14px!important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form > :not(.workspace-canvas-layers):not(#workspace-builder-preview):not(.workspace-canvas-inspector):not(.workspace-form-actions) {
+  display:none!important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers,
+.workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+  display:block!important;
+  min-width:0!important;
+}
+.workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+@media(max-width:1100px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+    grid-template-columns:145px minmax(0,1fr)!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    grid-column:1/-1!important;
+    position:static!important;
+    max-height:none!important;
+  }
+}
+@media(max-width:700px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form {
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:12px!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    display:block!important;
+    grid-column:1!important;
+    position:static!important;
+    width:100%!important;
+    max-height:none!important;
+    box-sizing:border-box!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    order:0;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    order:1;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    order:2;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions {
+    order:3;
+  }
+}
