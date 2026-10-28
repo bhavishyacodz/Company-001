@@ -221,6 +221,11 @@ const checks = [
     },
   },
   {
+    name: "website-only toggle exposes its active state accessibly",
+    run: () => read("src/OrganizerWorkspace.jsx").includes('className="button button-secondary workspace-canvas-toggle" aria-pressed={websiteOnlyMode} onClick=')
+      && read("src/OrganizerWorkspace.jsx").includes('websiteOnlyMode?"Back to editing controls":"Website-only view"'),
+  },
+  {
     name: "website-only toggle scrolls to the controls when leaving preview",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
