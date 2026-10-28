@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     try { body = await req.json(); } catch { return response(origin, 400, { error: "Invalid request." }); }
     const action = body.action;
     if (action === "list") {
-      const users: Record<string, unknown>[] = [];
+      const users: any[] = [];
       for (let page = 1; page <= 10; page++) {
         const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
         if (error) fail(error.message);
