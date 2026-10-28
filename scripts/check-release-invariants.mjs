@@ -401,6 +401,29 @@ const checks = [
     },
   },
   {
+    name: "King account management is owner-only and protects owner accounts and self",
+    run: () => {
+      const manager = read("supabase/functions/manage-user-accounts/index.ts");
+      const panel = read("src/OwnerPanel.jsx");
+      const styles = read("src/styles.css");
+      return manager.includes("admin.auth.getUser(token)")
+        && manager.includes('actorProfile?.platform_role !== "owner"')
+        && manager.includes('targetId === actor.id')
+        && manager.includes('targetProfile?.platform_role === "owner"')
+        && manager.includes('ban_duration: "876000h"')
+        && manager.includes('ban_duration: "none"')
+        && manager.includes('body.confirmation !== "DELETE"')
+        && manager.includes('admin.auth.admin.deleteUser(targetId)')
+        && manager.includes('admin.storage.from("payment-evidence").remove')
+        && panel.includes('supabase.functions.invoke("manage-user-accounts"')
+        && panel.includes('id="owner-user-accounts"')
+        && panel.includes('accountConfirmWord !== "DELETE"')
+        && panel.includes('accountActionTarget.action === "suspend"')
+        && styles.includes(".owner-user-account-list")
+        && styles.includes("@media(max-width:700px)");
+    },
+  },
+  {
     name: "organiser accounts can securely change passwords from both profile settings and workspace security",
     run: () => {
       const account = read("src/main.jsx");
