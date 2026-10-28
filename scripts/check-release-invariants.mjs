@@ -197,6 +197,15 @@ const checks = [
   },
 
   {
+    name: "event save errors scroll into view on mobile and desktop",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('id="workspace-alert" className="workspace-alert" role="alert" tabIndex={-1}')
+        && editor.includes('window.requestAnimationFrame(() => document.getElementById("workspace-alert")?.scrollIntoView({ behavior: "smooth", block: "center" }))')
+        && editor.includes('Could not save event.');
+    },
+  },
+  {
     name: "website-only toggle scrolls to the controls when leaving preview",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
