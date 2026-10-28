@@ -91,8 +91,14 @@ function App() {
           const savedView = window.sessionStorage.getItem("company001:last-view");
           if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
           if (data.session?.user && !isLiveEventRoute) {
-            const { data: organizer } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-            if (active) setView(organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : initialRole === "owner" ? "owner" : "account");
+            if (initialRole === "owner") {
+              if (active) setView("owner");
+            } else if (initialRole === "organizer") {
+              const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
+              if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
+            } else if (active) {
+              setView("account");
+            }
           }
         }
       })
@@ -232,12 +238,12 @@ function App() {
         </nav>
         <div className="top-actions">
           <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); setView("account"); }} aria-label="Organiser or user sign in">{signedInUser ? "MY ACCOUNT" : "ORGANISER LOGIN"} <ArrowRight size={14} /></button>
+          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("customize")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("organizer")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -531,14 +537,40 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           setNotice("Account created. Set up your workspace to start editing immediately.");
         }
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw error;
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: data.user.id, display_name: data.user.user_metadata?.display_name || email.split("@")[0], platform_role: "organizer",
-        }, { onConflict: "id", ignoreDuplicates: true });
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
         if (profileError) throw profileError;
+        if (profile?.platform_role === "owner") {
+          await supabase.auth.signOut();
+          setUser(null);
+          setNotice("This is the platform-owner account. Please use KING LOGIN; owner accounts cannot enter through User Login.");
+          return;
+        }
+        if (profile?.platform_role && profile.platform_role !== "organizer") {
+          await supabase.auth.signOut();
+          setUser(null);
+          throw new Error("This account does not have organiser access. Please contact platform support.");
+        }
+        if (!profile) {
+          const { error: createProfileError } = await supabase.from("profiles").insert({
+            id: data.user.id,
+            display_name: data.user.user_metadata?.display_name || email.split("@")[0],
+            platform_role: "organizer",
+          });
+          if (createProfileError && createProfileError.code !== "23505") throw createProfileError;
+        }
         setUser(data.user);
-        setNotice("Signed in successfully.");
+        const { data: organizer, error: organizerError } = await supabase
+          .from("organizers").select("id").eq("owner_user_id", data.user.id).maybeSingle();
+        if (organizerError) throw organizerError;
+        if (organizer) {
+          setNotice("Signed in. Opening your organiser dashboard…");
+          onOpenWorkspace();
+        } else {
+          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
+        }
       }
     } catch (error) {
       setNotice(error.message || "Could not complete account action.");
