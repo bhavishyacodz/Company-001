@@ -496,3 +496,22 @@
   .owner-shortcut.king-login{padding-inline:5px;font-size:6px}
   .account-entry{padding-inline:5px;font-size:6px}
 }
+
+/* Account deletion controls: deliberately separated from ordinary profile actions. */
+.account-delete-zone{display:grid;gap:16px;margin:18px 0 4px;padding:18px;border:1px solid #6d343d;border-radius:10px;background:linear-gradient(145deg,#2a151d66,#111018 68%)}
+.account-delete-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.account-delete-heading>div{min-width:0}
+.account-delete-heading h3{margin:7px 0;color:#f7e9ec;font-size:16px}
+.account-delete-heading p,.account-delete-warning{margin:0;color:#b8a4ab;font-size:11px;line-height:1.65}
+.account-delete-trigger{flex-shrink:0;border:1px solid #8a3c48;border-radius:7px;background:#351b23;color:#ffb8c1;padding:10px 12px;font-size:10px;font-weight:800;cursor:pointer}
+.account-delete-trigger:hover{background:#49202b;border-color:#b44b5b}
+.account-delete-form{display:grid;gap:12px;padding-top:14px;border-top:1px solid #59313b}
+.account-delete-form label{display:grid;gap:7px;color:#d4c4cb;font-size:9px;font-weight:800;letter-spacing:.06em}
+.account-delete-form input{width:100%;min-width:0;box-sizing:border-box;border:1px solid #4c3540;border-radius:7px;background:#0e0d13;color:#f5edf1;padding:12px;font:inherit;font-size:13px;letter-spacing:normal;outline:none}
+.account-delete-form input:focus{border-color:#d86c7d;box-shadow:0 0 0 3px #d86c7d22}
+.account-delete-warning{padding:10px 12px;border:1px solid #653642;border-radius:7px;background:#29161d;color:#e6b7c0}
+.account-delete-actions{display:flex;flex-wrap:wrap;gap:9px}
+.button-danger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border:1px solid #b64a5b;border-radius:7px;background:linear-gradient(100deg,#9b3547,#742a3b);color:#fff4f5;font-size:10px;font-weight:800;cursor:pointer}
+.button-danger:hover:not(:disabled){background:linear-gradient(100deg,#b53c51,#873047)}
+.button-danger:disabled{opacity:.65;cursor:wait}
+@media(max-width:480px){.account-delete-zone{padding:13px}.account-delete-heading{display:grid}.account-delete-trigger{justify-self:start}.account-delete-actions{display:grid}.account-delete-actions .button{width:100%}.account-delete-actions .button-danger{width:100%}}
