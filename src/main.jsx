@@ -85,7 +85,7 @@ function App() {
           if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
           if (data.session?.user && !isLiveEventRoute) {
             const { data: organizer } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-            if (active) setView(initialRole === "owner" ? "owner" : organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
+            if (active) setView(organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : initialRole === "owner" ? "owner" : "account");
           }
         }
       })
