@@ -584,3 +584,221 @@
   .account-password-zone { padding: 15px; }
   .account-password-form button { width: 100%; justify-content: center; }
 }
+
+/* King Login user-account administration. */
+.owner-user-admin-summary {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr)) auto;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(145,151,180,.18);
+}
+.owner-user-admin-summary > div {
+  display: grid;
+  gap: 5px;
+}
+.owner-user-admin-summary > div strong {
+  color: #f5f3ff;
+  font-size: 24px;
+  line-height: 1.1;
+}
+.owner-user-admin-summary .panel-label {
+  font-size: 9px;
+}
+.owner-user-admin-filters {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(170px,.35fr);
+  gap: 12px;
+  margin: 18px 0;
+}
+.owner-user-admin-filters label,
+.owner-user-confirm label {
+  display: grid;
+  gap: 8px;
+  color: #bfc2d4;
+  font-size: 11px;
+  font-weight: 700;
+}
+.owner-user-search {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #373d54;
+  border-radius: 9px;
+  background: #0d101b;
+  color: #a5a9c0;
+}
+.owner-user-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f3f3fa;
+  font: inherit;
+}
+.owner-user-admin-filters select,
+.owner-user-confirm input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #373d54;
+  border-radius: 9px;
+  background: #0d101b;
+  color: #f3f3fa;
+  font: inherit;
+}
+.owner-user-account-list {
+  display: grid;
+  gap: 12px;
+}
+.owner-user-account {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #30364b;
+  border-radius: 12px;
+  background: rgba(13,16,27,.65);
+}
+.owner-user-account.is-suspended {
+  border-color: rgba(245,158,11,.38);
+  background: rgba(120,75,13,.07);
+}
+.owner-user-account-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.owner-user-avatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(167,139,250,.35);
+  border-radius: 13px;
+  background: rgba(167,139,250,.12);
+  color: #d5c7ff;
+  font-weight: 800;
+}
+.owner-user-account-identity {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.owner-user-account-identity strong {
+  color: #f7f6fc;
+  font-size: 14px;
+}
+.owner-user-account-identity span,
+.owner-user-account-identity small {
+  overflow-wrap: anywhere;
+  color: #aeb2c7;
+  font-size: 11px;
+}
+.owner-user-account-identity small {
+  color: #858ba4;
+}
+.owner-user-state {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+}
+.owner-user-state.active {
+  border: 1px solid rgba(52,211,153,.28);
+  background: rgba(16,185,129,.09);
+  color: #6ee7b7;
+}
+.owner-user-state.suspended {
+  border: 1px solid rgba(251,191,36,.3);
+  background: rgba(245,158,11,.1);
+  color: #fcd34d;
+}
+.owner-user-account-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: #9fa4ba;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.owner-user-account-meta strong {
+  color: #dfe1ee;
+  font-weight: 650;
+}
+.owner-user-account-actions,
+.owner-user-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.owner-user-confirm {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid rgba(245,158,11,.4);
+  border-radius: 12px;
+  background: rgba(120,75,13,.08);
+}
+.owner-user-confirm h3 {
+  margin: 6px 0;
+  color: #f8f6ff;
+  font-size: 17px;
+}
+.owner-user-confirm p {
+  max-width: 760px;
+  color: #b7bbcd;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.owner-user-confirm > div > strong {
+  display: block;
+  margin-top: 8px;
+  color: #f0edfc;
+  overflow-wrap: anywhere;
+}
+@media(max-width:700px) {
+  .owner-user-admin-summary {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+  .owner-user-admin-summary > button {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: center;
+  }
+  .owner-user-admin-filters {
+    grid-template-columns: 1fr;
+  }
+  .owner-user-account {
+    padding: 12px;
+  }
+  .owner-user-account-top {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .owner-user-account-identity {
+    flex-basis: calc(100% - 60px);
+  }
+  .owner-user-state {
+    margin-left: 54px;
+  }
+  .owner-user-account-actions,
+  .owner-user-confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .owner-user-account-actions .button,
+  .owner-user-confirm-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
