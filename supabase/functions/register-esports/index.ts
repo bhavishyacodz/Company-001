@@ -110,7 +110,7 @@ Deno.serve(async (req: Request) => {
     if (required && !value) return reply(origin, 400, { error: `Please complete: ${label}.` });
     if (type === "email" && value && !validEmail(value)) return reply(origin, 400, { error: `Please enter a valid email for: ${label}.` });
     if (type === "number" && value && !Number.isFinite(Number(value))) return reply(origin, 400, { error: `Please enter a valid number for: ${label}.` });
-    if (type === "date" && value && (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value) || Number.isNaN(Date.parse(value)))) return reply(origin, 400, { error: `Please enter a valid date for: ${label}.` });
+    if (type === "date" && value) { const parsedDate = new Date(value + "T00:00:00Z"); if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== value) return reply(origin, 400, { error: `Please enter a valid date for: ${label}.` }); }
     if (type === "select") {
       const options = Array.isArray(field.options) ? field.options.filter((option): option is string => typeof option === "string").map((option) => option.trim().slice(0, 80)).filter(Boolean).slice(0, 20) : [];
       if (options.length < 2) return reply(origin, 400, { error: `The organiser has not configured the choices for: ${label}.` });
