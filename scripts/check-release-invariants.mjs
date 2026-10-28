@@ -197,6 +197,15 @@ const checks = [
   },
 
   {
+    name: "event save action label matches create or edit state",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('editingStatus==="published"?"Save changes & request review":"Save changes"')
+        && editor.includes('"Create event draft"')
+        && editor.includes('saving?"Saving…":<><Save size={14}/>');
+    },
+  },
+  {
     name: "event editor buttons declare explicit button types",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
