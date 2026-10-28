@@ -107,7 +107,7 @@ Deno.serve(async (req: Request) => {
 
     if (organizerIds.length) {
       await must(admin.from("audit_logs").delete().in("organizer_id", organizerIds));
-      await must(admin.from("events").delete().in("id", eventIds.length ? eventIds : ["00000000-0000-0000-0000-000000000000"]));
+      if (eventIds.length) await must(admin.from("events").delete().in("id", eventIds));
     }
     await must(admin.from("organizer_applications").delete().eq("applicant_user_id", user.id));
     await must(admin.from("organizer_applications").update({ reviewed_by: null }).eq("reviewed_by", user.id));
