@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
@@ -62,6 +62,14 @@ export default function OwnerPanel({ onBack }) {
     } finally { setLoading(false); }
   };
 
+  const signOut = async () => {
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) { setError(signOutError.message || "Could not sign out."); return; }
+    setUser(null);
+    setRole(null);
+    onBack();
+  };
+
   useEffect(() => { load(); }, []);
 
   const review = async (app, decision) => {
@@ -109,10 +117,12 @@ export default function OwnerPanel({ onBack }) {
     return matchesStatus && (!normalizedConsultationSearch || searchable.includes(normalizedConsultationSearch));
   });
   const newConsultationCount = consultationRequests.filter(request => request.status === "new").length;
+  if (loading) return <main className="owner-shell"><div className="owner-wrap"><section className="owner-card" role="status"><div className="section-kicker">COMPANY-001 / KING CONTROL ROOM</div><h1>Verifying owner access…</h1><p>Checking your signed-in account before loading private platform data.</p></section></div></main>;
+  if (!user || role !== "owner") return <main className="owner-shell"><div className="owner-wrap"><section className="owner-card" role="alert"><div className="section-kicker">RESTRICTED AREA</div><h1>King access required</h1><p>This dashboard is only available to the authenticated platform-owner account. Sign in through King Login to continue.</p><button className="button button-primary" onClick={onBack}>Back to website <ArrowRight size={14}/></button></section></div></main>;
   return (
     <main className="owner-shell">
       <div className="owner-wrap">
-        <header className="owner-heading"><div><div className="section-kicker owner-live-kicker"><span className="owner-live-dot" /> COMPANY-001 / KING CONTROL ROOM</div><h1>Good to have you back.</h1><p>Your platform command centre. Review activity, manage access, approve events and keep everything organised from one place.</p></div><div className="owner-heading-actions"><span className="owner-secure-label"><ShieldCheck size={14}/> OWNER ACCESS</span><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh data</button><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button></div></header>
+        <header className="owner-heading"><div><div className="section-kicker owner-live-kicker"><span className="owner-live-dot" /> COMPANY-001 / KING CONTROL ROOM</div><h1>Good to have you back.</h1><p>Your platform command centre. Review activity, manage access, approve events and keep everything organised from one place.</p></div><div className="owner-heading-actions"><span className="owner-secure-label"><ShieldCheck size={14}/> OWNER ACCESS</span><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh data</button><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button><button className="button button-secondary" onClick={signOut}><LogOut size={14}/> Sign out</button></div></header>
         <nav className="owner-command-nav" aria-label="Owner dashboard sections">
           <a href="#owner-overview"><LayoutDashboard size={16}/><span>Overview</span></a>
           <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>

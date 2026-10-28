@@ -84,7 +84,7 @@ const checks = [
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
-        && account.includes('onOpenWorkspace={() => setView("customize")}');
+        && account.includes('onOpenWorkspace={() => setView("organizer")}');
     },
   },
   {
@@ -398,6 +398,22 @@ const checks = [
         && app.includes('eventData?.branding?.heroBackgroundUrl')
         && app.includes('backgroundSize: "cover"')
         && styles.includes('.workspace-live-preview-hero.has-custom-background');
+    },
+  },
+  {
+    name: "user and owner login paths stay separate and route to role-appropriate dashboards",
+    run: () => {
+      const app = read("src/main.jsx");
+      const owner = read("src/OwnerPanel.jsx");
+      const workspace = read("src/OrganizerWorkspace.jsx");
+      return app.includes('if (initialRole === "owner")')
+        && app.includes('else if (initialRole === "organizer")')
+        && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
+        && app.includes('if (profile?.platform_role === "owner")')
+        && app.includes('onOpenWorkspace={() => setView("organizer")}')
+        && owner.includes('if (!user || role !== "owner")')
+        && owner.includes('supabase.auth.signOut()')
+        && workspace.includes('onClick={signOut}');
     },
   },
   {
