@@ -1485,7 +1485,7 @@
 .workspace-shell .workspace-builder .workspace-live-preview-hero.has-custom-background{
   background:
     linear-gradient(rgba(10,11,18,var(--preview-overlay,.35)),rgba(10,11,18,var(--preview-overlay,.35))),
-    var(--preview-background-image) center/cover no-repeat!important;
+    var(--preview-background-image) var(--preview-background-position,center center)/cover no-repeat!important;
 }
 .workspace-branding-fields input[type="range"]{width:100%;accent-color:var(--preview-accent,#9a6bff);cursor:pointer}
 .workspace-branding-fields label>span{color:#c9b5ff;font-size:10px;font-weight:800}
