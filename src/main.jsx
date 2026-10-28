@@ -477,6 +477,11 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
@@ -554,6 +559,53 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
     } finally { setBusy(false); }
   };
 
+  const deleteAccount = async (event) => {
+    event.preventDefault();
+    setNotice("");
+    if (!user?.email) { setNotice("Sign in again before deleting your account."); return; }
+    if (deleteConfirmation !== "DELETE") { setNotice("Type DELETE exactly to confirm account removal."); return; }
+    if (deleteEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+      setNotice("Enter the email address for the signed-in account exactly.");
+      return;
+    }
+    setDeletingAccount(true);
+    try {
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: deletePassword,
+      });
+      if (reauthError) throw new Error("Password verification failed. Check your password and try again.");
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData.session) throw new Error("Your session expired. Sign in again and retry.");
+      const { data, error } = await supabase.functions.invoke("delete-account", {
+        body: { confirmation: "DELETE", email: deleteEmail.trim() },
+      });
+      if (error) {
+        let message = error.message || "Could not delete your account.";
+        try {
+          const details = await error.context?.json();
+          if (details?.error) message = details.error;
+        } catch { /* Use the function error message if no response body is available. */ }
+        throw new Error(message);
+      }
+      if (data?.error) throw new Error(data.error);
+      await supabase.auth.signOut();
+      setUser(null);
+      setApplication(null);
+      setMode("signup");
+      setDeleteOpen(false);
+      setDeleteEmail("");
+      setDeleteConfirmation("");
+      setNotice("Your account and linked organiser data have been deleted.");
+    } catch (error) {
+      setNotice(error.message || "Could not delete your account. Please contact support before retrying.");
+    } finally {
+      setDeletingAccount(false);
+      setDeletePassword("");
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null); setApplication(null); setNotice("Signed out.");
@@ -597,6 +649,28 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
                 <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
                 <button className="profile-signout" onClick={signOut}>Sign out</button>
               </div>
+            </section>
+            <section className="account-delete-zone" aria-labelledby="account-delete-title">
+              <div className="account-delete-heading">
+                <div>
+                  <span className="panel-label">ACCOUNT SETTINGS</span>
+                  <h3 id="account-delete-title">Delete account</h3>
+                  <p>This permanently removes your organiser workspace, events, registrations, and linked payment-evidence files. This action cannot be undone.</p>
+                </div>
+                {!deleteOpen ? <button type="button" className="account-delete-trigger" onClick={() => { setDeleteOpen(true); setNotice(""); }}>Delete my account</button> : null}
+              </div>
+              {deleteOpen ? (
+                <form className="account-delete-form" onSubmit={deleteAccount}>
+                  <p className="account-delete-warning">For your protection, enter your current password, confirm your account email, and type DELETE.</p>
+                  <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
+                  <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
+                  <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
+                  <div className="account-delete-actions">
+                    <button className="button button-danger" type="submit" disabled={deletingAccount}>{deletingAccount ? "Deleting account…" : "Permanently delete account"}</button>
+                    <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
+                  </div>
+                </form>
+              ) : null}
             </section>
             {application ? (
               <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
