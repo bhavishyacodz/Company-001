@@ -101,6 +101,15 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   };
   useEffect(() => { load(); }, [user.id]);
   useEffect(() => {
+    if (!error) return;
+    const frame = window.requestAnimationFrame(() => {
+      const alert = document.getElementById("workspace-alert");
+      alert?.scrollIntoView({ behavior: "smooth", block: "center" });
+      alert?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [error]);
+  useEffect(() => {
     if (!isDirty || tab !== "customize") return;
     try {
       const key = `company001:editor:${user.id}`;
@@ -250,7 +259,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         resetForm(); await load(); setTab("organizer");
       }
       window.requestAnimationFrame(() => document.getElementById("workspace-notice")?.scrollIntoView({ behavior: "smooth", block: "center" }));
-    } catch(e) { setError(e.message || "Could not save event."); window.requestAnimationFrame(() => document.getElementById("workspace-alert")?.scrollIntoView({ behavior: "smooth", block: "center" })); }
+    } catch(e) { setError(e.message || "Could not save event."); }
     finally { setSaving(false); }
   };
   const requestReview = async (ev) => {
