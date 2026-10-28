@@ -22,6 +22,13 @@ const sampleRegistrations = [
   { name: "NeonRift", team: "PHANTOM", gameId: "NR-8821", status: "Pending review", tone: "pending" }
 ];
 
+const getSafeHttpsImageUrl = (value) => {
+  try {
+    const parsed = new URL(String(value || "").trim());
+    return parsed.protocol === "https:" && parsed.hostname && !parsed.username && !parsed.password ? parsed.href : "";
+  } catch { return ""; }
+};
+
 function App() {
   const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
@@ -232,7 +239,7 @@ function App() {
 
       {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("customize")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
-          <section className="hero" id="overview">
+          <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: "center" }; })() : undefined}>
             <div className="hero-grid" />
             <div className="hero-content">
               <div className="eyebrow"><span className="live-pip" /> REGISTRATION OPEN <span className="eyebrow-line" /> SEASON 01</div>
