@@ -476,3 +476,23 @@
 .profile-signout{border:1px solid #383344;border-radius:6px;background:#17151f;color:#c9b7e9;padding:10px 12px;font-size:10px}
 .profile-signout:hover{border-color:#65517f;background:#211a2c}
 @media(max-width:480px){.profile-overview{padding:13px;gap:14px}.profile-overview-top{align-items:flex-start;flex-wrap:wrap}.profile-overview-identity{min-width:calc(100% - 72px)}.profile-live-pill{margin-left:60px}.profile-overview-meta{grid-template-columns:1fr}.profile-overview-meta>div{grid-template-columns:105px minmax(0,1fr);align-items:center;padding:9px}.profile-overview-actions{align-items:stretch}.profile-overview-actions .button{flex:1;justify-content:center}.profile-signout{white-space:nowrap}}
+
+
+/* Navigation safety: keep the two login destinations distinct and tappable on narrow screens. */
+.top-actions{position:relative;z-index:20;flex-shrink:0;min-width:0}
+.top-actions>button{position:relative;z-index:1;touch-action:manipulation}
+.nav-links{z-index:15}
+@media(max-width:700px){
+  .topbar{padding-inline:12px;gap:8px}
+  .top-actions{gap:5px}
+  .owner-shortcut.king-login{padding:8px 7px;font-size:7px;letter-spacing:.035em;gap:4px;min-height:34px}
+  .owner-shortcut.king-login svg{width:12px;height:12px;flex-shrink:0}
+  .account-entry{padding:0 7px;font-size:7px;letter-spacing:.035em;min-height:34px}
+  .menu-button{position:relative;z-index:2;flex-shrink:0;padding:6px}
+}
+@media(max-width:380px){
+  .topbar{padding-inline:8px;gap:5px}
+  .top-actions{gap:4px}
+  .owner-shortcut.king-login{padding-inline:5px;font-size:6px}
+  .account-entry{padding-inline:5px;font-size:6px}
+}
