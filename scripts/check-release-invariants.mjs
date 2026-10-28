@@ -401,6 +401,23 @@ const checks = [
     },
   },
   {
+    name: "King Login password change requires owner role, current-password verification, and matching strong confirmation",
+    run: () => {
+      const owner = read("src/OwnerPanel.jsx");
+      return owner.includes('if (!user?.email || role !== "owner")')
+        && owner.includes("supabase.auth.signInWithPassword({")
+        && owner.includes("email: user.email")
+        && owner.includes("password: currentPassword")
+        && owner.includes("supabase.auth.updateUser({ password: newPassword })")
+        && owner.includes("newPassword.length < 12")
+        && owner.includes("newPassword !== confirmPassword")
+        && owner.includes('id="owner-security"')
+        && owner.includes('setCurrentPassword("");')
+        && owner.includes('setNewPassword("");')
+        && owner.includes('setConfirmPassword("");');
+    },
+  },
+  {
     name: "user and owner login paths stay separate and route to role-appropriate dashboards",
     run: () => {
       const app = read("src/main.jsx");
