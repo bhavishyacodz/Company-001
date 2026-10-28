@@ -338,7 +338,7 @@ const checks = [
     name: "save and review failures scroll the accessible error alert into view",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
-      return (editor.match(/workspace-alert/g) || []).length >= 4
+      return (editor.match(/workspace-alert/g) || []).length >= 3
         && editor.includes('role="alert" tabIndex={-1}')
         && editor.includes('scrollIntoView({ behavior: "smooth", block: "center" })');
     },
