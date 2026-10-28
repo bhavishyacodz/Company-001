@@ -212,6 +212,15 @@ const checks = [
     },
   },
   {
+    name: "successful event saves bring confirmation into view",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('id="workspace-notice" className="workspace-notice" role="status"')
+        && editor.includes('window.requestAnimationFrame(() => document.getElementById("workspace-notice")?.scrollIntoView({ behavior: "smooth", block: "center" }))')
+        && editor.includes('Event draft created in Supabase.');
+    },
+  },
+  {
     name: "event save errors scroll into view on mobile and desktop",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
