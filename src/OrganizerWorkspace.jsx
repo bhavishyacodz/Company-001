@@ -145,6 +145,8 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   const setupComplete = setupChecklist.filter(item => item.done).length;
   const setupPercent = Math.round((setupComplete / setupChecklist.length) * 100);
   const startFromTemplate = (templateKey) => {
+    // Starting a different template must not resurrect an older unsaved draft after reload.
+    try { window.sessionStorage.removeItem(`company001:editor:${user.id}`); } catch { /* Session recovery is optional. */ }
     const template = getTemplate(templateKey);
     setEditingId(null); setEditingStatus(null); setIsDirty(false);
     setForm({template_key:template.key,title:template.title,slug:template.key.replace(/-001$/,""),game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:"",primary_color:template.defaultColor || "#9a6bff",font_family:"Inter",logo_url:"",venue:"",contact_email:"",contact_phone:"",page_sections:["highlights","details","steps"],hero_title_size:72,hero_title_align:"left",hero_title_color:"#ffffff",hero_title_x:0,hero_title_y:0,description_x:0,description_y:0,custom_fields:[]});
