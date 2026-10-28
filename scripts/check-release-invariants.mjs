@@ -372,6 +372,23 @@ const checks = [
         && editor.includes("team_size:teamSize,entry_fee_minor:Math.round(entryFee*100)");
     },
   },
+  {
+    name: "self-service account deletion reauthenticates and requires explicit confirmation",
+    run: () => {
+      const account = read("src/main.jsx");
+      const deletion = read("supabase/functions/delete-account/index.ts");
+      return account.includes('supabase.auth.signInWithPassword({')
+        && account.includes('functions.invoke("delete-account"')
+        && account.includes('deleteConfirmation !== "DELETE"')
+        && account.includes('deleteEmail.trim().toLowerCase() !== user.email.trim().toLowerCase()')
+        && deletion.includes('admin.auth.getUser(token)')
+        && deletion.includes('profile?.platform_role === "owner"')
+        && deletion.includes('body.confirmation !== "DELETE"')
+        && deletion.includes('admin.storage.from("payment-evidence").remove')
+        && deletion.includes('admin.auth.admin.deleteUser(user.id)')
+        && !account.includes("SUPABASE_SERVICE_ROLE_KEY");
+    },
+  },
   ];
 
 let failed = false;
