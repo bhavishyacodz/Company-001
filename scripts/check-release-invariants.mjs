@@ -198,6 +198,16 @@ const checks = [
 
 ];
 
+  {
+    name: "editing an existing event opens its focused website canvas",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('editEvent(ev);changeWorkspaceTab("customize");window.scrollTo')
+        && !editor.includes('editEvent(ev);changeWorkspaceTab("customize");setWebsiteOnlyMode(false);window.scrollTo')
+        && editor.includes('setWebsiteOnlyMode(true);');
+    },
+  },
+
 let failed = false;
 for (const check of checks) {
   let passed = false;
