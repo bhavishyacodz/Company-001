@@ -243,7 +243,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("organizer")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("organizer")} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -479,7 +479,7 @@ function KingLoginPanel({ onBack, onSuccess }) {
   );
 }
 
-function AccountPanel({ onBack, onOpenWorkspace }) {
+function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -487,6 +487,7 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
+  const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -501,9 +502,42 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
   const [changingAccountPassword, setChangingAccountPassword] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
-    return () => listener.subscription.unsubscribe();
+    let active = true;
+    const syncAccountUser = async (nextUser) => {
+      if (!active) return;
+      if (!nextUser) {
+        setUser(null);
+        setOwnerSessionBlocked(false);
+        return;
+      }
+      const { data: profile, error } = await supabase.from("profiles")
+        .select("platform_role").eq("id", nextUser.id).maybeSingle();
+      if (!active) return;
+      if (error) {
+        setUser(null);
+        setNotice("Could not verify this account's role. Please try again.");
+        return;
+      }
+      if (profile?.platform_role === "owner") {
+        setUser(null);
+        setOwnerSessionBlocked(true);
+        setNotice("This Gmail belongs to King Login. Normal User access is disabled for this account.");
+        return;
+      }
+      setOwnerSessionBlocked(false);
+      setUser(nextUser);
+    };
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (error) {
+        if (active) setNotice("Could not verify your sign-in session. Please try again.");
+        return;
+      }
+      void syncAccountUser(data.session?.user ?? null);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => { void syncAccountUser(session?.user ?? null); }, 0);
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -547,9 +581,9 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
           .from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
         if (profileError) throw profileError;
         if (profile?.platform_role === "owner") {
-          await supabase.auth.signOut();
           setUser(null);
-          setNotice("This is the platform-owner account. Please use KING LOGIN; owner accounts cannot enter through User Login.");
+          setOwnerSessionBlocked(true);
+          setNotice("This Gmail belongs to King Login. Normal User access is disabled for this account.");
           return;
         }
         if (profile?.platform_role && profile.platform_role !== "organizer") {
@@ -697,6 +731,21 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
     await supabase.auth.signOut();
     setUser(null); setApplication(null); setNotice("Signed out.");
   };
+
+  if (ownerSessionBlocked) {
+    return (
+      <main className="account-shell">
+        <section className="account-card" aria-labelledby="owner-user-access-title">
+          <div className="section-kicker">COMPANY-001 / ACCOUNT ACCESS</div>
+          <h1 id="owner-user-access-title">King Login only.</h1>
+          <p className="account-lead">This Gmail is assigned the platform-owner role. It cannot be used as a normal organiser account, and your owner account has not been deleted or changed.</p>
+          <div className="account-notice" role="status">Normal User access is disabled for this account.</div>
+          <button className="button button-primary full-width" type="button" onClick={onOpenKingLogin}>Open King Login <ArrowRight size={16} /></button>
+          <button className="account-back" type="button" onClick={onBack}>Back to website</button>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="account-shell">

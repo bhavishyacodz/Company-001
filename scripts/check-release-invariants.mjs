@@ -494,6 +494,21 @@ const checks = [
         && !account.includes("SUPABASE_SERVICE_ROLE_KEY");
     },
   },
+  {
+    name: "shared owner Gmail cannot enter normal User account or be signed out by User Login",
+    run: () => {
+      const app = read("src/main.jsx");
+      const accountAdmin = read("supabase/functions/manage-user-accounts/index.ts");
+      return app.includes('const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false)')
+        && app.includes('setOwnerSessionBlocked(true);')
+        && app.includes('This Gmail belongs to King Login. Normal User access is disabled for this account.')
+        && app.includes('if (ownerSessionBlocked) {')
+        && app.includes('onOpenKingLogin={() => setView("king-login")}')
+        && app.includes('onClick={onOpenKingLogin}')
+        && !app.includes('if (profile?.platform_role === "owner") {\n          await supabase.auth.signOut();')
+        && accountAdmin.includes('if (targetProfile?.platform_role === "owner")');
+    },
+  },
   ];
 
 let failed = false;
