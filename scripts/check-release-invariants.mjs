@@ -236,8 +236,8 @@ const checks = [
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
       return editor.includes('id="workspace-alert" className="workspace-alert" role="alert" tabIndex={-1}')
-        && editor.includes('window.requestAnimationFrame(() => document.getElementById("workspace-alert")?.scrollIntoView({ behavior: "smooth", block: "center" }))')
-        && editor.includes('Could not save event.');
+        && editor.includes('setError(e.message || "Could not save event.")')
+        && editor.includes('alert?.scrollIntoView({ behavior: "smooth", block: "center" })');
     },
   },
   {
