@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut, KeyRound } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
@@ -30,6 +30,14 @@ export default function OwnerPanel({ onBack }) {
   const [filter, setFilter] = useState("pending");
   const [consultationFilter, setConsultationFilter] = useState("all");
   const [consultationSearch, setConsultationSearch] = useState("");
+  const [accounts, setAccounts] = useState([]);
+  const [accountSearch, setAccountSearch] = useState("");
+  const [accountFilter, setAccountFilter] = useState("all");
+  const [accountError, setAccountError] = useState("");
+  const [accountBusyId, setAccountBusyId] = useState("");
+  const [accountActionTarget, setAccountActionTarget] = useState(null);
+  const [accountConfirmEmail, setAccountConfirmEmail] = useState("");
+  const [accountConfirmWord, setAccountConfirmWord] = useState("");
 
   const load = async () => {
     setLoading(true); setError("");
@@ -61,6 +69,17 @@ export default function OwnerPanel({ onBack }) {
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, registrations: registrationResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
+      const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
+      if (accountLoadError) {
+        setAccountError(accountLoadError.message || "Could not load user accounts.");
+        setAccounts([]);
+      } else if (accountData?.error) {
+        setAccountError(accountData.error);
+        setAccounts([]);
+      } else {
+        setAccounts(Array.isArray(accountData?.users) ? accountData.users : []);
+        setAccountError("");
+      }
     } catch (e) {
       setError(e.message || "Could not load the owner workspace.");
     } finally { setLoading(false); }
@@ -73,6 +92,63 @@ export default function OwnerPanel({ onBack }) {
     setRole(null);
     onBack();
   };
+
+  const openAccountAction = (account, action) => {
+    setAccountActionTarget({ account, action });
+    setAccountConfirmEmail("");
+    setAccountConfirmWord("");
+    setAccountError("");
+    setError("");
+    setNotice("");
+  };
+
+  const runAccountAction = async (event) => {
+    event.preventDefault();
+    if (!accountActionTarget) return;
+    const { account, action } = accountActionTarget;
+    if (accountConfirmEmail.trim().toLowerCase() !== account.email.trim().toLowerCase()) {
+      setAccountError("Enter the account's exact email address to confirm this action.");
+      return;
+    }
+    if (action === "delete" && accountConfirmWord !== "DELETE") {
+      setAccountError("Type DELETE to permanently remove this account.");
+      return;
+    }
+    setAccountBusyId(account.id);
+    setAccountError("");
+    setNotice("");
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke("manage-user-accounts", {
+        body: {
+          action,
+          userId: account.id,
+          email: accountConfirmEmail.trim(),
+          ...(action === "delete" ? { confirmation: accountConfirmWord } : {}),
+        },
+      });
+      if (invokeError) throw new Error(invokeError.message || "The account action could not be completed.");
+      if (data?.error) throw new Error(data.error);
+      setNotice(data?.message || (action === "delete" ? "Account deleted." : action === "suspend" ? "Account suspended." : "Account restored."));
+      setAccountActionTarget(null);
+      setAccountConfirmEmail("");
+      setAccountConfirmWord("");
+      await load();
+    } catch (e) {
+      setAccountError(e.message || "Account action failed. Refresh the list before retrying.");
+    } finally {
+      setAccountBusyId("");
+    }
+  };
+
+  const visibleAccounts = accounts.filter(account => {
+    const query = accountSearch.trim().toLowerCase();
+    const matchesQuery = !query || [account.email, account.displayName, account.role,
+      ...(account.workspaces || []).map(workspace => workspace.display_name)]
+      .some(value => String(value || "").toLowerCase().includes(query));
+    const matchesFilter = accountFilter === "all" ||
+      (accountFilter === "suspended" ? account.suspended : !account.suspended);
+    return matchesQuery && matchesFilter;
+  });
 
   const changeOwnerPassword = async (event) => {
     event.preventDefault();
@@ -176,6 +252,7 @@ export default function OwnerPanel({ onBack }) {
           <a href="#owner-registrations"><ClipboardList size={16}/><span>Registrations</span><b>{counts.registrations}</b></a>
           <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
           <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
+          <a href="#owner-user-accounts"><UserRoundCog size={16}/><span>User accounts</span><b>{accounts.length}</b></a>
           <a href="#owner-security"><KeyRound size={16}/><span>Login security</span></a>
           <a href="#owner-activity"><Activity size={16}/><span>Activity log</span></a>
         </nav>
@@ -247,6 +324,26 @@ export default function OwnerPanel({ onBack }) {
         <section id="owner-registrations" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">05 / PARTICIPANT OPERATIONS</span><h2>Registrations</h2><p>Find participants and check registration and payment status across events.</p></div><OwnerRegistrations /></section>
         <section id="owner-payments" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">06 / PAYMENT OPERATIONS</span><h2>Payment evidence</h2><p>Review submitted payment evidence securely.</p></div><OwnerPaymentEvidence /></section>
         <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-user-accounts" className="owner-module-anchor">
+          <div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT ADMINISTRATION</span><h2>User accounts</h2><p>Search every registered account, temporarily suspend access, restore suspended users, or permanently delete an account and its linked organiser data. Owner accounts are protected.</p></div>
+          <div className="owner-card owner-user-admin">
+            <div className="owner-user-admin-summary"><div><span className="panel-label">REGISTERED ACCOUNTS</span><strong>{accounts.length}</strong></div><div><span className="panel-label">ACTIVE</span><strong>{accounts.filter(account => !account.suspended).length}</strong></div><div><span className="panel-label">SUSPENDED</span><strong>{accounts.filter(account => account.suspended).length}</strong></div><button className="button button-secondary" onClick={load} disabled={loading || Boolean(accountBusyId)}><RefreshCw size={14}/> Refresh users</button></div>
+            <div className="owner-user-admin-filters"><label><span>Search accounts</span><div className="owner-user-search"><Search size={15}/><input type="search" value={accountSearch} onChange={event => setAccountSearch(event.target.value)} placeholder="Email, name, role or workspace" aria-label="Search user accounts"/></div></label><label><span>Account status</span><select value={accountFilter} onChange={event => setAccountFilter(event.target.value)} aria-label="Filter user accounts"><option value="all">All accounts</option><option value="active">Active</option><option value="suspended">Suspended</option></select></label></div>
+            {accountError ? <p className="owner-alert" role="alert">{accountError}</p> : null}
+            {accountActionTarget ? <form className="owner-user-confirm" onSubmit={runAccountAction}>
+              <div><span className="panel-label">CONFIRM ACCOUNT ACTION</span><h3>{accountActionTarget.action === "delete" ? "Permanently delete this account?" : accountActionTarget.action === "suspend" ? "Suspend this account?" : "Restore this account?"}</h3><p>{accountActionTarget.action === "delete" ? "This permanently deletes the user's login, organiser workspaces, published/draft events, registrations and private payment-evidence files linked to those workspaces. This cannot be undone." : accountActionTarget.action === "suspend" ? "This blocks future sign-ins until you restore the account. The user's data is kept." : "This removes the sign-in ban so the user can access their account again."}</p><strong>{accountActionTarget.account.displayName} · {accountActionTarget.account.email}</strong></div>
+              <label>TYPE THE ACCOUNT EMAIL TO CONFIRM<input type="email" value={accountConfirmEmail} onChange={event => setAccountConfirmEmail(event.target.value)} autoComplete="off" required placeholder={accountActionTarget.account.email}/></label>
+              {accountActionTarget.action === "delete" ? <label>TYPE DELETE TO CONFIRM<input value={accountConfirmWord} onChange={event => setAccountConfirmWord(event.target.value)} autoComplete="off" required placeholder="DELETE"/></label> : null}
+              <div className="owner-user-confirm-actions"><button className={accountActionTarget.action === "delete" ? "button button-danger" : "button button-primary"} type="submit" disabled={Boolean(accountBusyId)}>{accountBusyId ? "Working…" : accountActionTarget.action === "delete" ? "Permanently delete account" : accountActionTarget.action === "suspend" ? "Suspend account" : "Restore account"}</button><button className="button button-secondary" type="button" disabled={Boolean(accountBusyId)} onClick={() => {setAccountActionTarget(null);setAccountConfirmEmail("");setAccountConfirmWord("");}}>Cancel</button></div>
+            </form> : null}
+            {loading && accounts.length === 0 ? <p className="owner-muted">Loading registered accounts…</p> : visibleAccounts.length === 0 ? <div className="owner-empty"><Users size={22}/><strong>No matching accounts.</strong><p>Try a different search or status filter.</p></div> : <div className="owner-user-account-list">{visibleAccounts.map(account => <article className={"owner-user-account " + (account.suspended ? "is-suspended" : "")} key={account.id}>
+              <div className="owner-user-account-top"><div className="owner-user-avatar">{String(account.displayName || account.email || "U").slice(0,1).toUpperCase()}</div><div className="owner-user-account-identity"><strong>{account.displayName}</strong><span>{account.email || "No email address"}</span><small>Joined {account.createdAt ? new Date(account.createdAt).toLocaleDateString() : "date unavailable"} · {account.lastSignInAt ? "Last sign-in " + new Date(account.lastSignInAt).toLocaleDateString() : "No recorded sign-in"}</small></div><span className={"owner-user-state " + (account.suspended ? "suspended" : "active")}>{account.suspended ? "SUSPENDED" : "ACTIVE"}</span></div>
+              <div className="owner-user-account-meta"><span>Role: <strong>{account.role}</strong></span>{account.workspaces?.length ? <span>Workspaces: <strong>{account.workspaces.map(workspace => workspace.display_name).join(", ")}</strong></span> : <span>No organiser workspace</span>}{account.role === "owner" ? <span className="owner-muted">Protected owner account</span> : null}</div>
+              {account.role !== "owner" && account.id !== user?.id ? <div className="owner-user-account-actions">{account.suspended ? <button className="button button-primary" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"restore")}><RotateCcw size={14}/> Restore account</button> : <button className="button button-secondary" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"suspend")}><Ban size={14}/> Suspend account</button>}<button className="button button-danger" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"delete")}><Trash2 size={14}/> Delete account</button></div> : null}
+            </article>)}</div>}
+            <p className="owner-muted">Suspending keeps account data but blocks authentication. Deletion is permanent. Both actions require the exact account email; deletion additionally requires typing DELETE.</p>
+          </div>
+        </section>
         <section id="owner-security" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT SECURITY</span><h2>King Login password</h2><p>Change the password for your current owner account. Your current password is verified before the new one is saved.</p></div><div className="owner-card owner-security-card"><form className="account-form" onSubmit={changeOwnerPassword} autoComplete="off"><label>CURRENT PASSWORD<input type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required minLength={1} /></label><label>NEW PASSWORD<input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" required minLength={12} aria-describedby="owner-password-guidance" /></label><label>CONFIRM NEW PASSWORD<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required minLength={12} /></label><p id="owner-password-guidance" className="owner-muted">Use at least 12 characters. A unique passphrase is recommended. Do not reuse your website or email password.</p><button className="button button-primary" type="submit" disabled={changingPassword}>{changingPassword ? "Updating password…" : "Change King Login password"} <KeyRound size={14}/></button></form></div></section>
         <section id="owner-activity" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / AUDIT & ACCOUNTABILITY</span><h2>Activity log</h2><p>See recorded moderation and access-control history.</p></div><OwnerAuditLog /></section>
         {error ? <p className="owner-alert" role="alert">{error}</p> : null}
