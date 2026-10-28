@@ -185,6 +185,17 @@ const checks = [
     },
   },
 
+  {
+    name: "template selection preserves restricted owner routing",
+    run: () => {
+      const app = read("src/main.jsx");
+      return app.includes('if (platformRole === "owner") {')
+        && app.includes('setView("owner");')
+        && app.includes('if (!signedInUser) {')
+        && app.includes('setView("account");');
+    },
+  },
+
 ];
 
 let failed = false;
