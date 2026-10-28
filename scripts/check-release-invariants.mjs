@@ -84,7 +84,7 @@ const checks = [
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
-        && account.includes('onOpenWorkspace={() => setView("customize")}');
+        && account.includes('onOpenWorkspace={() => setView("organizer")}');
     },
   },
   {
