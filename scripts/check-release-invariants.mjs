@@ -214,7 +214,7 @@ const checks = [
         && editor.includes('if (persist) {')
         && editor.includes('setForm(savedEditor.formDraft);');
     },
-  },,
+  },
   {
     name: "mobile focused editor shows selected-element controls before the long preview",
     run: () => {
