@@ -243,6 +243,17 @@
 .workspace-slug-preview-actions .workspace-slug-preview-hint{flex:1;min-width:150px}
 
 
+/* Keep website-only mode focused on the selected event canvas. */
+.workspace-website-canvas-mode .workspace-setup-progress,
+.workspace-website-canvas-mode .workspace-builder-jumpnav,
+.workspace-website-canvas-mode .workspace-history-toolbar{display:none!important}
+.workspace-website-canvas-mode .workspace-draft-state{margin-bottom:10px}
+@media(max-width:700px){
+ .workspace-website-canvas-mode .workspace-card{padding:12px}
+ .workspace-website-canvas-mode .workspace-canvas-layers,
+ .workspace-website-canvas-mode .workspace-canvas-inspector{position:static;max-height:none}
+}
+
 /* Professional website editor workspace: structure, canvas and contextual inspector. */
 .workspace-website-canvas-mode .workspace-form{grid-template-columns:190px minmax(0,1fr) 250px;align-items:start;gap:14px}
 .workspace-website-canvas-mode .workspace-form>:not(.workspace-canvas-layers):not(#workspace-builder-preview):not(.workspace-canvas-inspector):not(.workspace-form-actions){display:none!important}
