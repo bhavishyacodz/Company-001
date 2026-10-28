@@ -851,3 +851,204 @@
     order:3;
   }
 }
+
+
+/* Mobile-first editor usability: compact layer picker, readable preview, and reachable save actions. */
+.workspace-website-canvas-mode .workspace-canvas-panel-title {
+  gap: 6px;
+}
+.workspace-website-canvas-mode .workspace-canvas-layers > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  text-align: left;
+  touch-action: manipulation;
+}
+.workspace-website-canvas-mode .workspace-canvas-layers > button > span:last-child {
+  min-width: 0;
+}
+.workspace-website-canvas-mode .workspace-canvas-layers > button strong,
+.workspace-website-canvas-mode .workspace-canvas-layers > button small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.workspace-website-canvas-mode .workspace-canvas-inspector {
+  min-width: 0;
+}
+.workspace-website-canvas-mode .workspace-canvas-property-stack label {
+  min-width: 0;
+}
+.workspace-website-canvas-mode .workspace-canvas-property-stack input:not([type="checkbox"]):not([type="color"]),
+.workspace-website-canvas-mode .workspace-canvas-property-stack textarea,
+.workspace-website-canvas-mode .workspace-canvas-property-stack select {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.workspace-website-canvas-mode .workspace-property-help {
+  margin: 0;
+  color: #a9a6ba;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.workspace-website-canvas-mode .workspace-live-preview {
+  min-width: 0;
+  overflow: hidden;
+}
+.workspace-website-canvas-mode .workspace-live-preview-hero {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-website-canvas-mode .workspace-canvas-inline-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.workspace-website-canvas-mode .workspace-canvas-inline-tools button,
+.workspace-website-canvas-mode .workspace-canvas-inline-tools label {
+  min-height: 42px;
+}
+.workspace-website-canvas-mode .workspace-live-preview-hero h3,
+.workspace-website-canvas-mode .workspace-live-preview-description {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+.workspace-website-canvas-mode .workspace-form-actions {
+  position: sticky;
+  bottom: 8px;
+  z-index: 40;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid #393149;
+  border-radius: 14px;
+  background: rgba(15,15,24,.97);
+  box-shadow: 0 8px 28px rgba(0,0,0,.32);
+}
+.workspace-website-canvas-mode .workspace-form-actions .button {
+  min-height: 44px;
+}
+@media (min-width: 1101px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
+@media (max-width: 700px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-section-head {
+    align-items: stretch!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-section-head > button {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    display: grid!important;
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-panel-title {
+    grid-column: 1/-1;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers > button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 54px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers > button > span:first-child {
+    flex: 0 0 24px;
+    text-align: center;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers > button small {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-visibility-title,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-visibility {
+    grid-column: 1/-1;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-preview-mode {
+    display: flex;
+    width: 100%;
+    gap: 6px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-preview-mode button {
+    flex: 1;
+    min-height: 44px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode #workspace-builder-preview {
+    padding: 10px;
+    border-radius: 14px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-hero {
+    padding: 20px 14px!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-hero h3 {
+    max-width: 100%;
+    font-size: clamp(28px, 9vw, 52px)!important;
+    line-height: 1.08;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-facts {
+    grid-template-columns: minmax(0,1fr)!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-live-preview-details {
+    grid-template-columns: minmax(0,1fr)!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-preview-form-grid {
+    grid-template-columns: minmax(0,1fr)!important;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-inspector {
+    padding: 14px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-property-stack {
+    gap: 12px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-property-stack input,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-property-stack textarea,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-property-stack select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-property-stack textarea {
+    min-height: 120px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-position-tools > div {
+    display: grid;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 8px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-position-tools button {
+    min-height: 44px;
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-form-actions .button {
+    flex: 1 1 120px;
+    justify-content: center;
+  }
+}
+@media (max-width: 380px) {
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers {
+    grid-template-columns: minmax(0,1fr);
+  }
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-panel-title,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-visibility-title,
+  .workspace-shell .workspace-builder.workspace-website-canvas-mode .workspace-canvas-layers .workspace-canvas-visibility {
+    grid-column: 1;
+  }
+}
