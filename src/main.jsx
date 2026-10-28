@@ -5,7 +5,7 @@ import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard, MapPin, Mail, PhoneCall,
   Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
-  Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake
+  Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
 import OwnerPanel from "./OwnerPanel.jsx";
@@ -495,6 +495,10 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [accountCurrentPassword, setAccountCurrentPassword] = useState("");
+  const [accountNewPassword, setAccountNewPassword] = useState("");
+  const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
+  const [changingAccountPassword, setChangingAccountPassword] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUser(data.session?.user ?? null));
@@ -645,6 +649,50 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
     }
   };
 
+  const changeAccountPassword = async (event) => {
+    event.preventDefault();
+    setNotice("");
+    if (!user?.email || !user?.id) {
+      setNotice("Please sign in again before changing your password.");
+      return;
+    }
+    if (accountNewPassword.length < 12) {
+      setNotice("Choose a new password with at least 12 characters.");
+      return;
+    }
+    if (accountNewPassword !== accountConfirmPassword) {
+      setNotice("The new password and confirmation do not match.");
+      return;
+    }
+    if (accountNewPassword === accountCurrentPassword) {
+      setNotice("Choose a new password that differs from your current password.");
+      return;
+    }
+    setChangingAccountPassword(true);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (sessionData.session?.user?.id !== user.id) {
+        throw new Error("Your sign-in session changed. Please sign in again and retry.");
+      }
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: accountCurrentPassword,
+      });
+      if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
+      const { error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
+      if (updateError) throw updateError;
+      setAccountCurrentPassword("");
+      setAccountNewPassword("");
+      setAccountConfirmPassword("");
+      setNotice("Your account password has been changed successfully.");
+    } catch (error) {
+      setNotice(error.message || "Could not change your password. Please try again.");
+    } finally {
+      setChangingAccountPassword(false);
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null); setApplication(null); setNotice("Signed out.");
@@ -688,6 +736,23 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
                 <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
                 <button className="profile-signout" onClick={signOut}>Sign out</button>
               </div>
+            </section>
+            <section className="account-password-zone" aria-labelledby="account-password-title">
+              <div className="account-delete-heading">
+                <div>
+                  <span className="panel-label">ACCOUNT SETTINGS / SECURITY</span>
+                  <h3 id="account-password-title">Change password</h3>
+                  <p>Update the password you use to sign in. Your events, workspace, and registrations will not be affected.</p>
+                </div>
+                <span className="account-password-icon"><KeyRound size={20}/></span>
+              </div>
+              <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
+                <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
+                <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
+                <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
+                <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password you do not use on other websites.</p>
+                <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating password…" : "Change password"} <KeyRound size={14}/></button>
+              </form>
             </section>
             <section className="account-delete-zone" aria-labelledby="account-delete-title">
               <div className="account-delete-heading">
