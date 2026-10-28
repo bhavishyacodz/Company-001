@@ -82,7 +82,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         if (savedEditor?.eventId) {
           const savedEvent = (ev.data || []).find(item => item.id === savedEditor.eventId);
           if (savedEvent) {
-            editEvent(savedEvent);
+            editEvent(savedEvent, { persist: false });
             if (isRecoverableFormDraft(savedEditor.formDraft) && savedEditor.formDraft.template_key === (savedEvent.template_key || "esports-001")) {
               setForm(savedEditor.formDraft);
               setIsDirty(true);
@@ -117,9 +117,12 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   }, [form, isDirty, tab, editingId, websiteOnlyMode, selectedCanvasElement, user.id]);
 
   const resetForm = (templateKey = initialTemplateKey) => { try { window.localStorage.removeItem(`company001:editor:${user.id}`); } catch { /* Browser-local recovery is optional. */ } setWebsiteOnlyMode(false); const template = getTemplate(templateKey); setUndoStack([]); setRedoStack([]); setEditingId(null); setEditingStatus(null); setIsDirty(false); setForm({template_key:template.key,title:"",slug:"",game_title:template.gameTitle,description:template.sampleDescription,rules:template.sampleRules,entry_fee:"0",team_size:String(template.teamSize),starts_at:"",registration_closes_at:"",payment_instructions:"",payment_qr_public_url:"",primary_color:template.defaultColor || "#9a6bff",font_family:"Inter",logo_url:"",venue:"",contact_email:"",contact_phone:"",page_sections:["highlights","details","steps"],hero_title_size:72,hero_title_align:"left",hero_title_color:"#ffffff",hero_title_x:0,hero_title_y:0,description_x:0,description_y:0,custom_fields:[]}); };
-  const editEvent = (ev) => {
+  const editEvent = (ev, { persist = true } = {}) => {
     // Open an existing event directly in its focused website canvas, not the general template/setup view.
-    try { window.localStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({eventId:ev.id,tab:"customize",websiteOnlyMode:true,selectedElement:"title"})); } catch { /* Browser-local recovery is optional. */ }
+    // During refresh recovery, preserve the saved draft until its form state has been restored.
+    if (persist) {
+      try { window.localStorage.setItem(`company001:editor:${user.id}`, JSON.stringify({eventId:ev.id,tab:"customize",websiteOnlyMode:true,selectedElement:"title"})); } catch { /* Browser-local recovery is optional. */ }
+    }
     setWebsiteOnlyMode(true);
     setUndoStack([]); setRedoStack([]); setIsDirty(false);
     setEditingId(ev.id);

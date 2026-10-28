@@ -205,6 +205,16 @@ const checks = [
         && editor.includes('setWebsiteOnlyMode(true);');
     },
   },
+  {
+    name: "refresh recovery preserves the saved event editor draft",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('const editEvent = (ev, { persist = true } = {})')
+        && editor.includes('editEvent(savedEvent, { persist: false });')
+        && editor.includes('if (persist) {')
+        && editor.includes('setForm(savedEditor.formDraft);');
+    },
+  },
 ];
 
 let failed = false;
