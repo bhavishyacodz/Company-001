@@ -196,8 +196,6 @@ const checks = [
     },
   },
 
-];
-
   {
     name: "editing an existing event opens its focused website canvas",
     run: () => {
@@ -207,6 +205,7 @@ const checks = [
         && editor.includes('setWebsiteOnlyMode(true);');
     },
   },
+];
 
 let failed = false;
 for (const check of checks) {
