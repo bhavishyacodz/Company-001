@@ -479,7 +479,7 @@ function KingLoginPanel({ onBack, onSuccess }) {
   );
 }
 
-function AccountPanel({ onBack, onOpenWorkspace }) {
+function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
