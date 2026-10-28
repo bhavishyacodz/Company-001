@@ -334,6 +334,16 @@ const checks = [
         && editor.includes("const requestReview = async (ev) =>");
     },
   },
+  {
+    name: "event titles are validated after trimming before save",
+    run: () => {
+      const editor = read("src/OrganizerWorkspace.jsx");
+      return editor.includes('const title = String(form.title || "").trim();')
+        && editor.includes('if (title.length < 2) throw new Error("Enter an event title with at least 2 characters.");')
+        && editor.includes('if (title.length > 140) throw new Error("Event titles can be at most 140 characters.");')
+        && editor.includes("title,slug");
+    },
+  },
   ];
 
 let failed = false;
