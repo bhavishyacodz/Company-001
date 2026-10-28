@@ -266,7 +266,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         resetForm(); await load(); setTab("organizer");
       }
       window.requestAnimationFrame(() => document.getElementById("workspace-notice")?.scrollIntoView({ behavior: "smooth", block: "center" }));
-    } catch(e) { setError(e.message || "Could not save event."); }
+    } catch(e) { setError(e.message || "Could not save event."); window.requestAnimationFrame(() => document.getElementById("workspace-alert")?.scrollIntoView({ behavior: "smooth", block: "center" })); }
     finally { savingLock.current = false; setSaving(false); }
   };
   const requestReview = async (ev) => {
@@ -279,7 +279,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       if (updateError) throw updateError;
       setNotice("Submitted for platform review. It is not public until approved by the platform owner.");
       await load();
-    } catch(e) { setError(e.message || "Could not submit event for review."); }
+    } catch(e) { setError(e.message || "Could not submit event for review."); window.requestAnimationFrame(() => document.getElementById("workspace-alert")?.scrollIntoView({ behavior: "smooth", block: "center" })); }
     finally { savingLock.current = false; setSaving(false); }
   };
   const openEvidence = async (evidenceId) => {
