@@ -24,7 +24,7 @@ const sampleRegistrations = [
 
 function App() {
   const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
-  const [requestedTemplate, setRequestedTemplate] = useState("esports-001");
+  const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
@@ -80,6 +80,13 @@ function App() {
         if (active) {
           const savedView = window.sessionStorage.getItem("company001:last-view");
           if (!data.session?.user && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
+          if (data.session?.user && !isLiveEventRoute) {
+            const [{ data: profile }, { data: organizer }] = await Promise.all([
+              supabase.from("profiles").select("platform_role").eq("id", data.session.user.id).maybeSingle(),
+              supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle(),
+            ]);
+            if (active) setView(profile?.platform_role === "owner" ? "owner" : organizer ? "organizer" : "account");
+          }
         }
       })
       .catch(() => { if (active) setSignedInUser(null); })
@@ -157,6 +164,18 @@ function App() {
     }
   };
 
+  const handleUseTemplate = async (templateKey) => {
+    setRequestedTemplate(templateKey);
+    try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
+    if (!signedInUser || platformRole === "owner") {
+      setView("account");
+      return;
+    }
+    const { data: organizer, error } = await supabase.from("organizers")
+      .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
+    setView(!error && organizer ? "customize" : "account");
+  };
+
   const copyPlatformLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.origin + "/");
@@ -206,7 +225,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={(templateKey) => { setRequestedTemplate(templateKey); setView(platformRole === "owner" ? "owner" : "account"); }} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("customize")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview">
             <div className="hero-grid" />
@@ -538,10 +557,10 @@ function AccountPanel({ onBack, onOpenWorkspace }) {
   return (
     <main className="account-shell">
       <section className="account-card">
-        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to event templates</button>
+        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
-        <h1>{user ? "Your organiser account." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">Create an account, set up your organiser workspace, and prepare registration pages for your kind of event.</p>
+        <h1>{user ? "Your profile & workspace." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
+        <p className="account-lead">{user ? "Your sign-in is saved on this device. Open your workspace, choose a template, or manage your account here." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
