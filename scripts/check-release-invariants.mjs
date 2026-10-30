@@ -417,6 +417,7 @@ const checks = [
         && manager.includes("completeAccountDeletion(admin, targetId)")
         && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
         && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
+        && deletionHelper.includes("getUserById(userId)")
         && deletionHelper.includes('prepare_account_deletion')
         && panel.includes('supabase.functions.invoke("manage-user-accounts"')
         && panel.includes('id="owner-user-accounts"')
@@ -497,6 +498,7 @@ const checks = [
         && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
         && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
         && deletionHelper.includes('complete_account_deletion_storage')
+        && deletionHelper.includes("getUserById(userId)")
         && !account.includes("SUPABASE_SERVICE_ROLE_KEY");
     },
   },
