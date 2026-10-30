@@ -5,6 +5,7 @@ create extension if not exists pgtap with schema extensions;
 select plan(19);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
+-- Production-ledger-aligned migrations are replayed before this suite in CI.
 -- database created by GitHub Actions; it never connects to the production project.
 insert into auth.users (
   id, aud, role, email, encrypted_password, email_confirmed_at,
