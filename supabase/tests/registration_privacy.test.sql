@@ -224,10 +224,9 @@ select is(
   'Service-side Storage completion acknowledgement clears the deletion job'
 );
 select is(
-  (select count(*)::integer from private.account_deletion_jobs
-   where user_id = '10000000-0000-4000-8000-000000000002'),
-  0,
-  'Successful Storage cleanup purges the temporary user-linked deletion job'
+  public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
+  false,
+  'Repeating Storage completion confirms the temporary deletion job was already purged'
 );
 
 select * from finish();
