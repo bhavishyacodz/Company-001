@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
-import OwnerPaymentEvidence from "./OwnerPaymentEvidence.jsx";
-import OwnerRegistrations from "./OwnerRegistrations.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
 
@@ -18,7 +16,7 @@ export default function OwnerPanel({ onBack }) {
   const [applications, setApplications] = useState([]);
   const [consultationRequests, setConsultationRequests] = useState([]);
   const [organizers, setOrganizers] = useState([]);
-  const [counts, setCounts] = useState({ events: 0, registrations: 0, pendingEvents: 0 });
+  const [counts, setCounts] = useState({ events: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
   const [error, setError] = useState("");
@@ -55,20 +53,18 @@ export default function OwnerPanel({ onBack }) {
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
-        supabase.from("registrations").select("id", { count: "exact", head: true }),
         supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review")
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
       if (eventResult.error) throw eventResult.error;
-      if (registrationResult.error) throw registrationResult.error;
       if (consultationResult.error) throw consultationResult.error;
       if (pendingEventResult.error) throw pendingEventResult.error;
       setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
-      setCounts({ events: eventResult.count || 0, registrations: registrationResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
+      setCounts({ events: eventResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
       const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
       if (accountLoadError) {
         setAccountError(accountLoadError.message || "Could not load user accounts.");
@@ -249,8 +245,6 @@ export default function OwnerPanel({ onBack }) {
           <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
           <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
           <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span><b>{counts.pendingEvents}</b></a>
-          <a href="#owner-registrations"><ClipboardList size={16}/><span>Registrations</span><b>{counts.registrations}</b></a>
-          <a href="#owner-payments"><CreditCard size={16}/><span>Payments</span></a>
           <a href="#owner-organisers"><Building2 size={16}/><span>Organisers</span></a>
           <a href="#owner-user-accounts"><UserRoundCog size={16}/><span>User accounts</span><b>{accounts.length}</b></a>
           <a href="#owner-security"><KeyRound size={16}/><span>Login security</span></a>
@@ -262,7 +256,6 @@ export default function OwnerPanel({ onBack }) {
           <div className="owner-metric"><span>APPROVED ORGANISERS</span><strong>{organizers.filter(o => o.status === "approved").length}</strong><small>Active organiser accounts</small></div>
           <div className="owner-metric"><span>EVENTS TO REVIEW</span><strong>{counts.pendingEvents}</strong><small>Awaiting publication decision</small></div>
           <div className="owner-metric"><span>ALL EVENTS</span><strong>{counts.events}</strong><small>Total event records</small></div>
-          <div className="owner-metric"><span>REGISTRATIONS</span><strong>{counts.registrations}</strong><small>Participant records</small></div>
         </div>
         <section id="owner-enquiries" className="owner-card">
           <div className="owner-section-head"><div><span className="panel-label">01 / CUSTOMER PIPELINE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
