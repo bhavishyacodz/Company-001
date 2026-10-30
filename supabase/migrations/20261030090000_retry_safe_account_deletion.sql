@@ -3,10 +3,7 @@
 create table if not exists private.account_deletion_jobs (
   user_id uuid primary key,
   object_paths text[] not null default '{}',
-  status text not null default 'storage_pending'
-    check (status in ('storage_pending', 'storage_complete')),
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
 alter table private.account_deletion_jobs enable row level security;
@@ -95,8 +92,8 @@ begin
       and left(so.name, length(organizer_id::text) + 1) = organizer_id::text || '/'
   ) collected_paths;
 
-  insert into private.account_deletion_jobs(user_id, object_paths, status)
-  values (p_user_id, v_paths, 'storage_pending');
+  insert into private.account_deletion_jobs(user_id, object_paths)
+  values (p_user_id, v_paths);
 
   -- All relational cleanup below is one PostgreSQL transaction.
   delete from public.payment_evidence
