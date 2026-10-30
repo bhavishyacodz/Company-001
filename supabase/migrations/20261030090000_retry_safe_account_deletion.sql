@@ -72,11 +72,22 @@ begin
   where r.organizer_id = any(v_organizer_ids)
      or r.event_id = any(v_event_ids);
 
-  select coalesce(array_agg(distinct pe.private_object_path), '{}'::text[])
+  -- Include both metadata-linked evidence and any orphaned objects left
+  -- behind by a failed compensating upload cleanup.
+  select coalesce(array_agg(distinct object_path), '{}'::text[])
   into v_paths
-  from public.payment_evidence pe
-  where pe.organizer_id = any(v_organizer_ids)
-     or pe.registration_id = any(v_registration_ids);
+  from (
+    select pe.private_object_path as object_path
+    from public.payment_evidence pe
+    where pe.organizer_id = any(v_organizer_ids)
+       or pe.registration_id = any(v_registration_ids)
+    union
+    select so.name as object_path
+    from storage.objects so
+    cross join unnest(v_organizer_ids) as organizer_id
+    where so.bucket_id = 'payment-evidence'
+      and left(so.name, length(organizer_id::text) + 1) = organizer_id::text || '/'
+  ) collected_paths;
 
   insert into private.account_deletion_jobs(user_id, object_paths, status)
   values (p_user_id, v_paths, 'storage_pending');
