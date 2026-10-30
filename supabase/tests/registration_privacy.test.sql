@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(36);
+select plan(37);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
