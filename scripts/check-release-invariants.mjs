@@ -130,8 +130,8 @@ const checks = [
   {
     name: "delegated event access is event-scoped and owner-managed",
     run: () => {
-      const sql = read("supabase/migrations/20261027150621_organizer_access_panel.sql").replace(/\\s+/g, "");
-      const accessPolicies = read("supabase/migrations/20261027161935_consolidate_organizer_event_access_policies.sql").replace(/\\s+/g, "");
+      const sql = read("supabase/migrations/20261027150621_organizer_access_panel.sql").replace(/\s+/g, "");
+      const accessPolicies = read("supabase/migrations/20261027161935_consolidate_organizer_event_access_policies.sql").replace(/\s+/g, "");
       return sql.includes("a.event_id=e.idanda.user_id=(selectauth.uid())")
         && sql.includes("a.access_level='editor'")
         && sql.includes("Onlytheplatformownercanchangeorganiseraccessstatus")
