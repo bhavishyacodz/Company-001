@@ -1,7 +1,6 @@
 -- Activate organiser workspaces immediately; keep owner-only suspension and event publication review.
 begin;
 
--- Allow trusted database-owned activation logic while keeping client-side status changes owner-only.
 create or replace function private.enforce_owner_only_organizer_status()
 returns trigger
 language plpgsql
@@ -82,12 +81,10 @@ with check (
   and status = 'approved'
 );
 
--- Activate workspaces previously blocked only by manual approval.
 update public.organizers
 set status = 'approved', updated_at = now()
 where status = 'pending';
 
--- Ensure every applicant with a pending/approved application has a workspace.
 with latest_application as (
   select distinct on (applicant_user_id)
     applicant_user_id, business_name, id, created_at, status
@@ -125,7 +122,6 @@ on conflict (owner_user_id) do update
     else existing_organizer.status
   end;
 
--- Preserve explicitly rejected applications and suspended organiser accounts.
 update public.organizer_applications
 set status = 'approved',
     reviewed_by = null,

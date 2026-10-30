@@ -1,0 +1,1 @@
+alter table public.registrations add column if not exists custom_fields jsonb not null default '{}'::jsonb; alter table public.registrations add constraint registrations_custom_fields_object check (jsonb_typeof(custom_fields) = 'object');
