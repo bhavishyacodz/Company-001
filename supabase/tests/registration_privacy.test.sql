@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(19);
+select plan(22);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -85,9 +85,26 @@ select is((select count(*)::integer from public.registrations), 0, 'Platform own
 select is((select count(*)::integer from public.payment_evidence), 0, 'Platform owner cannot read payment-evidence metadata');
 select is((select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'), 0, 'Platform owner cannot read private screenshot objects');
 select throws_ok(
-  $$select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'owner attempt')$$,
+  $select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'owner attempt')$,
   '42501', 'Platform owner accounts cannot review participant payments',
   'Platform owner cannot review participant payments'
+);
+
+-- Anonymous visitors must not receive direct table grants or private screenshot access.
+reset role;
+select ok(
+  not has_table_privilege('anon', 'public.registrations', 'SELECT'),
+  'Anonymous visitors have no direct SELECT grant on participant registrations'
+);
+select ok(
+  not has_table_privilege('anon', 'public.payment_evidence', 'SELECT'),
+  'Anonymous visitors have no direct SELECT grant on payment-evidence metadata'
+);
+set local role anon;
+select is(
+  (select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'),
+  0,
+  'Anonymous visitors cannot list or read private payment screenshot objects'
 );
 
 -- Only the owning approved organizer may review payment through the audited RPC.
