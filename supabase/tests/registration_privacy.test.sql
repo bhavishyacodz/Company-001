@@ -115,9 +115,12 @@ select is((
   select count(*)::integer
   from public.audit_logs
   where actor_user_id = '10000000-0000-4000-8000-000000000001'
-    and target_id = '40000000-0000-4000-8000-000000000001'
+    and organizer_id = '20000000-0000-4000-8000-000000000001'
+    and target_type = 'registration_payment_review'
+    and target_id is null
     and action = 'registration_payment_approved'
-), 1, 'Successful organizer review creates an audit record');
+    and not (metadata ? 'confirmation_reference')
+), 1, 'Owner audit log records payment review without participant identifiers');
 
 select * from finish();
 rollback;
