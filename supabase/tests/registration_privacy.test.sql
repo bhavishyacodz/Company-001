@@ -215,13 +215,10 @@ select throws_ok(
   '42501', 'platform owner accounts are protected',
   'Deletion preparation refuses to remove the platform owner'
 );
-delete from storage.objects
-where bucket_id = 'payment-evidence'
-  and left(name, length('20000000-0000-4000-8000-000000000002') + 1) = '20000000-0000-4000-8000-000000000002/';
 select is(
   public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
   true,
-  'Successful Storage cleanup can be acknowledged'
+  'Service-side Storage completion acknowledgement clears the deletion job'
 );
 select is(
   (select count(*)::integer from private.account_deletion_jobs
