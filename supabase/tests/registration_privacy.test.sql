@@ -27,6 +27,10 @@ insert into public.organizers (id, owner_user_id, display_name, slug, status) va
   ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'Privacy Organizer A', 'privacy-organizer-a', 'approved'),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', 'Privacy Organizer B', 'privacy-organizer-b', 'approved');
 
+-- The production policy allows only the platform owner to publish events.
+-- Seed published test events under that owner's simulated JWT identity.
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003', true);
+
 insert into public.events (id, organizer_id, title, slug, status) values
   ('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Privacy Event A', 'privacy-event-a', 'published'),
   ('30000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002', 'Privacy Event B', 'privacy-event-b', 'published');
