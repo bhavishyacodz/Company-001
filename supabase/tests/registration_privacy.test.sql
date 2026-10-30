@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(25);
+select plan(36);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -153,6 +153,76 @@ select ok(
 select ok(
   has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
   'Service role can execute account deletion preparation'
+);
+
+
+-- Exercise account deletion against the two-organizer fixtures. This runs
+-- inside the isolated CI database and is rolled back at the end of the suite.
+reset role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+set local role service_role;
+select is(
+  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  1,
+  'Deletion preparation records the target organizer screenshot path'
+);
+select is(
+  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  1,
+  'A retry receives the same screenshot path after the database phase'
+);
+select is(
+  (select count(*)::integer from public.registrations where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer registrations'
+);
+select is(
+  (select count(*)::integer from public.registrations where organizer_id = '20000000-0000-4000-8000-000000000001'),
+  1,
+  'Deletion preserves the other organizer registrations'
+);
+select is(
+  (select count(*)::integer from public.payment_evidence where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer evidence metadata'
+);
+select is(
+  (select count(*)::integer from public.payment_evidence where organizer_id = '20000000-0000-4000-8000-000000000001'),
+  1,
+  'Deletion preserves the other organizer evidence metadata'
+);
+select is(
+  (select count(*)::integer from public.events where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer event'
+);
+select is(
+  (select count(*)::integer from public.organizers where id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer workspace'
+);
+select is(
+  (select count(*)::integer from public.organizer_event_access where user_id = '10000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes delegated event-access grants owned by the deleted user'
+);
+select throws_ok(
+  $select public.prepare_account_deletion('10000000-0000-4000-8000-000000000003'::uuid)$,
+  '42501', 'platform owner accounts are protected',
+  'Deletion preparation refuses to remove the platform owner'
+);
+delete from storage.objects
+where bucket_id = 'payment-evidence'
+  and name = '20000000-0000-4000-8000-000000000002/40000000-0000-4000-8000-000000000002/proof.png';
+select is(
+  public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
+  true,
+  'Successful Storage cleanup can be acknowledged'
+);
+select is(
+  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  0,
+  'A completed Storage cleanup no longer returns private object paths'
 );
 
 select * from finish();
