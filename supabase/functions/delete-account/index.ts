@@ -72,6 +72,6 @@ Deno.serve(async (req: Request) => {
     return response(origin, 200, { deleted: true, message: "Your account and linked organiser data have been deleted." });
   } catch (error) {
     console.error("delete-account failed", error);
-    return response(origin, 500, { error: "We could not complete account deletion. Please contact support before retrying." });
+    return response(origin, 500, { error: "We could not complete account deletion. Your account may still exist; refresh and retry. If the problem persists, contact support." });
   }
 });
