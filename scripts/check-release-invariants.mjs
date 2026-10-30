@@ -509,6 +509,48 @@ const checks = [
         && accountAdmin.includes('if (targetProfile?.platform_role === "owner")');
     },
   },
+
+  {
+    name: "participant records and payment evidence remain strictly organizer-owned",
+    run: () => {
+      const privacy = read("supabase/migrations/20261028000000_organizer_registration_privacy.sql");
+      return privacy.includes("create policy registrations_read_own_organizer_only")
+        && privacy.includes("not (select private.is_platform_owner())")
+        && privacy.includes("private.can_access_event(registrations.event_id)")
+        && privacy.includes("o.owner_user_id = (select auth.uid())")
+        && privacy.includes("o.status = 'approved'")
+        && privacy.includes("create policy payment_evidence_read_own_organizer_only")
+        && privacy.includes("organizer reads only their own private payment evidence")
+        && privacy.includes("Platform owner accounts cannot review participant payments")
+        && privacy.includes("Only the owning approved organiser can review this registration");
+    },
+  },
+  {
+    name: "King dashboard has no participant directory or payment-evidence viewer",
+    run: () => {
+      const owner = read("src/OwnerPanel.jsx");
+      return !owner.includes("OwnerRegistrations")
+        && !owner.includes("OwnerPaymentEvidence")
+        && !owner.includes('from("registrations")')
+        && !owner.includes('from("payment_evidence")')
+        && !owner.includes('functions.invoke("view-payment-evidence"');
+    },
+  },
+  {
+    name: "organizer privacy wording excludes platform-owner and delegated access",
+    run: () => read("src/OrganizerWorkspace.jsx").includes(
+      "Private participant records visible only to the approved organiser account that owns this event. Platform-owner and delegated event access are excluded."
+    ),
+  },
+  {
+    name: "obsolete King participant viewer components stay deleted",
+    run: () => {
+      const { existsSync } = await import("node:fs");
+      return !existsSync(join(process.cwd(), "src/OwnerRegistrations.jsx"))
+        && !existsSync(join(process.cwd(), "src/OwnerPaymentEvidence.jsx"));
+    },
+  },
+
   ];
 
 let failed = false;
