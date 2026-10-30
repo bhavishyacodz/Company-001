@@ -224,9 +224,10 @@ select is(
   'Successful Storage cleanup can be acknowledged'
 );
 select is(
-  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  (select count(*)::integer from private.account_deletion_jobs
+   where user_id = '10000000-0000-4000-8000-000000000002'),
   0,
-  'A completed Storage cleanup no longer returns private object paths'
+  'Successful Storage cleanup purges the temporary user-linked deletion job'
 );
 
 select * from finish();
