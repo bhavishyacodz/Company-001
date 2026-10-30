@@ -22,8 +22,14 @@ export async function completeAccountDeletion(admin: any, userId: string): Promi
 
   const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
   if (deleteError) {
-    // The storage-complete job remains. Retrying replays the same idempotent path cleanup,
-    // then retries deleting the Auth identity.
-    throw new Error("Data cleanup completed, but Auth deletion is pending and can be retried.");
+    // A concurrent retry may already have deleted the identity. Treat that
+    // specific outcome as success; preserve real Auth/network failures.
+    const { data: remaining, error: lookupError } = await admin.auth.admin.getUserById(userId);
+    const definitelyMissing = !remaining?.user && (
+      !lookupError || lookupError.status === 404 || lookupError.code === "user_not_found"
+    );
+    if (!definitelyMissing) {
+      throw new Error("Data cleanup completed, but Auth deletion is pending and can be retried.");
+    }
   }
 }
