@@ -98,7 +98,7 @@ select ok(
   'Authenticated clients have no direct payment-status update privilege'
 );
 select throws_ok(
-  $update public.registrations set payment_status = 'rejected' where id = '40000000-0000-4000-8000-000000000001'::uuid$,
+  $stmt$update public.registrations set payment_status = 'rejected' where id = '40000000-0000-4000-8000-000000000001'::uuid$stmt$,
   '42501', null,
   'Direct payment status updates are denied'
 );
