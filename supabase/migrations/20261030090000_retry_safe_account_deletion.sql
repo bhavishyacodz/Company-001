@@ -149,10 +149,12 @@ begin
   if auth.role() <> 'service_role' then
     raise exception 'service role required' using errcode = '42501';
   end if;
-  update private.account_deletion_jobs
-  set status = 'storage_complete', object_paths = '{}'::text[], updated_at = now()
+  -- Remove the temporary user-linked job record once every Storage path
+  -- has been confirmed removed. If Auth deletion later fails, a retry safely
+  -- rebuilds an empty job from the already-clean relational state.
+  delete from private.account_deletion_jobs
   where user_id = p_user_id;
-  return found;
+  return true;
 end;
 $$;
 
