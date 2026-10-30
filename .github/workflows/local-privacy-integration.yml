@@ -1,0 +1,56 @@
+name: Local privacy integration
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "scripts/check-release-invariants.mjs"
+      - "package.json"
+      - ".github/workflows/local-privacy-integration.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/**"
+      - "scripts/check-release-invariants.mjs"
+      - "package.json"
+      - ".github/workflows/local-privacy-integration.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  privacy-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run release invariants
+        run: npm run test:release
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start isolated local Supabase stack
+        run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy
+
+      - name: Apply repository migrations to local database
+        run: supabase db reset --local
+
+      - name: Run two-organizer privacy integration tests
+        run: supabase test db
