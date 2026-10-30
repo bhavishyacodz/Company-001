@@ -18,7 +18,7 @@ Deno.serve(async (req: Request) => {
   if (origin && origin !== SITE_ORIGIN) return reply(403, { error: "This website origin is not allowed." });
 
   try {
-    const token = (req.headers.get("Authorization") || "").match(/^Bearer\\s+(.+)$/i)?.[1] ?? "";
+    const token = (req.headers.get("Authorization") || "").match(/^Bearer\s+(.+)$/i)?.[1] ?? "";
     if (!token) return reply(401, { error: "Authentication required" });
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
