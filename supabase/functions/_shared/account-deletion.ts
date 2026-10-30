@@ -16,7 +16,7 @@ export async function completeAccountDeletion(admin: any, userId: string): Promi
   }
 
   const completed = await admin.rpc("complete_account_deletion_storage", { p_user_id: userId });
-  if (completed.error || completed.data !== true) {
+  if (completed.error) {
     throw new Error("Storage cleanup could not be confirmed; account deletion remains pending.");
   }
 
