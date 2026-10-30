@@ -404,6 +404,7 @@ const checks = [
     name: "King account management is owner-only and protects owner accounts and self",
     run: () => {
       const manager = read("supabase/functions/manage-user-accounts/index.ts");
+      const deletionHelper = read("supabase/functions/_shared/account-deletion.ts");
       const panel = read("src/OwnerPanel.jsx");
       const styles = read("src/styles.css");
       return manager.includes("admin.auth.getUser(token)")
@@ -413,8 +414,10 @@ const checks = [
         && manager.includes('ban_duration: "876000h"')
         && manager.includes('ban_duration: "none"')
         && manager.includes('body.confirmation !== "DELETE"')
-        && manager.includes('admin.auth.admin.deleteUser(targetId)')
-        && manager.includes('admin.storage.from("payment-evidence").remove')
+        && manager.includes("completeAccountDeletion(admin, targetId)")
+        && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
+        && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
+        && deletionHelper.includes('prepare_account_deletion')
         && panel.includes('supabase.functions.invoke("manage-user-accounts"')
         && panel.includes('id="owner-user-accounts"')
         && panel.includes('accountConfirmWord !== "DELETE"')
@@ -482,6 +485,7 @@ const checks = [
     run: () => {
       const account = read("src/main.jsx");
       const deletion = read("supabase/functions/delete-account/index.ts");
+      const deletionHelper = read("supabase/functions/_shared/account-deletion.ts");
       return account.includes('supabase.auth.signInWithPassword({')
         && account.includes('functions.invoke("delete-account"')
         && account.includes('deleteConfirmation !== "DELETE"')
@@ -489,8 +493,10 @@ const checks = [
         && deletion.includes('admin.auth.getUser(token)')
         && deletion.includes('profile?.platform_role === "owner"')
         && deletion.includes('body.confirmation !== "DELETE"')
-        && deletion.includes('admin.storage.from("payment-evidence").remove')
-        && deletion.includes('admin.auth.admin.deleteUser(user.id)')
+        && deletion.includes("completeAccountDeletion(admin, user.id)")
+        && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
+        && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
+        && deletionHelper.includes('complete_account_deletion_storage')
         && !account.includes("SUPABASE_SERVICE_ROLE_KEY");
     },
   },
