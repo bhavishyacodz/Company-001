@@ -32,6 +32,10 @@ begin
     raise exception 'target user is required' using errcode = '22004';
   end if;
 
+  -- Serialize concurrent retries for the same account so no caller can
+  -- observe an empty path list while another request is preparing the job.
+  perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));
+
   select * into v_existing
   from private.account_deletion_jobs
   where user_id = p_user_id
