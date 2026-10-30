@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { completeAccountDeletion } from "../_shared/account-deletion.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -139,56 +140,7 @@ Deno.serve(async (req: Request) => {
       return response(origin, 400, { error: "Type DELETE to confirm permanent account removal." });
     }
 
-    const organizerRows = await must(admin.from("organizers").select("id").eq("owner_user_id", targetId));
-    const organizerIds = (organizerRows ?? []).map((item: { id: string }) => item.id);
-    const eventRows = organizerIds.length
-      ? await must(admin.from("events").select("id").in("organizer_id", organizerIds))
-      : [];
-    const eventIds = (eventRows ?? []).map((item: { id: string }) => item.id);
-    const registrationsByOrganizer = organizerIds.length
-      ? await must(admin.from("registrations").select("id").in("organizer_id", organizerIds))
-      : [];
-    const registrationsByEvent = eventIds.length
-      ? await must(admin.from("registrations").select("id").in("event_id", eventIds))
-      : [];
-    const registrationIds = [...new Set([
-      ...(registrationsByOrganizer ?? []).map((item: { id: string }) => item.id),
-      ...(registrationsByEvent ?? []).map((item: { id: string }) => item.id),
-    ])];
-
-    const evidenceByOrganizer = organizerIds.length
-      ? await must(admin.from("payment_evidence").select("private_object_path").in("organizer_id", organizerIds))
-      : [];
-    const evidenceByRegistration = registrationIds.length
-      ? await must(admin.from("payment_evidence").select("private_object_path").in("registration_id", registrationIds))
-      : [];
-    const paths = [...new Set([...(evidenceByOrganizer ?? []), ...(evidenceByRegistration ?? [])]
-      .map((item: { private_object_path: string }) => item.private_object_path).filter(Boolean))];
-
-    for (let index = 0; index < paths.length; index += 100) {
-      const { error } = await admin.storage.from("payment-evidence").remove(paths.slice(index, index + 100));
-      if (error) fail("Could not remove private payment evidence. Account deletion was stopped before database cleanup.");
-    }
-    if (organizerIds.length) await must(admin.from("payment_evidence").delete().in("organizer_id", organizerIds));
-    if (registrationIds.length) {
-      await must(admin.from("payment_evidence").delete().in("registration_id", registrationIds));
-      await must(admin.from("registrations").delete().in("id", registrationIds));
-    }
-    if (eventIds.length) await must(admin.from("organizer_event_access").delete().in("event_id", eventIds));
-    await must(admin.from("organizer_event_access").delete().eq("user_id", targetId));
-    await must(admin.from("organizer_event_access").delete().eq("granted_by", targetId));
-    if (organizerIds.length) {
-      await must(admin.from("audit_logs").delete().in("organizer_id", organizerIds));
-      if (eventIds.length) await must(admin.from("events").delete().in("id", eventIds));
-    }
-    await must(admin.from("organizer_applications").delete().eq("applicant_user_id", targetId));
-    await must(admin.from("organizer_applications").update({ reviewed_by: null }).eq("reviewed_by", targetId));
-    await must(admin.from("payment_evidence").update({ reviewed_by: null }).eq("reviewed_by", targetId));
-    await must(admin.from("audit_logs").update({ actor_user_id: null }).eq("actor_user_id", targetId));
-    if (organizerIds.length) await must(admin.from("organizers").delete().in("id", organizerIds));
-
-    const { error: deleteError } = await admin.auth.admin.deleteUser(targetId);
-    if (deleteError) fail("Related data cleanup finished, but the account login could not be deleted. Please inspect the records before retrying.");
+    await completeAccountDeletion(admin, targetId);
     return response(origin, 200, { ok: true, deleted: true, message: "Account and linked organiser data permanently deleted." });
   } catch (error) {
     console.error("manage-user-accounts failed", error);
