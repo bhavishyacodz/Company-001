@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(25);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -138,6 +138,22 @@ select is((
     and action = 'registration_payment_approved'
     and not (metadata ? 'confirmation_reference')
 ), 1, 'Owner audit log records payment review without participant identifiers');
+
+
+-- The privileged account-removal RPC must never be callable by browser roles.
+reset role;
+select ok(
+  not has_function_privilege('anon', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
+  'Anonymous visitors cannot execute account deletion preparation'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
+  'Authenticated users cannot execute privileged account deletion preparation'
+);
+select ok(
+  has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
+  'Service role can execute account deletion preparation'
+);
 
 select * from finish();
 rollback;
