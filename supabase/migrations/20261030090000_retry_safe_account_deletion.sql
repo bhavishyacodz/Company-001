@@ -151,7 +151,7 @@ begin
   -- rebuilds an empty job from the already-clean relational state.
   delete from private.account_deletion_jobs
   where user_id = p_user_id;
-  return true;
+  return found;
 end;
 $$;
 
