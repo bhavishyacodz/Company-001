@@ -63,7 +63,7 @@ const checks = [
   {
     name: "new organiser workspaces activate immediately without owner-role escalation",
     run: () => {
-      const sql = read("supabase/migrations/20261028050000_instant_organizer_workspace.sql");
+      const sql = read("supabase/migrations/20261028045634_instant_organizer_workspace.sql");
       const account = read("src/main.jsx");
       return sql.includes("create trigger organizer_applications_auto_activate")
         && sql.includes("status = 'approved'")
@@ -98,7 +98,7 @@ const checks = [
   {
     name: "organiser application review RPC enforces owner authorization and blocks public execution",
     run: () => {
-      const sql = read("supabase/migrations/202610270005_owner_application_review_rpc.sql");
+      const sql = read("supabase/migrations/20261027054910_owner_application_review_rpc.sql");
       return sql.includes("security definer")
         && sql.includes("set search_path = ''")
         && sql.includes("auth.uid() is null or not (select private.is_platform_owner())")
@@ -109,7 +109,7 @@ const checks = [
   {
     name: "event publication review RPC enforces owner authorization and blocks public execution",
     run: () => {
-      const sql = read("supabase/migrations/202610270006_owner_event_publication_review.sql");
+      const sql = read("supabase/migrations/20261027055827_owner_event_publication_review.sql");
       return sql.includes("security definer")
         && sql.includes("set search_path = ''")
         && sql.includes("auth.uid() is null or not (select private.is_platform_owner())")
@@ -121,7 +121,7 @@ const checks = [
   {
     name: "profile policies prevent client-side owner-role escalation",
     run: () => {
-      const sql = read("supabase/migrations/202610270001_company001_esports_foundation.sql");
+      const sql = read("supabase/migrations/20261027053304_company001_esports_foundation.sql");
       return sql.includes("grant update (display_name) on public.profiles to authenticated;")
         && sql.includes("using (id = (select auth.uid()))")
         && sql.includes("with check (id = (select auth.uid()) and platform_role = 'organizer')");
@@ -130,13 +130,13 @@ const checks = [
   {
     name: "delegated event access is event-scoped and owner-managed",
     run: () => {
-      const sql = read("supabase/migrations/20261027150621_organizer_access_panel.sql");
-      const accessPolicies = read("supabase/migrations/20261027161935_consolidate_organizer_event_access_policies.sql");
-      return sql.includes("a.event_id = e.id and a.user_id = (select auth.uid())")
-        && sql.includes("a.access_level = 'editor'")
-        && sql.includes("Only the platform owner can change organiser access status")
-        && accessPolicies.includes("using ((select private.is_platform_owner()))")
-        && accessPolicies.includes("with check ((select private.is_platform_owner()))");
+      const sql = read("supabase/migrations/20261027150621_organizer_access_panel.sql").replace(/\\s+/g, "");
+      const accessPolicies = read("supabase/migrations/20261027161935_consolidate_organizer_event_access_policies.sql").replace(/\\s+/g, "");
+      return sql.includes("a.event_id=e.idanda.user_id=(selectauth.uid())")
+        && sql.includes("a.access_level='editor'")
+        && sql.includes("Onlytheplatformownercanchangeorganiseraccessstatus")
+        && accessPolicies.includes("using((selectprivate.is_platform_owner()))")
+        && accessPolicies.includes("withcheck((selectprivate.is_platform_owner()))");
     },
   },
   {
@@ -164,7 +164,7 @@ const checks = [
   {
     name: "payment evidence remains private and rate-limit storage is server-only",
     run: () => {
-      const sql = read("supabase/migrations/202610270003_registration_endpoint_and_private_evidence.sql");
+      const sql = read("supabase/migrations/20261027054121_registration_endpoint_and_private_evidence.sql");
       return sql.includes("values ('payment-evidence', 'payment-evidence', false")
         && sql.includes("bucket_id = 'payment-evidence'")
         && sql.includes("revoke all on function public.consume_registration_rate_limit(text, timestamptz, integer) from public, anon, authenticated")
@@ -513,7 +513,7 @@ const checks = [
   {
     name: "participant records and payment evidence remain strictly organizer-owned",
     run: () => {
-      const privacy = read("supabase/migrations/20261028000000_organizer_registration_privacy.sql");
+      const privacy = read("supabase/migrations/20261030043305_organizer_registration_privacy.sql");
       return privacy.includes("create policy registrations_read_own_organizer_only")
         && privacy.includes("not (select private.is_platform_owner())")
         && privacy.includes("private.can_access_event(registrations.event_id)")
