@@ -85,7 +85,7 @@ select is((select count(*)::integer from public.registrations), 0, 'Platform own
 select is((select count(*)::integer from public.payment_evidence), 0, 'Platform owner cannot read payment-evidence metadata');
 select is((select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'), 0, 'Platform owner cannot read private screenshot objects');
 select throws_ok(
-  $select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'owner attempt')$,
+  $$select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'owner attempt')$$,
   '42501', 'Platform owner accounts cannot review participant payments',
   'Platform owner cannot review participant payments'
 );
