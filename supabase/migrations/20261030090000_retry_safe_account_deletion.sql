@@ -36,6 +36,17 @@ begin
   -- observe an empty path list while another request is preparing the job.
   perform pg_advisory_xact_lock(hashtextextended(p_user_id::text, 0));
 
+  if exists (
+    select 1 from public.profiles
+    where id = p_user_id and platform_role = 'owner'
+  ) then
+    raise exception 'platform owner accounts are protected' using errcode = '42501';
+  end if;
+
+  if not exists (select 1 from auth.users where id = p_user_id) then
+    raise exception 'target account does not exist' using errcode = 'P0002';
+  end if;
+
   select * into v_existing
   from private.account_deletion_jobs
   where user_id = p_user_id
@@ -122,7 +133,7 @@ begin
     raise exception 'service role required' using errcode = '42501';
   end if;
   update private.account_deletion_jobs
-  set status = 'storage_complete', updated_at = now()
+  set status = 'storage_complete', object_paths = '{}'::text[], updated_at = now()
   where user_id = p_user_id;
   return found;
 end;
