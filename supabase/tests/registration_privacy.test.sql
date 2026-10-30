@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(19);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- database created by GitHub Actions; it never connects to the production project.
@@ -93,8 +93,12 @@ select throws_ok(
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select ok(
+  not has_column_privilege('authenticated', 'public.registrations', 'payment_status', 'UPDATE'),
+  'Authenticated clients have no direct payment-status update privilege'
+);
 select throws_ok(
-  $$update public.registrations set payment_status = 'rejected' where id = '40000000-0000-4000-8000-000000000001'::uuid$$,
+  $update public.registrations set payment_status = 'rejected' where id = '40000000-0000-4000-8000-000000000001'::uuid$,
   '42501', null,
   'Direct payment status updates are denied'
 );
