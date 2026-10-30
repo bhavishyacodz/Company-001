@@ -55,6 +55,10 @@ insert into storage.objects (bucket_id, name, owner_id, metadata) values
   ('payment-evidence', '20000000-0000-4000-8000-000000000001/40000000-0000-4000-8000-000000000001/proof.png', '10000000-0000-4000-8000-000000000001', '{"mimetype":"image/png","size":128}'),
   ('payment-evidence', '20000000-0000-4000-8000-000000000002/40000000-0000-4000-8000-000000000002/proof.png', '10000000-0000-4000-8000-000000000002', '{"mimetype":"image/png","size":128}');
 
+-- Simulate an orphaned screenshot object: upload succeeded, but evidence metadata was never written.
+insert into storage.objects (bucket_id, name, owner_id, metadata) values
+  ('payment-evidence', '20000000-0000-4000-8000-000000000002/orphan-upload/proof.png', '10000000-0000-4000-8000-000000000002', '{"mimetype":"image/png","size":128}');
+
 -- Organizer A: can read only its own registration, evidence row, and Storage object.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
@@ -163,13 +167,13 @@ select set_config('request.jwt.claim.role', 'service_role', true);
 set local role service_role;
 select is(
   cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
-  1,
-  'Deletion preparation records the target organizer screenshot path'
+  2,
+  'Deletion preparation records metadata-linked and orphaned screenshot paths'
 );
 select is(
   cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
-  1,
-  'A retry receives the same screenshot path after the database phase'
+  2,
+  'A retry receives the same metadata-linked and orphaned screenshot paths'
 );
 select is(
   (select count(*)::integer from public.registrations where organizer_id = '20000000-0000-4000-8000-000000000002'),
@@ -213,7 +217,7 @@ select throws_ok(
 );
 delete from storage.objects
 where bucket_id = 'payment-evidence'
-  and name = '20000000-0000-4000-8000-000000000002/40000000-0000-4000-8000-000000000002/proof.png';
+  and left(name, length('20000000-0000-4000-8000-000000000002') + 1) = '20000000-0000-4000-8000-000000000002/';
 select is(
   public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
   true,
