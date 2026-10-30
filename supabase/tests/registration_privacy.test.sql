@@ -147,16 +147,19 @@ select is((
 -- The privileged account-removal RPC must never be callable by browser roles.
 reset role;
 select ok(
-  not has_function_privilege('anon', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
-  'Anonymous visitors cannot execute account deletion preparation'
+  not has_function_privilege('anon', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Anonymous visitors cannot execute either privileged account-deletion RPC'
 );
 select ok(
-  not has_function_privilege('authenticated', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
-  'Authenticated users cannot execute privileged account deletion preparation'
+  not has_function_privilege('authenticated', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Authenticated users cannot execute either privileged account-deletion RPC'
 );
 select ok(
-  has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE'),
-  'Service role can execute account deletion preparation'
+  has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Service role can execute both account-deletion RPCs'
 );
 
 
