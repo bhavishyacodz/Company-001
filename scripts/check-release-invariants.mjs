@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
@@ -545,7 +545,6 @@ const checks = [
   {
     name: "obsolete King participant viewer components stay deleted",
     run: () => {
-      const { existsSync } = await import("node:fs");
       return !existsSync(join(process.cwd(), "src/OwnerRegistrations.jsx"))
         && !existsSync(join(process.cwd(), "src/OwnerPaymentEvidence.jsx"));
     },
