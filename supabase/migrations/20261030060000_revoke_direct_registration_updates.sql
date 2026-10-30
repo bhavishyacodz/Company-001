@@ -5,7 +5,6 @@ begin;
 revoke update on table public.registrations from authenticated;
 revoke update (payment_status, registration_status) on table public.registrations from authenticated;
 
-commit;
 
 -- Keep participant-specific identifiers out of the platform-owner audit feed.
 -- The owner may see that an organizer reviewed a payment, but not a registration ID
@@ -95,3 +94,5 @@ begin
   );
 end;
 $function$;
+
+commit;
