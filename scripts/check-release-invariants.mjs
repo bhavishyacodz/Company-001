@@ -525,6 +525,38 @@ const checks = [
         && privacy.includes("Only the owning approved organiser can review this registration");
     },
   },
+
+  {
+    name: "payment-evidence endpoint parses bearer tokens and enforces organizer-only access",
+    run: () => {
+      const evidence = read("supabase/functions/view-payment-evidence/index.ts");
+      const oneSlashBearerPattern = String.raw`match(/^Bearer\s+(.+)$/i)`;
+      const twoSlashBearerPattern = String.raw`match(/^Bearer\\s+(.+)$/i)`;
+      return evidence.includes(oneSlashBearerPattern)
+        && !evidence.includes(twoSlashBearerPattern)
+        && evidence.includes('authClient.auth.getUser(token)')
+        && evidence.includes('profile?.platform_role === "owner"')
+        && evidence.includes('organizer?.owner_user_id !== user.id')
+        && evidence.includes('organizer?.status !== "approved"')
+        && evidence.includes('createSignedUrl(evidence.private_object_path, 60)')
+        && evidence.includes('"Cache-Control": "no-store"');
+    },
+  },
+  {
+    name: "public registration response never returns participant or screenshot data",
+    run: () => {
+      const registration = read("supabase/functions/register-esports/index.ts");
+      const response = registration.slice(registration.lastIndexOf("return reply(origin, 201, {"));
+      return response.includes("confirmation_reference:")
+        && response.includes("event_title:")
+        && response.includes("payment_status:")
+        && !response.includes("participant_name:")
+        && !response.includes("participant_email:")
+        && !response.includes("private_object_path:")
+        && !response.includes("signedUrl:");
+    },
+  },
+
   {
     name: "King dashboard has no participant directory or payment-evidence viewer",
     run: () => {
