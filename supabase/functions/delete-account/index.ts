@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { completeAccountDeletion } from "../_shared/account-deletion.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -67,59 +68,7 @@ Deno.serve(async (req: Request) => {
       return response(origin, 403, { error: "The platform owner account cannot be deleted from self-service settings. Use the protected owner account-management process." });
     }
 
-    const organizers = await must(admin.from("organizers").select("id").eq("owner_user_id", user.id));
-    const organizerIds = (organizers ?? []).map((item: { id: string }) => item.id);
-    const events = organizerIds.length
-      ? await must(admin.from("events").select("id").in("organizer_id", organizerIds))
-      : [];
-    const eventIds = (events ?? []).map((item: { id: string }) => item.id);
-    const registrations = organizerIds.length
-      ? await must(admin.from("registrations").select("id").in("organizer_id", organizerIds))
-      : [];
-    const registrationIds = (registrations ?? []).map((item: { id: string }) => item.id);
-
-    const evidenceByOrganizer = organizerIds.length
-      ? await must(admin.from("payment_evidence").select("private_object_path").in("organizer_id", organizerIds))
-      : [];
-    const evidenceByRegistration = registrationIds.length
-      ? await must(admin.from("payment_evidence").select("private_object_path").in("registration_id", registrationIds))
-      : [];
-    const paths = [...new Set([...(evidenceByOrganizer ?? []), ...(evidenceByRegistration ?? [])]
-      .map((item: { private_object_path: string }) => item.private_object_path).filter(Boolean))];
-
-    for (let index = 0; index < paths.length; index += 100) {
-      const { error } = await admin.storage.from("payment-evidence").remove(paths.slice(index, index + 100));
-      if (error) fail("Could not securely remove stored payment evidence. No account records were deleted; please contact support.");
-    }
-
-    if (organizerIds.length) {
-      await must(admin.from("payment_evidence").delete().in("organizer_id", organizerIds));
-    }
-    if (registrationIds.length) {
-      await must(admin.from("payment_evidence").delete().in("registration_id", registrationIds));
-      await must(admin.from("registrations").delete().in("id", registrationIds));
-    }
-    if (eventIds.length) {
-      await must(admin.from("organizer_event_access").delete().in("event_id", eventIds));
-    }
-    await must(admin.from("organizer_event_access").delete().eq("user_id", user.id));
-    await must(admin.from("organizer_event_access").delete().eq("granted_by", user.id));
-
-    if (organizerIds.length) {
-      await must(admin.from("audit_logs").delete().in("organizer_id", organizerIds));
-      if (eventIds.length) await must(admin.from("events").delete().in("id", eventIds));
-    }
-    await must(admin.from("organizer_applications").delete().eq("applicant_user_id", user.id));
-    await must(admin.from("organizer_applications").update({ reviewed_by: null }).eq("reviewed_by", user.id));
-    await must(admin.from("payment_evidence").update({ reviewed_by: null }).eq("reviewed_by", user.id));
-    await must(admin.from("audit_logs").update({ actor_user_id: null }).eq("actor_user_id", user.id));
-
-    if (organizerIds.length) {
-      await must(admin.from("organizers").delete().in("id", organizerIds));
-    }
-
-    const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
-    if (deleteError) fail("Your linked event data was removed, but the login could not be deleted automatically. Contact support to finish account removal.");
+    await completeAccountDeletion(admin, user.id);
     return response(origin, 200, { deleted: true, message: "Your account and linked organiser data have been deleted." });
   } catch (error) {
     console.error("delete-account failed", error);
