@@ -79,8 +79,14 @@ begin
   from (
     select pe.private_object_path as object_path
     from public.payment_evidence pe
-    where pe.organizer_id = any(v_organizer_ids)
-       or pe.registration_id = any(v_registration_ids)
+    where (pe.organizer_id = any(v_organizer_ids)
+       or pe.registration_id = any(v_registration_ids))
+      and exists (
+        select 1
+        from unnest(v_organizer_ids) as owned_organizer_id
+        where left(pe.private_object_path, length(owned_organizer_id::text) + 1)
+          = owned_organizer_id::text || '/'
+      )
     union
     select so.name as object_path
     from storage.objects so
