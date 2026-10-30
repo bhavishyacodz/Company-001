@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, CreditCard, Shield, RefreshCw, Building2, ShieldCheck, ClipboardList, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
@@ -49,7 +49,7 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, registrationResult, consultationResult, pendingEventResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
@@ -314,8 +314,6 @@ export default function OwnerPanel({ onBack }) {
         </section>
         <section id="owner-access" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">03 / PERMISSIONS</span><h2>Access control</h2><p>Give organisers the right level of access, or revoke it when needed.</p></div><OrganizerAccessPanel currentUser={user} /></section>
         <section id="owner-events" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">04 / CONTENT OPERATIONS</span><h2>Event publishing</h2><p>Review submitted events before they become visible to the public.</p></div><OwnerEventReview /></section>
-        <section id="owner-registrations" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">05 / PARTICIPANT OPERATIONS</span><h2>Registrations</h2><p>Find participants and check registration and payment status across events.</p></div><OwnerRegistrations /></section>
-        <section id="owner-payments" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">06 / PAYMENT OPERATIONS</span><h2>Payment evidence</h2><p>Review submitted payment evidence securely.</p></div><OwnerPaymentEvidence /></section>
         <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
         <section id="owner-user-accounts" className="owner-module-anchor">
           <div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT ADMINISTRATION</span><h2>User accounts</h2><p>Search every registered account, temporarily suspend access, restore suspended users, or permanently delete an account and its linked organiser data. Owner accounts are protected.</p></div>
