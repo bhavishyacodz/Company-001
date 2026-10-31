@@ -1054,8 +1054,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   return (
     <main className="account-shell">
       <section className="account-card">
-        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button>
-        <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
+        {!user ? <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button> : null}
+        {!user ? <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div> : null}
         <h1>{user ? "Your profile." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
         <p className="account-lead">{user ? "Your account and websites, all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
         {!user ? (
@@ -1172,7 +1172,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           </div>
         )}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
-        <p className="account-footnote">Never share your password or payment credentials. Live events still require owner publication review.</p>
+        {!user ? <p className="account-footnote">Never share your password or payment credentials. Live events still require owner publication review.</p> : null}
       </section>
     </main>
   );
