@@ -21,6 +21,7 @@ export default function OwnerPanel({ onBack }) {
   const [counts, setCounts] = useState({ events: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
+  const [planBusyId, setPlanBusyId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -53,7 +54,7 @@ export default function OwnerPanel({ onBack }) {
       if (!profile || profile.platform_role !== "owner") return;
       const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
-        supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
+        supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_forms,max_responses_per_form").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review")
@@ -81,6 +82,32 @@ export default function OwnerPanel({ onBack }) {
     } catch (e) {
       setError(e.message || "Could not load the owner workspace.");
     } finally { setLoading(false); }
+  };
+
+  const changeOrganizerPlan = async (organizer, planKey) => {
+    const plans = {
+      free: { storage_quota_bytes: 40000000, max_screenshot_bytes: 1000000, max_screenshots: 40, max_forms: 1, max_responses_per_form: 100 },
+      starter: { storage_quota_bytes: 200000000, max_screenshot_bytes: 3000000, max_screenshots: 200, max_forms: 3, max_responses_per_form: 500 },
+      business: { storage_quota_bytes: 1000000000, max_screenshot_bytes: 3000000, max_screenshots: 1000, max_forms: 10, max_responses_per_form: 2000 }
+    };
+    if (!plans[planKey] || organizer.plan_key === planKey) return;
+    if (!window.confirm("Change " + organizer.display_name + " to the " + planKey.toUpperCase() + " plan? Only do this after checking payment and available platform storage.")) return;
+    setPlanBusyId(organizer.id); setError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("organizers").update({
+        plan_key: planKey, ...plans[planKey], plan_activated_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      }).eq("id", organizer.id);
+      if (updateError) throw updateError;
+      const { error: auditError } = await supabase.from("audit_logs").insert({
+        actor_user_id: user.id, organizer_id: organizer.id, action: "organizer_plan_changed",
+        target_type: "organizer", target_id: organizer.id,
+        metadata: { previous_plan: organizer.plan_key || "free", plan_key: planKey, limits: plans[planKey] }
+      });
+      setNotice("Plan updated for " + organizer.display_name + "." + (auditError ? " Warning: the audit log could not be saved." : ""));
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not update the organiser plan.");
+    } finally { setPlanBusyId(""); }
   };
 
   const signOut = async () => {
@@ -316,7 +343,7 @@ export default function OwnerPanel({ onBack }) {
         </section>
         <section id="owner-access" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">03 / PERMISSIONS</span><h2>Access control</h2><p>Give organisers the right level of access, or revoke it when needed.</p></div><OrganizerAccessPanel currentUser={user} /></section>
         <section id="owner-events" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">04 / CONTENT OPERATIONS</span><h2>Event publishing</h2><p>Review submitted events before they become visible to the public.</p></div><OwnerEventReview /></section>
-        <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE & PLAN MANAGEMENT</span><h2>Organisers and plans</h2><p>Manage each organiser's allowance. Only activate a paid plan after confirming payment and checking that platform storage capacity is available.</p></div></div><div className="owner-inbox-summary"><div><strong>{organizers.filter(o => (o.plan_key || "free") === "free").length} / 10</strong><span>Free pilot workspaces</span></div><div><strong>{organizers.filter(o => o.plan_key === "starter").length}</strong><span>Starter workspaces</span></div><div><strong>{organizers.filter(o => o.plan_key === "business").length}</strong><span>Business workspaces</span></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th><th>PLAN</th><th>STORAGE</th><th>CHANGE PLAN</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td><td><strong>{(o.plan_key || "free").toUpperCase()}</strong></td><td>{((Number(o.storage_quota_bytes) || 40000000) / 1000000).toFixed(0)} MB</td><td><select aria-label={"Change plan for " + o.display_name} value={o.plan_key || "free"} disabled={Boolean(planBusyId)} onChange={event => changeOrganizerPlan(o, event.target.value)}><option value="free">Free · ₹0</option><option value="starter">Starter · ₹199/mo</option><option value="business">Business · ₹499/mo</option></select>{planBusyId === o.id ? <small>Saving…</small> : null}</td></tr>)}</tbody></table></div>}<p className="owner-muted">Plan changes are manual. The website does not collect subscription payments yet. The 500 MB pilot-wide screenshot ceiling remains in force until storage capacity is deliberately increased.</p></section>
         <section id="owner-user-accounts" className="owner-module-anchor">
           <div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT ADMINISTRATION</span><h2>User accounts</h2><p>Search every registered account, temporarily suspend access, restore suspended users, or permanently delete an account and its linked organiser data. Owner accounts are protected.</p></div>
           <div className="owner-card owner-user-admin">
