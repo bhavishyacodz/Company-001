@@ -93,7 +93,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: event, error: eventError } = await admin
     .from("events")
-    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, branding, organizers!inner(slug,status,owner_user_id)")
+    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, branding, organizers!inner(slug,status,owner_user_id,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_responses_per_form)")
     .eq("slug", eventSlug)
     .eq("organizers.slug", organizerSlug)
     .eq("status", "published")
@@ -125,6 +125,24 @@ Deno.serve(async (req: Request) => {
     return reply(origin, 409, { error: "Registration for this event has closed." });
   }
 
+  const organiserPlan = (event.organizers as {
+    plan_key?: string;
+    storage_quota_bytes?: number;
+    max_screenshot_bytes?: number;
+    max_screenshots?: number;
+    max_responses_per_form?: number;
+  } | null) ?? {};
+  const maxResponses = Math.max(1, Number(organiserPlan.max_responses_per_form) || 100);
+  const { count: responseCount, error: responseCountError } = await admin
+    .from("registrations").select("id", { count: "exact", head: true }).eq("event_id", event.id);
+  if (responseCountError) {
+    console.error("response_quota_check_failed");
+    return reply(origin, 503, { error: "Registration is temporarily unavailable. Please try again." });
+  }
+  if ((responseCount ?? 0) >= maxResponses) {
+    return reply(origin, 409, { error: "This form has reached its response limit. Please contact the organiser." });
+  }
+
   const fee = Number(event.entry_fee_minor ?? 0);
   const configuredFields = Array.isArray((event.branding as Record<string, unknown> | null)?.registrationFields)
     ? ((event.branding as Record<string, unknown>).registrationFields as Array<Record<string, unknown>>).slice(0, 8)
@@ -152,13 +170,41 @@ Deno.serve(async (req: Request) => {
   let imageBytes: Uint8Array | null = null;
   let imageType: { ext: string; type: string } | null = null;
   if (fee > 0) {
-    if (!(fileEntry instanceof File) || fileEntry.size < 1 || fileEntry.size > 3_000_000) {
-      return reply(origin, 400, { error: "Upload your payment screenshot (maximum 3 MB)." });
+    const maxScreenshotBytes = Math.min(3_000_000, Math.max(1, Number(organiserPlan.max_screenshot_bytes) || 1_000_000));
+    if (!(fileEntry instanceof File) || fileEntry.size < 1 || fileEntry.size > maxScreenshotBytes) {
+      return reply(origin, 400, { error: "Your organiser's current plan allows a screenshot up to " + Math.round(maxScreenshotBytes / 1_000_000) + " MB." });
     }
     imageBytes = new Uint8Array(await fileEntry.arrayBuffer());
     imageType = detectImage(imageBytes);
     if (!imageType || fileEntry.type !== imageType.type) {
       return reply(origin, 400, { error: "Use a valid PNG, JPG, or WEBP screenshot." });
+    }
+
+    const organiserQuota = Math.max(1, Number(organiserPlan.storage_quota_bytes) || 40_000_000);
+    const maxScreenshots = Math.max(1, Number(organiserPlan.max_screenshots) || 40);
+    const { data: organiserEvidence, error: organiserEvidenceError } = await admin
+      .from("payment_evidence").select("file_size_bytes").eq("organizer_id", event.organizer_id).limit(1000);
+    if (organiserEvidenceError) {
+      console.error("organiser_storage_quota_check_failed");
+      return reply(origin, 503, { error: "Screenshot storage is temporarily unavailable. Please try again." });
+    }
+    const organiserFiles = organiserEvidence ?? [];
+    const organiserBytesUsed = organiserFiles.reduce((sum, item) => sum + (Number(item.file_size_bytes) || 1_000_000), 0);
+    if (organiserFiles.length >= maxScreenshots || organiserBytesUsed + fileEntry.size > organiserQuota) {
+      return reply(origin, 409, { error: "Your screenshot allowance is full. Export your response data, save any screenshots you need, delete old evidence, or request a plan upgrade." });
+    }
+
+    // The pilot has a 500 MB platform-wide screenshot budget. The remaining
+    // 100 MB of the 1 GB Free bucket is deliberately held as an operating reserve.
+    const { data: allEvidence, error: globalEvidenceError } = await admin
+      .from("payment_evidence").select("file_size_bytes").limit(1000);
+    if (globalEvidenceError) {
+      console.error("platform_storage_quota_check_failed");
+      return reply(origin, 503, { error: "Screenshot storage is temporarily unavailable. Please try again." });
+    }
+    const platformBytesUsed = (allEvidence ?? []).reduce((sum, item) => sum + (Number(item.file_size_bytes) || 1_000_000), 0);
+    if (platformBytesUsed + fileEntry.size > 500_000_000) {
+      return reply(origin, 503, { error: "Company-001's free pilot screenshot capacity is full. Please try again after the platform owner expands storage." });
     }
   }
 
@@ -196,6 +242,7 @@ Deno.serve(async (req: Request) => {
       registration_id: registration.id,
       organizer_id: event.organizer_id,
       private_object_path: path,
+      file_size_bytes: imageBytes.length,
       review_status: "pending",
     });
     if (evidenceError) {
