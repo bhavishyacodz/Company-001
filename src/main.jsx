@@ -9,11 +9,12 @@ import {
 import "./styles.css";
 import "./premium-refresh.css";
 import "./experience-redesign.css";
-import "./tactile-design-system.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
 import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js";
+// Load shared tokens last so they consistently override legacy screen styles.
+import "./tactile-design-system.css";
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
