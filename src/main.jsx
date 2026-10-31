@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard, MapPin, Mail, PhoneCall,
-  Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
+  Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X, LogOut, Settings,
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
@@ -1056,8 +1056,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       <section className="account-card">
         {!user ? <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button> : null}
         {!user ? <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div> : null}
-        <h1>{user ? "Your profile." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">{user ? "Your account and websites, all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
+        {!user ? <h1>{mode === "signup" ? "Start your arena." : "Welcome back."}</h1> : null}
+        {!user ? <p className="account-lead">Create an account, set up your organiser workspace, and prepare registration pages for your kind of event.</p> : null}
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -1105,11 +1105,11 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 }}>
                   <button type="button" className="profile-settings-item" role="menuitem" onClick={() => { setSettingsOpen(false); setSettingsSection("security"); }}
                     style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
-                    <KeyRound size={16} /> Settings & security
+                    <Settings size={16} /> Settings
                   </button>
                   <button type="button" className="profile-settings-item" role="menuitem" onClick={signOut}
                     style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
-                    <ArrowRight size={16} /> Sign out
+                    <LogOut size={16} /> Sign out
                   </button>
                 </div>
               ) : null}
