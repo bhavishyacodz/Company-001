@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; PR #83 OAuth preview-origin investigation in progress; exact-head Pages preview succeeded)
+Last verified: 2026-10-31 (UTC; PR #83 OAuth regression/privacy checks passed; hosted redirect allow-list still needs confirmation)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -109,7 +109,7 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Baseline head `5878f5471ff7d3a95153d31d8f4ebfe819204216`: Actions run `41215659098` completed successfully, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration tests.
 - Baseline test head `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`: Actions run `41216029159` completed successfully: release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration all passed.
-- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: Actions runs `41217571388` (OAuth regression tests) and `41217573622` (privacy integration) were still running at last verification. Release invariants, frontend build, bounded request/account-deletion tests, and Edge Function type checks had passed. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
+- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: Actions run `41217571388` (OAuth regression assertions) completed successfully. Privacy run `41217573622` also completed successfully, including local Supabase migration replay and two-organiser privacy integration. Release invariants, frontend build, bounded request/account-deletion tests, and Edge Function type checks passed. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
 - Cloudflare Pages preview for exact latest head `9899218`: successful. Preview URL: https://e994caa6.company-001.pages.dev. Earlier baseline preview: https://fc138a01.company-001.pages.dev. These are previews only, not production.
 - The separate `Workers Builds: company-001` check failed for the baseline head and prior PR previews, pointing to a distinct Workers service. The latest exact-head Pages preview succeeded; branch-protection status returns 403 to the connected GitHub integration, so required-check status remains unverified. Do not assume the Workers check is non-blocking.
 - PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
