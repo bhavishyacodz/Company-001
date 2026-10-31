@@ -168,6 +168,25 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   ];
   const setupComplete = setupChecklist.filter(item => item.done).length;
   const setupPercent = Math.round((setupComplete / setupChecklist.length) * 100);
+  const dashboardActivity = [
+    ...events.filter(event => event.created_at).map(event => ({
+      id: "event-" + event.id,
+      kind: "EVENT CREATED",
+      title: event.title || "Untitled event",
+      detail: "Event workspace created",
+      at: event.created_at
+    })),
+    ...registrations.filter(registration => registration.created_at).map(registration => ({
+      id: "registration-" + registration.id,
+      kind: "REGISTRATION",
+      title: events.find(event => event.id === registration.event_id)?.title || "Your event",
+      detail: "A new participant registration was received",
+      at: registration.created_at
+    }))
+  ].filter(item => Number.isFinite(new Date(item.at).getTime()))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+    .slice(0, 5);
+
   const startFromTemplate = (templateKey) => {
     // Starting a different template must not resurrect an older unsaved draft after reload.
     try { window.localStorage.removeItem(`company001:editor:${user.id}`); } catch { /* Browser-local recovery is optional. */ }
@@ -470,6 +489,18 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         <div className="dashboard-stat"><span>REGISTRATIONS</span><strong>{registrations.length.toString().padStart(2,"0")}</strong><small>Participants received</small></div>
         <button className="dashboard-stat dashboard-stat-action" onClick={()=>changeWorkspaceTab("payments")}><span>PAYMENTS TO REVIEW</span><strong>{registrations.filter(r=>r.payment_status==="pending"||r.payment_status==="under_review").length.toString().padStart(2,"0")} <ArrowRight size={17}/></strong><small>Open review queue</small></button>
       </section>
+      {events.length===0 ? <section className="dashboard-onboarding">
+        <div className="dashboard-onboarding-head"><div><span className="dashboard-section-index">YOUR FIRST EVENT / THE QUICK START</span><h2>Three steps. One great launch.</h2><p>You don't need a website or coding skills. Start with a format, make it yours, then submit it for review.</p></div><span className="dashboard-onboarding-count">0 <i>/ 3</i></span></div>
+        <div className="dashboard-onboarding-steps">
+          <div className="dashboard-onboarding-step"><span>01</span><div><strong>Choose your format</strong><small>Pick a design made for your kind of event.</small></div><b>START HERE</b></div>
+          <div className="dashboard-onboarding-step"><span>02</span><div><strong>Make it yours</strong><small>Add your event details, branding and registration fields.</small></div><b>IN THE EDITOR</b></div>
+          <div className="dashboard-onboarding-step"><span>03</span><div><strong>Review, then share</strong><small>Submit for approval. Your public link appears when it is published.</small></div><b>READY TO LAUNCH</b></div>
+        </div>
+        <button className="dashboard-onboarding-cta" onClick={()=>startFromTemplate(EVENT_TEMPLATES[0].key)}>Choose your first template <ArrowRight size={16}/></button>
+      </section> : <section className="dashboard-activity">
+        <div className="dashboard-section-heading"><div><span className="dashboard-section-index">03 / THE LATEST</span><h2>Things are happening.</h2><p>A simple timeline of event creation and incoming registrations.</p></div><span className="dashboard-side-note">LATEST 5 UPDATES</span></div>
+        {dashboardActivity.length===0 ? <div className="dashboard-activity-empty">Your recent activity will appear here as you create events and receive registrations.</div> : <div className="dashboard-activity-list">{dashboardActivity.map((item,index)=><article className="dashboard-activity-item" key={item.id}><span className="dashboard-activity-marker">{String(index+1).padStart(2,"0")}</span><div className="dashboard-activity-copy"><span>{item.kind}</span><strong>{item.title}</strong><small>{item.detail}</small></div><time dateTime={new Date(item.at).toISOString()}>{new Date(item.at).toLocaleString(undefined,{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</time></article>)}</div>}
+      </section>}
       <section className="workspace-card dashboard-template-section">
         <div className="dashboard-section-heading"><div><span className="dashboard-section-index">01 / THE STARTING POINT</span><h2>Start with a spark.</h2><p>Choose a direction. Make it yours. Publish when it feels right.</p></div><span className="dashboard-side-note">7 CURATED FORMATS <span>↗</span></span></div>
         <div className="template-gallery">{EVENT_TEMPLATES.map((template,index)=>{const Icon=template.icon;return <button type="button" key={template.key} className="template-choice" onClick={()=>startFromTemplate(template.key)}><span className="template-choice-icon"><Icon size={19}/></span><span className="dashboard-template-number">0{index+1} / FORMAT</span><strong>{template.name}</strong><small>{template.description}</small><span className="template-choice-action">Build this event <ArrowRight size={13}/></span></button>;})}</div>
