@@ -84,7 +84,7 @@ export default function PlanUsagePanel({ organizer, events, registrations, usage
           <div className="plan-storage-numbers"><strong>{mb(usedBytes)} MB</strong><span>of {mb(storageLimit)} MB used</span></div>
           <div className="plan-storage-track"><span style={{ width: percent + "%" }}/></div>
           <div className="plan-storage-foot"><span>{evidenceCount} files counted</span><span>Max {mb(maxFile)} MB per file</span></div>
-          {percent >= 90 ? <p className="plan-storage-warning">You are close to your storage limit. Export what you need and review older screenshots before collecting more.</p> : <p className="plan-storage-note">Exporting responses does not delete screenshots. Delete evidence only after saving a copy if you need it.</p>}
+          {percent >= 90 ? <p className="plan-storage-warning">You are close to your storage limit. Export what you need and review older screenshots before collecting more.</p> : <p className="plan-storage-note">Export your responses, save any screenshot you need from Payments, then use Delete screenshot to free storage. Response records stay in your dashboard.</p>}
         </div>
       </div>
 
