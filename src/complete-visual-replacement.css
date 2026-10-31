@@ -304,3 +304,42 @@ a{color:inherit}
   content:"";position:absolute;left:16px;width:15px;height:15px;border:2px solid #cbd4ff;border-top-color:#6379df;border-radius:50%;animation:c001-spinner .75s linear infinite
 }
 @keyframes c001-spinner{to{transform:rotate(360deg)}}
+
+
+/* Organizer workspace: legibility, predictable hierarchy and site management. */
+.app.platform-ui .workspace-shell{background:var(--c001-bg)!important;color:var(--c001-ink)!important}
+.app.platform-ui .workspace-shell :is(h1,h2,h3,h4,strong,b,summary){color:#252d4b}
+.app.platform-ui .workspace-shell :is(p,small,.workspace-footnote,.workspace-muted,.workspace-event span,.workspace-reg span,.workspace-event small,.workspace-reg small){color:#59627e!important}
+.app.platform-ui .workspace-shell :is(label,.workspace-form>label,.workspace-property-help){color:#3f4969!important}
+.app.platform-ui .workspace-shell :is(input,select,textarea){background:#fff!important;color:#252d4b!important;border:1px solid #cbd3e5!important;box-shadow:inset 0 1px 2px rgba(30,45,90,.035)}
+.app.platform-ui .workspace-shell :is(input,select,textarea)::placeholder{color:#7c849c!important;opacity:1}
+.app.platform-ui .workspace-shell :is(.workspace-card,.workspace-event,.workspace-reg,.workspace-metrics>div,.workspace-section-visibility,.workspace-branding-builder,.workspace-fields-builder,.workspace-history-toolbar){background:#fff!important;color:#252d4b!important;border-color:#dce2ef!important;box-shadow:0 8px 24px rgba(45,58,105,.055)}
+.app.platform-ui .workspace-shell .workspace-tabs{border-color:#dce2ef!important}
+.app.platform-ui .workspace-shell .workspace-tabs button{background:#fff!important;color:#4b5677!important;border:1px solid #dce2ef!important;border-radius:12px!important;font-weight:700}
+.app.platform-ui .workspace-shell .workspace-tabs button.active{background:#e9edff!important;color:#344da9!important;border-color:#bfcaf6!important}
+.app.platform-ui .workspace-shell .workspace-empty{background:#f0f3fb!important;border:1px dashed #c5cee2!important;border-radius:16px;color:#515d7b!important}
+.app.platform-ui .workspace-shell .workspace-empty strong{color:#273252!important}
+.app.platform-ui .workspace-shell .workspace-form-note,.app.platform-ui .workspace-shell .template-sample-note{background:#eef2ff!important;color:#3f4e83!important;border-color:#d5defb!important}
+.app.platform-ui .workspace-shell .workspace-status{background:#edf0f7!important;color:#47516e!important}
+.app.platform-ui .workspace-shell .workspace-status.status-published,.app.platform-ui .workspace-shell .workspace-status.status-approved{background:#e2f5ec!important;color:#246b50!important}
+.app.platform-ui .workspace-shell .workspace-status.status-pending_review,.app.platform-ui .workspace-shell .workspace-status.status-pending,.app.platform-ui .workspace-shell .workspace-status.status-under_review{background:#fff3dc!important;color:#82591a!important}
+.app.platform-ui .workspace-shell .workspace-status.status-rejected,.app.platform-ui .workspace-shell .workspace-status.status-archived{background:#ffebe8!important;color:#9b4037!important}
+.app.platform-ui .workspace-shell .workspace-alert{background:#fff0ef!important;color:#963f3b!important;border-color:#f0c7c2!important}
+.app.platform-ui .workspace-shell .workspace-notice{background:#e8f7f0!important;color:#24694e!important;border-color:#bfe7d4!important}
+.app.platform-ui .sites-dashboard,.app.platform-ui .sites-detail-view,.app.platform-ui .sites-fields-view{color:#252d4b}
+.app.platform-ui .sites-fields-summary{padding:18px 20px;background:#eef2ff;border:1px solid #d9e1fb;border-radius:18px;margin:18px 0;color:#34436f}
+.app.platform-ui .sites-fields-summary strong{display:block;color:#2d3c70;font-size:15px}
+.app.platform-ui .sites-fields-summary p{margin:6px 0 0;color:#536184;font-size:13px;line-height:1.6}
+.app.platform-ui .sites-fields-list{display:grid;gap:10px}
+.app.platform-ui .sites-field-item{display:grid;grid-template-columns:38px minmax(0,1fr) auto;align-items:start;gap:12px;padding:16px 18px;background:#fff;border:1px solid #dce2ef;border-radius:16px;box-shadow:0 6px 18px rgba(45,58,105,.045)}
+.app.platform-ui .sites-field-number{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#edf0ff;color:#4058b3;font-weight:800;font-size:12px}
+.app.platform-ui .sites-field-item strong{display:block;color:#273252;font-size:14px}
+.app.platform-ui .sites-field-item small{display:block;margin-top:4px;color:#596580!important;font-size:12px}
+.app.platform-ui .sites-field-item p{margin:6px 0 0;color:#68718b!important;font-size:12px;line-height:1.5}
+.app.platform-ui .sites-field-required,.app.platform-ui .sites-field-optional{font-size:11px;font-weight:800;padding:6px 9px;border-radius:999px;white-space:nowrap}
+.app.platform-ui .sites-field-required{background:#fff0ed;color:#a64f40}
+.app.platform-ui .sites-field-optional{background:#edf2ff;color:#4a5da4}
+.app.platform-ui .sites-fields-empty{padding:22px;background:#f3f5fb;border:1px dashed #cbd3e5;border-radius:14px;color:#56617e;font-size:13px}
+.app.platform-ui .sites-fields-footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 0}
+.app.platform-ui .sites-fields-footer p{flex:1 1 100%;margin:0;color:#59627e!important;font-size:12px;line-height:1.6}
+@media(max-width:600px){.app.platform-ui .sites-field-item{grid-template-columns:32px minmax(0,1fr);padding:14px}.app.platform-ui .sites-field-required,.app.platform-ui .sites-field-optional{grid-column:2;justify-self:start}.app.platform-ui .sites-fields-footer .button{flex:1}}
