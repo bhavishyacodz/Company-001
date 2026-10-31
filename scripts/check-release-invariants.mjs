@@ -79,7 +79,7 @@ const checks = [
     },
   },
   {
-    name: "saved sessions restore account routing and template selection avoids login loops",
+    name: "saved sessions restore creator routing without a public template catalogue",
     run: () => {
       const account = read("src/main.jsx");
       const client = read("src/services/supabase/client.js");
@@ -93,9 +93,9 @@ const checks = [
         && account.includes("if (isLiveEventRoute) {")
         && account.includes('.eq("owner_user_id", user.id)')
         && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
-        && account.includes('const handleUseTemplate = async (templateKey)')
-        && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
-        && account.includes('onBack={() => setView("templates")}')
+        && account.includes('view === "templates" ? <main className="public-templates-shell">')
+        && !account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
+        && account.includes('onBack={() => setView("site")}')
         && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
     },
   },
@@ -330,7 +330,7 @@ const checks = [
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
       return editor.includes('editingStatus==="published"?"Save changes & request review":"Save changes"')
-        && editor.includes('"Create event draft"')
+        && editor.includes('"Save draft"')
         && editor.includes('saving?"Saving…":<><Save size={14}/>');
     },
   },
