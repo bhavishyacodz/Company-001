@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { readBodyLimited } from "../_shared/request-body.ts";
 
 const SITE_ORIGIN = "https://company-001.pages.dev";
 const corsHeaders = {
@@ -35,7 +36,16 @@ Deno.serve(async (req: Request) => {
     if (profileError) throw new Error("Could not verify account access.");
     if (profile?.platform_role === "owner") return reply(403, { error: "Platform owner accounts cannot view participant payment evidence. Only the owning organiser can access it." });
 
-    const body = await req.json().catch(() => ({}));
+    const bodyBytes = await readBodyLimited(req, 2_048);
+    if (!bodyBytes) return reply(413, { error: "Request is too large." });
+    let body: Record<string, unknown>;
+    try {
+      const parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bodyBytes));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid");
+      body = parsed as Record<string, unknown>;
+    } catch {
+      return reply(400, { error: "Invalid request." });
+    }
     const evidenceId = typeof body?.evidenceId === "string" ? body.evidenceId : "";
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(evidenceId)) return reply(400, { error: "A valid evidence ID is required" });
 
