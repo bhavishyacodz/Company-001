@@ -345,6 +345,10 @@
   .tactile-footer{align-items:flex-start}
   .tactile-footer>div{flex-direction:column;gap:7px}
 }
+@media(max-width:380px){
+  .tactile-center-pill{display:none}
+  .tactile-brand-pill{font-size:8px}
+}
 @media(prefers-reduced-motion:reduce){
   .tactile-home *, .tactile-home *::before,.tactile-home *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
