@@ -35,6 +35,7 @@ function App() {
   const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
+  const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -75,56 +76,98 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    const refresh = async (user) => {
-      if (!active) return null;
-      setSignedInUser(user || null);
-      if (!user) { setPlatformRole(null); return null; }
-      const { data: profile, error: profileError } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      // Never infer organizer privileges when the role lookup itself failed.
-      // A genuinely new OAuth user has no profile row yet and is onboarded
-      // through AccountPanel; a query error must fail closed instead.
-      const role = profileError ? "unknown" : (profile?.platform_role || "organizer");
-      if (active) setPlatformRole(role);
-      return role;
-    };
-    supabase.auth.getSession()
-      .then(async ({ data, error }) => {
-        if (error) throw error;
-        const initialUser = data.session?.user || null;
-        const initialRole = await refresh(initialUser);
-        if (active) {
-          const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
-          if (organizerGoogleCallback) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if (initialRole === "owner") {
-              try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
-              await supabase.auth.signOut();
-              if (active) setView("account");
-            } else {
-              setView("account");
-            }
-          } else {
-            const savedView = window.sessionStorage.getItem("company001:last-view");
-            if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-            if (data.session?.user && !isLiveEventRoute) {
-              if (initialRole === "owner") {
-                if (active) setView("king-login");
-              } else if (initialRole === "organizer") {
-                const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-                if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
-              } else if (active) {
-                setView("account");
-              }
-            }
-          }
+    let requestVersion = 0;
+    const protectedViews = ["organizer", "registrations", "customize"];
+    const resolveSession = async (user) => {
+      const version = ++requestVersion;
+      if (!active) return;
+      if (!user) {
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+        return;
+      }
+
+      setSignedInUser(user);
+      setPlatformRole(null);
+      setOrganizerWorkspaceReady(false);
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("platform_role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!active || version !== requestVersion) return;
+
+        // A missing profile or failed role lookup is unknown, never an organiser.
+        const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)
+          ? profile.platform_role
+          : "unknown";
+        setPlatformRole(role);
+
+        if (isLiveEventRoute) return;
+        if (role === "owner") {
+          setView("owner");
+          return;
         }
+        if (role !== "organizer") {
+          setView("account");
+          return;
+        }
+
+        const { data: organizer, error: organizerError } = await supabase
+          .from("organizers")
+          .select("id")
+          .eq("owner_user_id", user.id)
+          .maybeSingle();
+        if (!active || version !== requestVersion) return;
+        if (organizerError) {
+          setPlatformRole("unknown");
+          setView("account");
+          return;
+        }
+        if (!organizer) {
+          setView("account");
+          return;
+        }
+
+        setOrganizerWorkspaceReady(true);
+        const savedView = window.sessionStorage.getItem("company001:last-view");
+        setView(protectedViews.includes(savedView) ? savedView : "organizer");
+      } catch {
+        if (!active || version !== requestVersion) return;
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView(isLiveEventRoute ? "site" : "account");
+      }
+    };
+
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return resolveSession(data.session?.user || null);
       })
-      .catch(() => { if (active) setSignedInUser(null); })
+      .catch(() => {
+        if (!active) return;
+        requestVersion += 1;
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+      })
       .finally(() => { if (active) setAuthReady(true); });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      window.setTimeout(() => { if (active) refresh(session?.user || null); }, 0);
+      // Defer Supabase reads until after the auth callback has released its lock.
+      window.setTimeout(() => {
+        if (active) resolveSession(session?.user || null);
+      }, 0);
     });
-    return () => { active = false; listener.subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -202,13 +245,15 @@ function App() {
       setView("owner");
       return;
     }
-    if (!signedInUser) {
+    if (!signedInUser || platformRole !== "organizer") {
       setView("account");
       return;
     }
     const { data: organizer, error } = await supabase.from("organizers")
       .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
-    setView(!error && organizer ? "customize" : "account");
+    const ready = !error && Boolean(organizer);
+    setOrganizerWorkspaceReady(ready);
+    setView(ready ? "customize" : "account");
   };
 
   const copyPlatformLink = async () => {
@@ -221,8 +266,10 @@ function App() {
     }
   };
 
-  if (!authReady && ["organizer", "registrations", "customize"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Restoring your workspace…</h1><p>Checking your saved sign-in before opening your dashboard.</p></section></main>;
-  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if (!authReady && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
+  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }} onOpenKingLogin={() => setView("king-login")} />;
+  if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
   if (authReady && !signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} onOpenKingLogin={() => setView("king-login")} />;
 
