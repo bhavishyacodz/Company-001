@@ -79,12 +79,14 @@ const checks = [
       const account = read("src/main.jsx");
       return account.includes('storage: window.localStorage')
         && account.includes('window.localStorage.getItem("company001:selected-template")')
-        && account.includes('data.session?.user && !isLiveEventRoute')
-        && account.includes('supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id)')
+        && account.includes("const resolveSession = async (user)")
+        && account.includes("if (isLiveEventRoute) return;")
+        && account.includes('.eq("owner_user_id", user.id)')
+        && account.includes("setOrganizerWorkspaceReady(true)")
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
-        && account.includes('onOpenWorkspace={() => setView("organizer")}');
+        && account.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}');
     },
   },
   {
