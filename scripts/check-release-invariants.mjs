@@ -91,7 +91,7 @@ const checks = [
         && account.includes('if (role === "owner") {')
         && account.includes('if (role !== "organizer") {')
         && account.includes('.eq("owner_user_id", user.id)')
-        && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
+        && account.includes('const openOrganizerWorkspace = async (candidateUser = signedInUser, destination = "organizer") =>')
         && account.includes('view === "templates" ? <main className="public-templates-shell">')
         && !account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
