@@ -314,14 +314,14 @@ const checks = [
   },
 
   {
-    name: "template selection preserves restricted owner routing",
+    name: "default creator routing preserves restricted owner access",
     run: () => {
       const app = read("src/main.jsx");
       return app.includes('if (platformRole === "owner") {')
         && app.includes('setView("king-login");')
         && app.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()")
         && app.includes('assurance?.currentLevel === "aal2"')
-        && app.includes('if (!signedInUser || platformRole !== "organizer") {')
+        && app.includes('if (role !== "organizer") {')
         && app.includes('setView("account");');
     },
   },
