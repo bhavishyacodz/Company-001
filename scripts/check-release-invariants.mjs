@@ -239,6 +239,11 @@ const checks = [
     },
   },
   {
+    name: "participant registration responses are never cached",
+    run: () => read("supabase/functions/register-esports/index.ts")
+      .includes('"Cache-Control": "no-store"'),
+  },
+  {
     name: "suspension blocks signed evidence links and new public registrations",
     run: () => {
       const evidence = read("supabase/functions/view-payment-evidence/index.ts");
