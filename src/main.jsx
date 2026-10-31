@@ -114,6 +114,7 @@ function App() {
         const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
         if (organizerGoogleCallback) {
           window.history.replaceState({}, document.title, window.location.pathname);
+          const returningFromDeleteReauth = window.sessionStorage.getItem("company001:delete-reauth") === "1";
           if (role === "owner") {
             try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
             await supabase.auth.signOut();
@@ -125,6 +126,11 @@ function App() {
               setView("account");
               setAuthResolving(false);
             }
+            return;
+          }
+          if (returningFromDeleteReauth && role === "organizer") {
+            setView("account");
+            setAuthResolving(false);
             return;
           }
         }
@@ -826,6 +832,16 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   }, []);
 
   useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("company001:delete-reauth") === "1") {
+        window.sessionStorage.removeItem("company001:delete-reauth");
+        setDeleteOpen(true);
+        setNotice("Google sign-in refreshed. Confirm your email and type DELETE to continue.");
+      }
+    } catch { /* Optional session flag. */ }
+  }, []);
+
+  useEffect(() => {
     if (!user) { setApplication(null); setOrganizerWorkspace(null); return; }
     supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle()
       .then(({ data, error }) => { if (!error) setOrganizerWorkspace(data || null); });
@@ -949,13 +965,19 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setNotice("Enter the email address for the signed-in account exactly.");
       return;
     }
+    const hasPasswordIdentity = Boolean(
+      user.identities?.some(identity => identity.provider === "email") ||
+      user.app_metadata?.providers?.includes("email")
+    );
     setDeletingAccount(true);
     try {
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: deletePassword,
-      });
-      if (reauthError) throw new Error("Password verification failed. Check your password and try again.");
+      if (hasPasswordIdentity) {
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: deletePassword,
+        });
+        if (reauthError) throw new Error("Password verification failed. Check your password and try again.");
+      }
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       if (!sessionData.session) throw new Error("Your session expired. Sign in again and retry.");
@@ -1042,6 +1064,24 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setNotice(error.message || "Could not change your password. Please try again.");
     } finally {
       setChangingAccountPassword(false);
+    }
+  };
+
+  const reauthenticateGoogleForDeletion = async () => {
+    setNotice("");
+    try {
+      window.sessionStorage.setItem("company001:delete-reauth", "1");
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google&account_action=delete",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      try { window.sessionStorage.removeItem("company001:delete-reauth"); } catch { /* Optional session flag. */ }
+      setNotice(error.message || "Could not restart Google sign-in. Please try again.");
     }
   };
 
@@ -1176,10 +1216,17 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                     <form className="account-delete-form" onSubmit={deleteAccount}>
                       <p className="account-delete-warning">Confirm your account email, current password, and type DELETE.</p>
                       <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
-                      <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
+                      {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
+                        <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
+                      ) : (
+                        <div className="account-password-help">
+                          <p>Google accounts must reconfirm with Google before deletion. Your account will not be removed during sign-in.</p>
+                          <button className="button button-secondary" type="button" onClick={reauthenticateGoogleForDeletion}>Reconfirm with Google</button>
+                        </div>
+                      )}
                       <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
                       <div className="account-delete-actions">
-                        <button className="button button-danger" type="submit" disabled={deletingAccount}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
+                        <button className="button button-danger" type="submit" disabled={deletingAccount || !(user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email")) && !deletePassword}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
                         <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
                       </div>
                     </form>
