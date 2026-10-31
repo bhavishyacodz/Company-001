@@ -75,7 +75,7 @@ const checks = [
         && sql.includes("revoke all on function public.auto_activate_organizer_application() from public, anon, authenticated")
         && sql.includes("if current_user = 'postgres' then")
         && account.includes("Workspace activated. Opening your template editor")
-        && account.includes("Your workspace activates immediately");
+        && account.includes('if (data.status === "approved") await onOpenWorkspace(user);');
     },
   },
   {
@@ -300,10 +300,14 @@ const checks = [
       const account = read("src/main.jsx");
       const css = read("src/styles.css");
       return account.includes('className="profile-overview"')
-        && account.includes('MEMBER SINCE')
-        && account.includes('Browse templates')
-        && account.includes('onClick={signOut}')
-        && css.includes(".profile-overview-meta")
+        && account.includes('className="profile-overview-identity"')
+        && account.includes("<small>{user.email}</small>")
+        && account.includes('aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}')
+        && account.includes("My Sites")
+        && account.includes("Create Website")
+        && account.includes("settingsSection === \"security\"")
+        && account.includes("onClick={signOut}")
+        && css.includes(".profile-overview")
         && css.includes("@media(max-width:480px)");
     },
   },
@@ -413,9 +417,10 @@ const checks = [
     name: "editing an existing event opens its focused website canvas",
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
-      return editor.includes('editEvent(ev);changeWorkspaceTab("customize");window.scrollTo')
-        && !editor.includes('editEvent(ev);changeWorkspaceTab("customize");setWebsiteOnlyMode(false);window.scrollTo')
-        && editor.includes('setWebsiteOnlyMode(true);');
+      return editor.includes("const editEvent = (ev, { persist = true } = {})")
+        && editor.includes("setWebsiteOnlyMode(true);")
+        && editor.includes('onClick={()=>{editEvent(selectedSite);setTab("customize");}}')
+        && editor.includes("websiteOnlyMode:true");
     },
   },
   {
@@ -598,7 +603,7 @@ const checks = [
       const workspace = read("src/OrganizerWorkspace.jsx");
       return app.includes('if (role === "owner")')
         && app.includes('if (role !== "organizer")')
-        && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
+        && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("account");')
         && app.includes('if (profile?.platform_role === "owner")')
         && app.includes('onOpenWorkspace={openOrganizerWorkspace}')
         && app.includes('company001:google-owner-blocked')
