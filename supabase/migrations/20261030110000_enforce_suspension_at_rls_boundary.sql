@@ -21,6 +21,27 @@ $function$;
 revoke all on function private.is_active_account() from public, anon;
 grant execute on function private.is_active_account() to authenticated;
 
+create or replace function public.is_account_active_for_user(p_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, auth
+as $function$
+  select p_user_id is not null and exists (
+    select 1
+    from auth.users u
+    where u.id = p_user_id
+      and (u.banned_until is null or u.banned_until <= now())
+      and coalesce(u.raw_app_meta_data ->> 'account_suspended', 'false') <> 'true'
+  );
+$function$;
+
+-- This lookup is needed only by trusted service-role Edge Functions that
+-- create signed URLs or accept public registrations for an organizer.
+revoke all on function public.is_account_active_for_user(uuid) from public, anon, authenticated;
+grant execute on function public.is_account_active_for_user(uuid) to service_role;
+
 create or replace function private.is_organizer_owner(p_organizer_id uuid)
 returns boolean
 language sql
