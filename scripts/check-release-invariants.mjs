@@ -634,7 +634,7 @@ const checks = [
     run: () => {
       const app = read("src/main.jsx");
       const headerStart = app.indexOf('<div className="top-actions">');
-      const headerEnd = app.indexOf('</div>\\n      </header>', headerStart);
+      const headerEnd = app.indexOf('</div>\n      </header>', headerStart);
       const publicHeader = headerStart >= 0 && headerEnd > headerStart
         ? app.slice(headerStart, headerEnd)
         : "";
