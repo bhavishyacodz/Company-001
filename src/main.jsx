@@ -359,7 +359,9 @@ function App() {
       // record automatically; it does not require an organisation application or review.
       if (!organizer) {
         const metadata = candidateUser.user_metadata || {};
-        const displayName = String(metadata.display_name || metadata.full_name || metadata.name || candidateUser.email?.split("@")[0] || "My Website").trim().slice(0, 120) || "My Website";
+        const requestedName = String(metadata.display_name || metadata.full_name || metadata.name || candidateUser.email?.split("@")[0] || "").trim().slice(0, 120);
+        // The database requires organiser display names to contain at least two characters.
+        const displayName = requestedName.length >= 2 ? requestedName : "My Website";
         const { error: activationError } = await supabase.from("organizer_applications").insert({
           applicant_user_id: candidateUser.id,
           business_name: displayName,
