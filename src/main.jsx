@@ -1093,7 +1093,7 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
         business_name: businessName.trim(),
         category: "general",
         contact_email: user.email,
-        notes: "Creator workspace setup,
+        notes: "Creator workspace setup",
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
