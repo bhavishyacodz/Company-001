@@ -8,11 +8,15 @@ import {
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
-import "./premium-refresh.css";
-import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
+// Load all premium/authenticated themes after every screen/component stylesheet.
+// This prevents legacy component CSS from overriding the profile, dashboard and editor themes after login.
+import "./premium-refresh.css";
+import "./experience-redesign.css";
+// The dedicated gold dashboard theme loads last so it wins over broad legacy redesign rules.
+import "./dashboard-yellow.css";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
@@ -100,6 +104,10 @@ function App() {
               try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
               await supabase.auth.signOut();
               if (active) setView("account");
+            } else if (initialRole === "organizer" && initialUser) {
+              const { data: organizer, error: organizerError } = await supabase
+                .from("organizers").select("id").eq("owner_user_id", initialUser.id).maybeSingle();
+              if (active) setView(!organizerError && organizer ? "organizer" : "account");
             } else {
               setView("account");
             }
@@ -371,35 +379,7 @@ function App() {
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Organiser login <ArrowRight size={14} /></button></footer>
         </main> : <CompanyHome onStart={() => document.getElementById("process")?.scrollIntoView({ behavior: "smooth" })} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
-      ) : (
-        <main className="dashboard">
-          <aside className="sidebar">
-            <div className="workspace-label">WORKSPACE <ChevronDown size={14} /></div>
-            <div className="workspace-card"><div className="workspace-avatar">N</div><div><strong>{organizerName}</strong><small>Template 001 · eSports</small></div><span className="demo-pill">DEMO</span></div>
-            <div className="sidebar-section">MANAGE</div>
-            <button className={view === "organizer" ? "side-link selected" : "side-link"} onClick={() => setView("organizer")}><LayoutDashboard size={17} /> Overview</button>
-            <button className={view === "registrations" ? "side-link selected" : "side-link"} onClick={() => setView("registrations")}><Users size={17} /> Registrations <span className="side-count">12</span></button>
-            <button className={view === "customize" ? "side-link selected" : "side-link"} onClick={() => setView("customize")}><Settings2 size={17} /> Customize template</button>
-            <button className="side-link" onClick={() => setView("site")}><Globe2 size={17} /> Public event page <ExternalLink size={13} /></button>
-            <div className="sidebar-bottom"><div className="help-card"><CircleHelp size={18} /><strong>Need more?</strong><p>Ask Company-001 for custom features beyond this template.</p><button onClick={() => alert("Consultation booking will be connected in a later phase.")}>Request help <ArrowRight size={14} /></button></div><div className="side-foot">COMPANY-001 · ORGANISER</div></div>
-          </aside>
-          <section className="dashboard-main">
-            <div className="dashboard-top"><div><div className="section-kicker">ORGANISER WORKSPACE / TEMPLATE 001</div><h1>{view === "customize" ? "Make it yours." : view === "registrations" ? "Your registrations." : "Good evening, Nexus."}</h1><p>{view === "customize" ? "Edit the basics of your public event page." : view === "registrations" ? "Review incoming player entries and payment evidence." : "Here's what's happening with your tournament."}</p></div><button className="button button-primary" onClick={() => setView("site")}>Preview event <ExternalLink size={15} /></button></div>
-            {view === "customize" ? (
-              <div className="customize-layout"><div className="settings-panel"><div className="panel-header simple"><div><span className="panel-label">EVENT DETAILS</span><h3>Basic information</h3></div><Sparkles size={19} /></div><label className="setting-label">TOURNAMENT NAME<input value={eventName} onChange={e => setEventName(e.target.value)} /></label><label className="setting-label">ORGANISER / BRAND NAME<input value={organizerName} onChange={e => setOrganizerName(e.target.value)} /></label><div className="setting-label">ENTRY TYPE<div className="fixed-setting">Free entry · no payment collected</div></div><div className="setting-label">ACCENT COLOUR<div className="color-options"><button className={accent === "violet" ? "color-swatch violet active-swatch" : "color-swatch violet"} onClick={() => setAccent("violet")} aria-label="Violet accent" /><button className={accent === "cyan" ? "color-swatch cyan active-swatch" : "color-swatch cyan"} onClick={() => setAccent("cyan")} aria-label="Cyan accent" /><button className={accent === "lime" ? "color-swatch lime active-swatch" : "color-swatch lime"} onClick={() => setAccent("lime")} aria-label="Lime accent" /></div></div><div className="save-note"><Check size={15} /> Changes update this preview instantly. Live saving is not connected.</div></div><div className="preview-panel"><div className="preview-top"><span>LIVE PREVIEW</span><span className="preview-dot" /></div><div className="mini-preview"><div className="mini-nav">ARENA. <span>TOURNAMENT</span></div><div className="mini-hero"><div className="section-kicker">REGISTRATION OPEN</div><h2>{eventName || "YOUR TOURNAMENT"}</h2><p>YOUR NEXT VICTORY STARTS HERE.</p><span className="mini-button">REGISTER NOW</span></div><div className="mini-stats"><span>ENTRY <b>Free</b></span><span>FORMAT <b>Solo / Squad</b></span></div></div></div></div>
-            ) : view === "registrations" ? (
-              <div className="registrations-panel"><div className="table-toolbar"><div><h3>Player entries</h3><p>Example records for layout preview</p></div><button className="button button-secondary" onClick={() => alert("CSV export will work after live data is connected.")}>Export CSV <ArrowRight size={14} /></button></div><div className="table-scroll"><table><thead><tr><th>PLAYER</th><th>TEAM</th><th>GAME ID</th><th>REGISTRATION STATUS</th><th>ACTION</th></tr></thead><tbody>{sampleRegistrations.map((r) => <tr key={r.gameId}><td><strong>{r.name}</strong><small>Submitted today</small></td><td>{r.team}</td><td>{r.gameId}</td><td><span className={`status-chip ${r.tone}`}><span />{r.status}</span></td><td><button className="text-action" onClick={() => alert("Registration review will be connected after authentication and backend integration.")}>Review <ArrowRight size={13} /></button></td></tr>)}</tbody></table></div><div className="table-foot">Showing 3 sample entries <span>12 total · demo only</span></div></div>
-            ) : (
-              <>
-                <div className="status-banner"><div className="status-symbol"><Clock3 size={19} /></div><div><strong>Your template is in preview mode</strong><p>Connect your account and get organiser approval before publishing a real registration page.</p></div><span className="status-tag">NOT PUBLISHED</span></div>
-                <div className="stats-grid"><div className="stat-card"><span>TOTAL REGISTRATIONS <Users size={16} /></span><strong>12</strong><small><span className="stat-muted">Sample data</span></small></div><div className="stat-card"><span>PENDING ENTRIES <Users size={16} /></span><strong>4</strong><small>Need organiser review</small></div><div className="stat-card"><span>VERIFIED PLAYERS <ShieldCheck size={16} /></span><strong>8</strong><small>Sample data</small></div><div className="stat-card"><span>PAGE VISITS <Globe2 size={16} /></span><strong>248</strong><small>Illustrative only</small></div></div>
-                <div className="dashboard-grid"><div className="registrations-panel"><div className="table-toolbar"><div><h3>Recent registrations</h3><p>Keep payment evidence private and review each entry.</p></div><button className="text-action" onClick={() => setView("registrations")}>View all <ArrowRight size={14} /></button></div><div className="recent-list">{sampleRegistrations.slice(0,2).map(r => <div className="recent-row" key={r.gameId}><div className="player-avatar">{r.name.slice(0,1)}</div><div className="player-meta"><strong>{r.name}</strong><small>{r.team} · {r.gameId}</small></div><span className={`status-chip ${r.tone}`}><span />{r.status}</span></div>)}</div></div><div className="quick-panel"><span className="panel-label">QUICK ACTION</span><h3>Make the event<br />feel like yours.</h3><p>Update your event title, brand name and accent colour before you publish.</p><button className="button button-secondary full-width" onClick={() => setView("customize")}>Customize template <ArrowRight size={15} /></button><button className="copy-link" onClick={copyPlatformLink}><Copy size={15} /> {copied ? "Platform link copied" : "Copy platform link"}</button></div></div>
-                <div className="bottom-tip"><Sparkles size={17} /><div><strong>Need a feature that isn't here?</strong><p>Book a free 30-minute consultation. If you need custom development, you'll receive a quote to approve before work starts.</p></div><button onClick={() => alert("Free 30-minute consultation booking will be connected in a later phase.")}>Request consultation <ArrowRight size={14} /></button></div>
-              </>
-            )}
-          </section>
-        </main>
-      )}
+      ) : <CompanyHome onStart={() => document.getElementById("process")?.scrollIntoView({ behavior: "smooth" })} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />}
     </div>
   );
 }

@@ -58,3 +58,74 @@
 @media(prefers-reduced-motion:reduce){
   .dashboard-stage:before{animation:none!important}
 }
+
+
+/* Organizer profile tab — consistent black/gold visual system */
+.workspace-profile-panel{border:1px solid rgba(255,216,77,.2)!important;border-radius:18px!important;background:radial-gradient(ellipse at 95% 0%,rgba(255,216,77,.08),transparent 38%),linear-gradient(145deg,#191a13,#101310)!important;box-shadow:0 22px 60px rgba(0,0,0,.28)!important}
+.workspace-profile-hero{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:20px;margin:8px 0 18px;border:1px solid rgba(255,216,77,.18);border-radius:14px;background:linear-gradient(120deg,rgba(255,216,77,.09),rgba(255,255,255,.02) 55%,rgba(255,216,77,.04))}
+.workspace-profile-avatar{width:58px;height:58px;flex:0 0 58px;display:grid;place-items:center;border:1px solid rgba(255,232,138,.7);border-radius:17px;background:linear-gradient(145deg,#514019,#211b0b);color:#fff0a6;font-size:24px;font-weight:800;box-shadow:0 10px 25px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.18)}
+.workspace-profile-identity{display:grid;gap:5px;min-width:0;flex:1}
+.workspace-profile-identity>span,.workspace-profile-grid article>span{font-size:9px;letter-spacing:.13em;font-weight:800;color:#d9c88c}
+.workspace-profile-identity strong{font-size:19px;color:#fff8df;overflow-wrap:anywhere}
+.workspace-profile-identity small{display:flex;align-items:center;gap:6px;color:#b9b8ae;font-size:12px;overflow-wrap:anywhere}
+.workspace-profile-status{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid rgba(255,216,77,.24);border-radius:999px;background:rgba(255,216,77,.07);color:#ffe58b;font-size:9px;font-weight:800;letter-spacing:.08em}
+.workspace-profile-status i{width:7px;height:7px;border-radius:50%;background:#a8d7a0;box-shadow:0 0 10px rgba(168,215,160,.6)}
+.workspace-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.workspace-profile-grid article{display:grid;gap:8px;min-width:0;padding:15px;border:1px solid rgba(255,216,77,.14);border-radius:11px;background:linear-gradient(145deg,#1a1c14,#11140f)}
+.workspace-profile-grid article strong{font-size:13px;line-height:1.5;color:#f4f0df;overflow-wrap:anywhere;text-transform:capitalize}
+.workspace-profile-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.workspace-profile-privacy{margin:16px 0 0;padding:12px 14px;border-left:2px solid #d9b83c;background:rgba(255,216,77,.045);color:#bdbbaa;font-size:11px;line-height:1.7}
+@media(max-width:700px){.workspace-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workspace-profile-hero{align-items:flex-start}.workspace-profile-status{margin-left:73px}}
+@media(max-width:420px){.workspace-profile-grid{grid-template-columns:1fr}.workspace-profile-panel{padding:16px!important}.workspace-profile-hero{padding:14px}.workspace-profile-identity strong{font-size:16px}}
+
+
+/* Simple profile-first organiser dashboard (mobile-first, inspired by social profile layouts). */
+.ig-organizer-dashboard{display:grid;gap:22px;max-width:1040px;margin:0 auto}
+.ig-profile-card{padding:clamp(18px,3vw,28px);border:1px solid rgba(255,216,77,.2);border-radius:20px;background:radial-gradient(ellipse at 90% 0%,rgba(255,216,77,.09),transparent 42%),linear-gradient(145deg,#191a14,#101310);box-shadow:0 18px 48px rgba(0,0,0,.22)}
+.ig-profile-topline{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#d9c88c;font-size:10px;font-weight:800;letter-spacing:.13em}
+.ig-account-state{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid rgba(255,216,77,.18);border-radius:999px;color:#ffe58b;letter-spacing:.06em}
+.ig-account-state i{width:7px;height:7px;border-radius:50%;background:#a8d7a0;box-shadow:0 0 9px rgba(168,215,160,.6)}
+.ig-profile-main{display:flex;align-items:center;gap:17px;margin:26px 0 22px}
+.ig-profile-avatar{width:82px;height:82px;flex:0 0 82px;display:grid;place-items:center;border:2px solid #e8c95a;border-radius:50%;background:linear-gradient(145deg,#58451a,#211b0b 70%);color:#fff1ad;font-size:34px;font-weight:850;box-shadow:0 8px 25px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.18)}
+.ig-profile-identity{display:grid;gap:5px;min-width:0}
+.ig-profile-identity h2{margin:0;color:#fff8df;font-size:clamp(20px,4vw,28px);line-height:1.2;overflow-wrap:anywhere}
+.ig-profile-identity>span{color:#e9d27d;font-size:13px;font-weight:650}
+.ig-profile-identity small{color:#aaa99f;font-size:12px;overflow-wrap:anywhere}
+.ig-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid rgba(255,216,77,.14);border-bottom:1px solid rgba(255,216,77,.14);padding:13px 0;margin-bottom:18px}
+.ig-profile-stats button{display:grid;justify-items:center;gap:4px;min-width:0;border:0;border-right:1px solid rgba(255,216,77,.12);background:transparent;color:#aaa99f;cursor:pointer}
+.ig-profile-stats button:last-child{border-right:0}
+.ig-profile-stats strong{color:#fff3c1;font-size:22px;line-height:1.1}
+.ig-profile-stats span{font-size:11px}
+.ig-create-website{width:100%;min-height:48px;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 18px;border:1px solid #f4d45f;border-radius:12px;background:linear-gradient(135deg,#ffe98a,#ffd43b 52%,#e6a900);color:#171306;font-size:14px;font-weight:850;box-shadow:0 9px 24px rgba(255,212,59,.13),inset 0 1px rgba(255,255,255,.6);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease}
+.ig-create-website svg:last-child{margin-left:auto}
+.ig-create-website:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(255,212,59,.22)}
+.ig-websites-section{padding:clamp(16px,2.5vw,22px);border:1px solid rgba(255,216,77,.15);border-radius:18px;background:linear-gradient(145deg,#171911,#11140f)}
+.ig-section-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:16px}
+.ig-section-heading>div>span{color:#d9c88c;font-size:9px;font-weight:850;letter-spacing:.14em}
+.ig-section-heading h2{margin:5px 0 0;color:#fff5d0;font-size:20px}
+.ig-section-heading>span{color:#aaa99f;font-size:11px}
+.ig-empty-websites{display:grid;justify-items:center;gap:9px;padding:30px 15px;text-align:center;border:1px dashed rgba(255,216,77,.2);border-radius:14px}
+.ig-empty-icon{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;background:rgba(255,216,77,.09);color:#ffe58b}
+.ig-empty-websites strong{color:#fff3c1;font-size:15px}
+.ig-empty-websites p{max-width:300px;margin:0;color:#aaa99f;font-size:12px;line-height:1.6}
+.ig-empty-websites button{display:inline-flex;align-items:center;gap:8px;margin-top:7px;padding:10px 13px;border:1px solid rgba(255,216,77,.25);border-radius:10px;background:rgba(255,216,77,.08);color:#ffe58b;font-size:12px;font-weight:750;cursor:pointer}
+.ig-website-list{display:grid;gap:9px}
+.ig-website-row{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid rgba(255,216,77,.12);border-radius:13px;background:rgba(255,255,255,.018)}
+.ig-website-thumb{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;border:1px solid rgba(255,216,77,.28);border-radius:12px;background:linear-gradient(145deg,#514019,#211b0b);color:#fff0a6;font-weight:850;font-size:18px}
+.ig-website-info{display:grid;gap:4px;min-width:0;flex:1}
+.ig-website-info strong{color:#f7f0d9;font-size:13px;overflow-wrap:anywhere}
+.ig-website-info small{color:#aaa99f;font-size:10px;overflow-wrap:anywhere}
+.ig-website-status{width:max-content;padding:3px 7px;border:1px solid rgba(255,216,77,.15);border-radius:999px;color:#e9d27d;font-size:9px;font-weight:750}
+.ig-website-actions{display:flex;align-items:center;gap:7px}
+.ig-website-actions button,.ig-website-actions a{padding:7px 10px;border:1px solid rgba(255,216,77,.2);border-radius:9px;background:rgba(255,216,77,.06);color:#ffe58b;font-size:11px;font-weight:750;text-decoration:none;cursor:pointer}
+@media(max-width:560px){.ig-profile-main{gap:13px;margin:20px 0}.ig-profile-avatar{width:68px;height:68px;flex-basis:68px;font-size:28px}.ig-profile-stats strong{font-size:19px}.ig-website-row{gap:9px;padding:10px}.ig-website-thumb{width:40px;height:40px;flex-basis:40px}.ig-website-actions{gap:5px}.ig-website-actions button,.ig-website-actions a{padding:7px 8px}.ig-section-heading h2{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.ig-create-website{transition:none}}
+
+/* Compact Instagram-inspired organiser profile page */
+.ig-profile-page{max-width:760px;margin:0 auto}
+.ig-profile-page .ig-profile-main{margin-top:30px}
+.ig-profile-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.ig-profile-details>div{display:grid;gap:6px;min-width:0;padding:14px;border:1px solid rgba(255,216,77,.13);border-radius:12px;background:rgba(255,255,255,.018)}
+.ig-profile-details span{color:#d9c88c;font-size:9px;font-weight:850;letter-spacing:.12em}
+.ig-profile-details strong{color:#f4f0df;font-size:13px;overflow-wrap:anywhere;text-transform:capitalize}
+@media(max-width:480px){.ig-profile-details{grid-template-columns:1fr}.ig-profile-page .ig-profile-main{margin:20px 0}}

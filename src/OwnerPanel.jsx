@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, WalletCards, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
-// Keep the King Control Room redesign above nested legacy component styles.
-import "./experience-redesign.css";
+import "./finance-ledger.css";
 
 const supabase = createClient(
   "https://zkzgkovwktljfuuuhivk.supabase.co",
@@ -18,9 +17,15 @@ export default function OwnerPanel({ onBack }) {
   const [applications, setApplications] = useState([]);
   const [consultationRequests, setConsultationRequests] = useState([]);
   const [organizers, setOrganizers] = useState([]);
+  const [financeEntries, setFinanceEntries] = useState([]);
+  const [financeForm, setFinanceForm] = useState({ entry_type: "income", category: "subscription", amount: "", organizer_id: "", note: "" });
+  const [savingFinance, setSavingFinance] = useState(false);
+  const [platformStorageCapMB, setPlatformStorageCapMB] = useState("500");
+  const [savingStorageCap, setSavingStorageCap] = useState(false);
   const [counts, setCounts] = useState({ events: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
+  const [planBusyId, setPlanBusyId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -51,22 +56,28 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult, financeResult, storageSettingsResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
-        supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at").order("created_at", { ascending: false }).limit(100),
+        supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_forms,max_responses_per_form").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
-        supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review")
+        supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
+        supabase.from("platform_finance_entries").select("id,entry_type,category,amount_paise,note,organizer_id,recorded_by,created_at").order("created_at", { ascending: false }).limit(200),
+        supabase.from("platform_storage_settings").select("screenshot_quota_bytes").eq("id", 1).maybeSingle()
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
       if (eventResult.error) throw eventResult.error;
       if (consultationResult.error) throw consultationResult.error;
       if (pendingEventResult.error) throw pendingEventResult.error;
+      if (financeResult.error) throw financeResult.error;
+      if (storageSettingsResult.error) throw storageSettingsResult.error;
       setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
+      setFinanceEntries(financeResult.data || []);
+      setPlatformStorageCapMB(String(Math.round((Number(storageSettingsResult.data?.screenshot_quota_bytes) || 500000000) / 1000000)));
       const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
       if (accountLoadError) {
         setAccountError(accountLoadError.message || "Could not load user accounts.");
@@ -81,6 +92,81 @@ export default function OwnerPanel({ onBack }) {
     } catch (e) {
       setError(e.message || "Could not load the owner workspace.");
     } finally { setLoading(false); }
+  };
+
+  const changeOrganizerPlan = async (organizer, planKey) => {
+    const plans = {
+      free: { storage_quota_bytes: 40000000, max_screenshot_bytes: 1000000, max_screenshots: 40, max_forms: 1, max_responses_per_form: 100 },
+      starter: { storage_quota_bytes: 200000000, max_screenshot_bytes: 3000000, max_screenshots: 200, max_forms: 3, max_responses_per_form: 250 },
+      business: { storage_quota_bytes: 1000000000, max_screenshot_bytes: 3000000, max_screenshots: 1000, max_forms: 10, max_responses_per_form: 500 }
+    };
+    if (!plans[planKey] || organizer.plan_key === planKey) return;
+    if (!window.confirm("Change " + organizer.display_name + " to the " + planKey.toUpperCase() + " plan? Only do this after checking payment and available platform storage.")) return;
+    setPlanBusyId(organizer.id); setError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("organizers").update({
+        plan_key: planKey, ...plans[planKey], plan_activated_at: new Date().toISOString(), updated_at: new Date().toISOString()
+      }).eq("id", organizer.id);
+      if (updateError) throw updateError;
+      const { error: auditError } = await supabase.from("audit_logs").insert({
+        actor_user_id: user.id, organizer_id: organizer.id, action: "organizer_plan_changed",
+        target_type: "organizer", target_id: organizer.id,
+        metadata: { previous_plan: organizer.plan_key || "free", plan_key: planKey, limits: plans[planKey] }
+      });
+      setNotice("Plan updated for " + organizer.display_name + "." + (auditError ? " Warning: the audit log could not be saved." : ""));
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not update the organiser plan.");
+    } finally { setPlanBusyId(""); }
+  };
+
+  const saveFinanceEntry = async (event) => {
+    event.preventDefault();
+    const amount = Number(financeForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
+      setError("Enter a valid amount greater than ₹0.");
+      return;
+    }
+    setSavingFinance(true); setError(""); setNotice("");
+    try {
+      const { error: insertError } = await supabase.from("platform_finance_entries").insert({
+        entry_type: financeForm.entry_type,
+        category: financeForm.category,
+        amount_paise: Math.round(amount * 100),
+        note: financeForm.note.trim(),
+        organizer_id: financeForm.organizer_id || null,
+        recorded_by: user.id
+      });
+      if (insertError) throw insertError;
+      setFinanceForm({ entry_type: "income", category: "subscription", amount: "", organizer_id: "", note: "" });
+      setNotice("Finance entry saved. Allocation figures have been refreshed.");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not save the finance entry.");
+    } finally { setSavingFinance(false); }
+  };
+
+  const savePlatformStorageCap = async (event) => {
+    event.preventDefault();
+    const megabytes = Number(platformStorageCapMB);
+    if (!Number.isFinite(megabytes) || megabytes < 1 || megabytes > 100000) {
+      setError("Enter a shared storage cap between 1 MB and 100,000 MB.");
+      return;
+    }
+    if (!window.confirm("Save a shared screenshot cap of " + megabytes.toLocaleString("en-IN") + " MB? Only increase this after the Supabase storage allowance has actually been upgraded. This setting does not purchase storage.")) return;
+    setSavingStorageCap(true); setError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("platform_storage_settings").update({
+        screenshot_quota_bytes: Math.round(megabytes * 1000000),
+        updated_at: new Date().toISOString(),
+        updated_by: user.id
+      }).eq("id", 1);
+      if (updateError) throw updateError;
+      setNotice("Shared screenshot capacity updated. Existing organiser quotas remain unchanged.");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not update shared screenshot capacity.");
+    } finally { setSavingStorageCap(false); }
   };
 
   const signOut = async () => {
@@ -244,6 +330,7 @@ export default function OwnerPanel({ onBack }) {
         <nav className="owner-command-nav" aria-label="Owner dashboard sections">
           <a href="#owner-overview"><LayoutDashboard size={16}/><span>Overview</span></a>
           <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>
+          <a href="#owner-finance"><WalletCards size={16}/><span>Finance & reinvestment</span></a>
           <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
           <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
           <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span><b>{counts.pendingEvents}</b></a>
@@ -259,6 +346,47 @@ export default function OwnerPanel({ onBack }) {
           <div className="owner-metric"><span>EVENTS TO REVIEW</span><strong>{counts.pendingEvents}</strong><small>Awaiting publication decision</small></div>
           <div className="owner-metric"><span>ALL EVENTS</span><strong>{counts.events}</strong><small>Total event records</small></div>
         </div>
+        <section id="owner-finance" className="owner-card">
+          <div className="owner-section-head"><div><span className="panel-label">01 / FINANCE & REINVESTMENT</span><h2>Money in. Costs out. Growth planned.</h2><p>Record confirmed plan payments and actual expenses. The allocation below is a planning guide only; it does not move money automatically.</p></div></div>
+          <div className="owner-inbox-summary">
+            <div><strong>₹{(financeEntries.filter(entry => entry.entry_type === "income").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Recorded income</span></div>
+            <div><strong>₹{(financeEntries.filter(entry => entry.entry_type === "expense").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Recorded expenses</span></div>
+            <div><strong>₹{((financeEntries.reduce((sum, entry) => sum + (entry.entry_type === "income" ? 1 : -1) * Number(entry.amount_paise || 0), 0)) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Remaining balance</span></div>
+          </div>
+          <form className="owner-storage-cap-control" onSubmit={savePlatformStorageCap}>
+            <div><span className="panel-label">PLATFORM CAPACITY CONTROL</span><h3>Shared screenshot storage</h3><p>Current pilot cap: {Number(platformStorageCapMB).toLocaleString("en-IN")} MB. Increase this only after the Supabase storage plan has been upgraded and verified. The database and upload service both enforce this value.</p></div>
+            <label>New shared cap (MB)<input type="number" min="1" max="100000" step="1" value={platformStorageCapMB} onChange={event => setPlatformStorageCapMB(event.target.value)}/></label>
+            <button className="button button-primary" type="submit" disabled={savingStorageCap}>{savingStorageCap ? "Saving…" : "Save shared capacity"}</button>
+          </form>
+          <div className="owner-finance-allocation">
+            <div><span className="panel-label">SUGGESTED SPLIT OF RECORDED INCOME</span><p>Use this as a budget guide after confirming receipts. Review actual costs before spending.</p></div>
+            {[
+              ["Infrastructure", 50, "#4b94d1"],
+              ["Emergency reserve", 20, "#4ba77a"],
+              ["Product development", 20, "#a18bd4"],
+              ["Fees & refunds reserve", 10, "#d1a34d"]
+            ].map(([label, percent, color]) => {
+              const income = financeEntries.filter(entry => entry.entry_type === "income").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100;
+              const amount = income * Number(percent) / 100;
+              return <div className="owner-finance-allocation-row" key={label}>
+                <span><i style={{ background: color }}/>{label}</span><strong>₹{amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><small>{percent}%</small>
+                <div className="owner-finance-bar"><span style={{ width: percent + "%", background: color }}/></div>
+              </div>;
+            })}
+          </div>
+          <form className="owner-finance-form" onSubmit={saveFinanceEntry}>
+            <div><span className="panel-label">RECORD A REAL TRANSACTION</span><h3>Add income or expense</h3><p>Only record money actually received or spent. Plan upgrades remain manual.</p></div>
+            <label>Entry type<select value={financeForm.entry_type} onChange={event => setFinanceForm(current => ({ ...current, entry_type: event.target.value, category: event.target.value === "income" ? "subscription" : "infrastructure" }))}><option value="income">Income received</option><option value="expense">Expense paid</option></select></label>
+            <label>Category<select value={financeForm.category} onChange={event => setFinanceForm(current => ({ ...current, category: event.target.value }))}>{financeForm.entry_type === "income" ? <><option value="subscription">Premium subscription</option><option value="founding-pilot">Founding pilot payment</option><option value="other-income">Other income</option></> : <><option value="infrastructure">Hosting / infrastructure</option><option value="payment-fee">Payment fee</option><option value="refund">Refund</option><option value="development">Product development</option><option value="other-expense">Other expense</option></>}</select></label>
+            <label>Amount (₹)<input type="number" min="0.01" max="100000000" step="0.01" value={financeForm.amount} onChange={event => setFinanceForm(current => ({ ...current, amount: event.target.value }))} required placeholder="500"/></label>
+            <label>Related organiser (optional)<select value={financeForm.organizer_id} onChange={event => setFinanceForm(current => ({ ...current, organizer_id: event.target.value }))}><option value="">Not linked to an organiser</option>{organizers.map(item => <option key={item.id} value={item.id}>{item.display_name}</option>)}</select></label>
+            <label className="owner-finance-note">Note<input value={financeForm.note} onChange={event => setFinanceForm(current => ({ ...current, note: event.target.value }))} maxLength={500} placeholder="e.g. Starter plan payment confirmed"/></label>
+            <button className="button button-primary" type="submit" disabled={savingFinance}>{savingFinance ? "Saving…" : "Save finance entry"}</button>
+          </form>
+          <div className="owner-finance-ledger"><div className="owner-section-head"><div><span className="panel-label">RECENT TRANSACTIONS</span><h3>Finance ledger</h3></div><span className="owner-muted">Latest 200 entries</span></div>
+            {financeEntries.length === 0 ? <p className="owner-muted">No transactions recorded yet. When a plan payment is actually received or a bill is paid, record it here.</p> : <div className="owner-table-wrap"><table><thead><tr><th>TYPE</th><th>CATEGORY</th><th>AMOUNT</th><th>NOTE</th><th>DATE</th></tr></thead><tbody>{financeEntries.map(entry => <tr key={entry.id}><td><span className={"status-chip " + (entry.entry_type === "income" ? "approved" : "pending")}><span/>{entry.entry_type}</span></td><td>{entry.category.replaceAll("-", " ")}</td><td><strong>{entry.entry_type === "income" ? "+" : "−"}₹{(Number(entry.amount_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong></td><td>{entry.note || "—"}</td><td>{new Date(entry.created_at).toLocaleDateString("en-IN")}</td></tr>)}</tbody></table></div>}
+          </div>
+        </section>
         <section id="owner-enquiries" className="owner-card">
           <div className="owner-section-head"><div><span className="panel-label">01 / CUSTOMER PIPELINE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
           <div className="owner-inbox-summary">
@@ -316,7 +444,7 @@ export default function OwnerPanel({ onBack }) {
         </section>
         <section id="owner-access" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">03 / PERMISSIONS</span><h2>Access control</h2><p>Give organisers the right level of access, or revoke it when needed.</p></div><OrganizerAccessPanel currentUser={user} /></section>
         <section id="owner-events" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">04 / CONTENT OPERATIONS</span><h2>Event publishing</h2><p>Review submitted events before they become visible to the public.</p></div><OwnerEventReview /></section>
-        <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE DIRECTORY</span><h2>Organisers</h2><p>Quick visibility into active and suspended workspaces.</p></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td></tr>)}</tbody></table></div>}</section>
+        <section id="owner-organisers" className="owner-card"><div className="owner-section-head"><div><span className="panel-label">07 / WORKSPACE & PLAN MANAGEMENT</span><h2>Organisers and plans</h2><p>Manage each organiser's allowance. Only activate a paid plan after confirming payment and checking that platform storage capacity is available.</p></div></div><div className="owner-inbox-summary"><div><strong>{organizers.filter(o => (o.plan_key || "free") === "free").length} / 10</strong><span>Free pilot workspaces</span></div><div><strong>{organizers.filter(o => o.plan_key === "starter").length}</strong><span>Starter workspaces</span></div><div><strong>{organizers.filter(o => o.plan_key === "business").length}</strong><span>Business workspaces</span></div></div>{organizers.length === 0 ? <p className="owner-muted">No organiser workspaces have been created yet.</p> : <div className="owner-table-wrap"><table><thead><tr><th>ORGANISER</th><th>PUBLIC SLUG</th><th>STATUS</th><th>PLAN</th><th>STORAGE</th><th>CHANGE PLAN</th></tr></thead><tbody>{organizers.map(o => <tr key={o.id}><td>{o.display_name}</td><td><code>{o.slug}</code></td><td><span className={"status-chip " + (o.status === "approved" ? "approved" : "pending")}><span />{o.status}</span></td><td><strong>{(o.plan_key || "free").toUpperCase()}</strong></td><td>{((Number(o.storage_quota_bytes) || 40000000) / 1000000).toFixed(0)} MB</td><td><select aria-label={"Change plan for " + o.display_name} value={o.plan_key || "free"} disabled={Boolean(planBusyId)} onChange={event => changeOrganizerPlan(o, event.target.value)}><option value="free">Free · ₹0</option><option value="starter">Starter · ₹199/mo</option><option value="business">Business · ₹499/mo</option></select>{planBusyId === o.id ? <small>Saving…</small> : null}</td></tr>)}</tbody></table></div>}<p className="owner-muted">Plan changes are manual. The website does not collect subscription payments yet. The 500 MB pilot-wide screenshot ceiling remains in force until storage capacity is deliberately increased.</p></section>
         <section id="owner-user-accounts" className="owner-module-anchor">
           <div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT ADMINISTRATION</span><h2>User accounts</h2><p>Search every registered account, temporarily suspend access, restore suspended users, or permanently delete an account and its linked organiser data. Owner accounts are protected.</p></div>
           <div className="owner-card owner-user-admin">
