@@ -10,8 +10,8 @@ const supabase = createClient(
 
 const PLANS = {
   free: { name: "Free pilot", price: "₹0", cadence: "forever", storage: 40_000_000, screenshots: 40, maxFile: 1_000_000, forms: 1, responses: 100 },
-  starter: { name: "Starter", price: "₹199", cadence: "/ month", storage: 200_000_000, screenshots: null, maxFile: 3_000_000, forms: 3, responses: 500 },
-  business: { name: "Business", price: "₹499", cadence: "/ month", storage: 1_000_000_000, screenshots: null, maxFile: 3_000_000, forms: 10, responses: 2000 },
+  starter: { name: "Starter", price: "₹199", cadence: "/ month", storage: 200_000_000, screenshots: null, maxFile: 3_000_000, forms: 3, responses: 250 },
+  business: { name: "Business", price: "₹499", cadence: "/ month", storage: 1_000_000_000, screenshots: null, maxFile: 3_000_000, forms: 10, responses: 500 },
 };
 
 const mb = (bytes) => (bytes / 1_000_000).toFixed(bytes >= 10_000_000 ? 0 : 1);
