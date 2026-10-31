@@ -189,6 +189,23 @@ const checks = [
     },
   },
   {
+    name: "account deletion failure paths are tested before Auth removal",
+    run: () => {
+      const helper = read("supabase/functions/_shared/account-deletion.ts");
+      const tests = read("supabase/functions/_shared/account-deletion.test.ts");
+      const workflow = read(".github/workflows/local-privacy-integration.yml");
+      return helper.includes("prepare_account_deletion")
+        && helper.includes("complete_account_deletion_storage")
+        && tests.includes("Storage failure preserves the deletion job")
+        && tests.includes("malformed Storage manifest fails closed")
+        && tests.includes("Storage completion failure prevents Auth deletion")
+        && tests.includes("Auth deletion failure is retryable")
+        && tests.includes("already-removed Auth identity as success")
+        && tests.includes("removed in batches of at most 100")
+        && workflow.includes("account-deletion.test.ts");
+    },
+  },
+  {
     name: "suspension is enforced at the database RLS boundary",
     run: () => {
       const migration = read("supabase/migrations/20261030110000_enforce_suspension_at_rls_boundary.sql");
