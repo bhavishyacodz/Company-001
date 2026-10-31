@@ -1,27 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Gamepad2, Music2, Trophy, GraduationCap, Palette, UsersRound, BookOpen, Copy, Undo2, Redo2, LogOut, KeyRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Copy, Undo2, Redo2, LogOut, KeyRound } from "lucide-react";
+import { EVENT_TEMPLATES, getTemplate } from "./templates/eventTemplateRegistry.js";
 import "./workspace.css";
 import "./dashboard-yellow.css";
 // Load the product redesign after legacy workspace styles so authenticated screens retain it.
 import "./experience-redesign.css";
 import { supabase } from "./services/supabase/client.js";
 
-const EVENT_TEMPLATES = [
-  { key:"esports-001", category:"esports", name:"eSports tournament", label:"eSports", icon:Gamepad2, description:"Gaming brackets, player IDs, squads and entry rules.", title:"Nexus Open Qualifiers", fieldLabel:"GAME / TITLE", fieldPlaceholder:"e.g. BGMI, Valorant, Free Fire", teamSize:4, gameTitle:"BGMI", sampleDescription:"Join the open qualifiers, check your match schedule, and follow organiser updates.", sampleRules:"Use your own account. Cheating and abusive conduct are not allowed. Follow the match schedule and organiser decisions." },
-  { key:"garba-001", category:"garba", name:"Garba / Navratri", label:"Garba", icon:Music2, description:"Pass registration, venue details, session timings and dress notes.", title:"Navratri Garba Night", fieldLabel:"EVENT TYPE / SESSION", fieldPlaceholder:"e.g. Family pass, Day 2 evening", teamSize:1, gameTitle:"Garba Night", sampleDescription:"Celebrate Navratri with an evening of Garba. Check the selected session, venue details and entry instructions before registering.", sampleRules:"Carry your registration confirmation. Follow venue staff instructions and respect other attendees. Entry depends on venue capacity and safety rules." },
-  { key:"sports-001", category:"sports", name:"Sports tournament", label:"Sports", icon:Trophy, description:"Teams, fixtures, venue, age groups and competition rules.", title:"City Champions Cup", fieldLabel:"SPORT / DIVISION", fieldPlaceholder:"e.g. Football U-17, Badminton Open", teamSize:11, gameTitle:"Football", sampleDescription:"Register your team for the city competition. Review the division, venue, fixture schedule and team requirements before submitting.", sampleRules:"Teams must arrive before their scheduled fixture. Follow the published competition rules and officials decisions." },
-  { key:"workshop-001", category:"workshop", name:"Workshop / seminar", label:"Workshop", icon:BookOpen, description:"Seat reservations, agenda, speaker and attendee instructions.", title:"Creative Skills Workshop", fieldLabel:"SESSION / TRACK", fieldPlaceholder:"e.g. Beginner session, Track A", teamSize:1, gameTitle:"Workshop", sampleDescription:"Reserve a seat for this practical workshop. The organiser will share the agenda, venue or joining details, and any preparation required.", sampleRules:"Please arrive on time and follow the facilitator instructions. Contact the organiser if you can no longer attend." },
-  { key:"coaching-001", category:"coaching", name:"Coaching / classes", label:"Coaching", icon:GraduationCap, description:"Batch enrolment, course level, schedule and contact information.", title:"Foundation Learning Batch", fieldLabel:"COURSE / BATCH", fieldPlaceholder:"e.g. JEE Foundation, Morning batch", teamSize:1, gameTitle:"Coaching class", sampleDescription:"Enquire about this course or batch. Add your preferred batch and review the schedule and enrolment information supplied by the organiser.", sampleRules:"Submitting this form is an enquiry unless the organiser explicitly confirms enrolment. Confirm fees and schedule directly with the provider." },
-  { key:"cultural-001", category:"cultural", name:"Cultural event", label:"Cultural", icon:Palette, description:"Performances, auditions, participant categories and event schedules.", title:"Rhythm & Culture Fest", fieldLabel:"PERFORMANCE / CATEGORY", fieldPlaceholder:"e.g. Solo dance, Group music", teamSize:1, gameTitle:"Cultural fest", sampleDescription:"Register for a cultural showcase featuring performances and community talent. Select the relevant category and follow the event schedule.", sampleRules:"Performers must follow the event schedule, stage instructions and published participation rules." },
-  { key:"community-001", category:"community", name:"Community meetup", label:"Community", icon:UsersRound, description:"Meetups, club gatherings, volunteering and community sessions.", title:"Local Creators Meetup", fieldLabel:"GROUP / SESSION", fieldPlaceholder:"e.g. Volunteer, Creator circle", teamSize:1, gameTitle:"Community meetup", sampleDescription:"Join a local gathering to meet people, share ideas and participate in community activities. Check the session details before attending.", sampleRules:"Treat attendees respectfully, follow venue guidance and contact the organiser if plans change. Do not share other attendees private information." }
-];
 const getSafeHttpsImageUrl = (value) => {
   try {
     const parsed = new URL(String(value || "").trim());
     return parsed.protocol === "https:" && parsed.hostname && !parsed.username && !parsed.password ? parsed.href : "";
   } catch { return ""; }
 };
-const getTemplate = (key) => EVENT_TEMPLATES.find((item) => item.key === key) || EVENT_TEMPLATES[0];
 const isRecoverableFormDraft = (draft) => Boolean(
   draft && typeof draft === "object" && !Array.isArray(draft) &&
   EVENT_TEMPLATES.some(template => template.key === draft.template_key) &&

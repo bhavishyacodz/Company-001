@@ -1,0 +1,38 @@
+/*
+ * Semantic design-system aliases.
+ * Values mirror the current production appearance; migrating components to
+ * these tokens is intentionally incremental to avoid a surprise redesign.
+ */
+:root {
+  --ds-color-canvas: var(--bg, #090b12);
+  --ds-color-surface: var(--panel, #11141e);
+  --ds-color-surface-raised: var(--panel-2, #171b27);
+  --ds-color-border: var(--border, #282c3b);
+  --ds-color-text: var(--text, #f4f5fb);
+  --ds-color-muted: var(--muted, #969bad);
+  --ds-color-primary: var(--accent, #9a6bff);
+  --ds-color-primary-contrast: #ffffff;
+  --ds-color-accent: var(--accent-2, #5be7e3);
+  --ds-color-success: #a7ffcc;
+  --ds-color-warning: #f4c66a;
+  --ds-color-danger: #ff6b81;
+  --ds-color-focus: var(--accent-2, #5be7e3);
+  --ds-font-body: 'DM Sans', sans-serif;
+  --ds-font-display: 'Barlow Condensed', sans-serif;
+  --ds-radius-control: 8px;
+  --ds-radius-card: 16px;
+  --ds-radius-dialog: 20px;
+  --ds-motion-fast: 140ms;
+  --ds-motion-normal: 180ms;
+}
+
+:where(button, input, select, textarea, a):focus-visible {
+  outline-color: var(--ds-color-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ds-motion-fast: 0ms;
+    --ds-motion-normal: 0ms;
+  }
+}
