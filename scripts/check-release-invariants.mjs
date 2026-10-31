@@ -1,7 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
+const listSourceFiles = (directory) => readdirSync(join(process.cwd(), directory), { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = `${directory}/${entry.name}`;
+    return entry.isDirectory() ? listSourceFiles(path) : /\\.(js|jsx|ts|tsx)$/.test(entry.name) ? [path] : [];
+  });
 const checks = [
   {
     name: "historical payment-review migrations are present",
@@ -589,18 +594,15 @@ const checks = [
   {
     name: "all frontend features use one shared Supabase client",
     run: () => {
-      const files = [
-        "src/main.jsx",
-        "src/OrganizerWorkspace.jsx",
-        "src/OwnerPanel.jsx",
-        "src/OrganizerAccessPanel.jsx",
-        "src/OwnerEventReview.jsx",
-        "src/OwnerAuditLog.jsx",
-      ];
+      const files = listSourceFiles("src");
+      const clientFactoryFiles = files.filter((path) => read(path).includes("createClient("));
+      const clientImportFiles = files.filter((path) => read(path).includes('from "@supabase/supabase-js"'));
       const client = read("src/services/supabase/client.js");
       return client.includes("createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY")
-        && files.every((path) => !read(path).includes('from "@supabase/supabase-js"'))
-        && files.every((path) => !read(path).includes("createClient("));
+        && clientFactoryFiles.length === 1
+        && clientFactoryFiles[0] === "src/services/supabase/client.js"
+        && clientImportFiles.length === 1
+        && clientImportFiles[0] === "src/services/supabase/client.js";
     },
   },
 
