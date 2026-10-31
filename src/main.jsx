@@ -9,6 +9,8 @@ import {
 import "./styles.css";
 import "./premium-refresh.css";
 import "./experience-redesign.css";
+import "./design-system/tokens.css";
+import { CompanyThemeProvider } from "./design-system/CompanyThemeProvider.jsx";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
@@ -1349,4 +1351,4 @@ function ArrowUpRightIcon() {
   return <ArrowRight size={15} />;
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<CompanyThemeProvider><App /></CompanyThemeProvider>);
