@@ -134,6 +134,15 @@ export function applyThemeTokens(element, theme, expectedTarget) {
   if (!result.valid) return result;
   if (!element?.style?.setProperty) return { valid: false, errors: ["A valid theme scope element is required."] };
 
+  const isDocumentRoot = element?.tagName?.toLowerCase() === "html" ||
+    Boolean(element?.ownerDocument?.documentElement === element);
+  if (expectedTarget === "platform" && !isDocumentRoot) {
+    return { valid: false, errors: ["Platform themes may only be applied to the document root."] };
+  }
+  if (expectedTarget === "event" && (isDocumentRoot || element?.dataset?.companyEventThemeScope !== "true")) {
+    return { valid: false, errors: ["Event themes require an explicitly marked event-owned container."] };
+  }
+
   for (const [cssName, path] of Object.entries(CSS_TOKEN_MAP)) {
     element.style.setProperty(cssName, theme.tokens[path[0]][path[1]]);
   }
