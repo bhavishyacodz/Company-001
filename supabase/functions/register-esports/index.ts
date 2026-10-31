@@ -12,6 +12,7 @@ const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "*")
   .split(",").map((s) => s.trim()).filter(Boolean);
 const jsonHeaders = (origin: string) => ({
   "Content-Type": "application/json",
+  "Cache-Control": "no-store",
   "Access-Control-Allow-Origin": allowedOrigins.includes("*") || allowedOrigins.includes(origin) ? origin || "*" : allowedOrigins[0] || "*",
   "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
