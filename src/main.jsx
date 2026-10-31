@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
@@ -13,10 +12,7 @@ import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
-
-const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js";
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
