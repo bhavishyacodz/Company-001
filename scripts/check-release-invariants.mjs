@@ -189,6 +189,35 @@ const checks = [
     },
   },
   {
+    name: "suspension is enforced at the database RLS boundary",
+    run: () => {
+      const migration = read("supabase/migrations/20261030110000_enforce_suspension_at_rls_boundary.sql");
+      const tests = read("supabase/tests/registration_privacy.test.sql");
+      return migration.includes("private.is_active_account()")
+        && migration.includes("u.banned_until")
+        && migration.includes("raw_app_meta_data ->> 'account_suspended'")
+        && migration.includes("(select private.is_active_account())")
+        && migration.includes("create policy registrations_read_own_organizer_only")
+        && migration.includes("create policy payment_evidence_read_own_organizer_only")
+        && migration.includes('create policy "organizer reads only their own private payment evidence"')
+        && tests.includes("banned organizer cannot read participant registrations with an existing token")
+        && tests.includes("banned organizer cannot read payment evidence with an existing token")
+        && tests.includes("banned organizer cannot read private screenshots with an existing token")
+        && tests.includes("account also disables an account");
+    },
+  },
+  {
+    name: "suspension blocks signed evidence links and new public registrations",
+    run: () => {
+      const evidence = read("supabase/functions/view-payment-evidence/index.ts");
+      const registration = read("supabase/functions/register-esports/index.ts");
+      return evidence.includes("admin.auth.admin.getUserById(user.id)")
+        && evidence.includes("currentAccount.user.app_metadata?.account_suspended")
+        && registration.includes("admin.auth.admin.getUserById(organizerOwnerId)")
+        && registration.includes("organizerOwner.user.app_metadata?.account_suspended");
+    },
+  },
+  {
     name: "owner account directory responses are not cacheable",
     run: () => read("supabase/functions/manage-user-accounts/index.ts")
       .includes('"Cache-Control": "no-store"')
