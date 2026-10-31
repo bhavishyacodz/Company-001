@@ -7,7 +7,7 @@ const checks = [
   ["public homepage uses a dedicated tactile bento layout", home.includes("tactile-frame") && home.includes("tactile-bento-grid") && home.includes("tactile-mascot")],
   ["navigation menu is an accessible controlled popover", home.includes('aria-expanded={menuOpen}') && home.includes('aria-controls="tactile-menu"') && home.includes('id="tactile-menu"')],
   ["navigation popover closes on outside press and Escape", home.includes("closeOnOutsidePress") && home.includes("closeOnEscape") && home.includes('event.key === "Escape"')],
-  ["catalog navigation opens the existing public template gallery", home.includes("onTemplates") && app.includes('onTemplates={() => setView("templates")}')],
+  ["catalog navigation now opens direct site creation instead of the public theme gallery", home.includes("onTemplates") && home.includes("Create your site") && app.includes('onTemplates={() => setView(signedInUser ? "organizer" : "account")}') && !app.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')],
   ["organiser workspace shortcut uses the existing authenticated routing", home.includes("onClick={onOrganiser}") && app.includes('onOrganiser={() => setView(signedInUser ? "organizer" : "account")}')],
   ["custom website enquiry remains reachable from its bento card", home.includes('className="tactile-bento-card bento-web"') && app.includes('onStart={() => document.getElementById("contact")?.scrollIntoView')],
   ["existing consultation endpoint and input validation are preserved", home.includes('/functions/v1/request-consultation') && home.includes('minLength={15}') && home.includes('maxLength={3000}') && home.includes('type="email"')],
