@@ -38,6 +38,7 @@ function App() {
   const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authResolving, setAuthResolving] = useState(false);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -84,6 +85,7 @@ function App() {
       if (!active) return;
       if (!user) {
         resolvedUserId = null;
+        setAuthResolving(false);
         setSignedInUser(null);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
@@ -93,6 +95,7 @@ function App() {
 
       const changedUser = resolvedUserId !== user.id;
       resolvedUserId = user.id;
+      setAuthResolving(true);
       setSignedInUser(user);
       if (changedUser) {
         setPlatformRole(null);
@@ -124,20 +127,26 @@ function App() {
               setPlatformRole(null);
               setOrganizerWorkspaceReady(false);
               setView("account");
+              setAuthResolving(false);
             }
             return;
           }
         }
 
-        if (isLiveEventRoute) return;
+        if (isLiveEventRoute) {
+          setAuthResolving(false);
+          return;
+        }
         if (role === "owner") {
           setOrganizerWorkspaceReady(false);
           setView("owner");
+          setAuthResolving(false);
           return;
         }
         if (role !== "organizer") {
           setOrganizerWorkspaceReady(false);
           setView("account");
+          setAuthResolving(false);
           return;
         }
 
@@ -151,22 +160,26 @@ function App() {
           setPlatformRole("unknown");
           setOrganizerWorkspaceReady(false);
           setView("account");
+          setAuthResolving(false);
           return;
         }
         if (!organizer) {
           setOrganizerWorkspaceReady(false);
           setView("account");
+          setAuthResolving(false);
           return;
         }
 
         setOrganizerWorkspaceReady(true);
         const savedView = window.sessionStorage.getItem("company001:last-view");
         setView(protectedViews.includes(savedView) ? savedView : "organizer");
+        setAuthResolving(false);
       } catch {
         if (!active || version !== requestVersion) return;
         setPlatformRole("unknown");
         setOrganizerWorkspaceReady(false);
         setView(isLiveEventRoute ? "site" : "account");
+        setAuthResolving(false);
       }
     };
 
@@ -183,6 +196,7 @@ function App() {
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
         setView(current => protectedViews.includes(current) ? "site" : current);
+        setAuthResolving(false);
       })
       .finally(() => { if (active) setAuthReady(true); });
 
@@ -294,7 +308,7 @@ function App() {
     }
   };
 
-  if (!authReady && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
+  if ((!authReady || authResolving) && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
   if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }} onOpenKingLogin={() => setView("king-login")} />;
   if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
   if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
