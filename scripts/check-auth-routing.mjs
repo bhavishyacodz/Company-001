@@ -47,6 +47,12 @@ const checks = [
   ["dashboard visual styles load after legacy workspace styles", workspaceSource.indexOf('import "./workspace.css"') < workspaceSource.indexOf('import "./dashboard-yellow.css"') && workspaceSource.indexOf('import "./dashboard-yellow.css"') < workspaceSource.indexOf('import "./experience-redesign.css"')],
   ["owner dashboard routing requires verified AAL2", source.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()") && source.includes('assurance?.currentLevel === "aal2"') && source.includes('setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login")')],
   ["owner dashboard remains restricted to MFA-verified King sessions", source.includes('if (role === "owner") {') && source.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()") && source.includes('setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login")') && source.includes('setView(platformRole === "owner" ? "owner" : "king-login")')],
+
+  ["Create site routes signed-in creators directly into the default editor", source.includes('openOrganizerWorkspace(signedInUser, "customize")') && source.includes('const openOrganizerWorkspace = async (candidateUser = signedInUser, destination = "organizer")') && source.includes("setView(destination)")],
+  ["first Create site action activates a missing internal organiser record without a manual review step", source.includes('from("organizer_applications").insert({') && source.includes('status: "approved"') && source.includes('Creator workspace activation') && source.includes('select("id,display_name,slug,status")')],
+  ["Profile Create Website action opens the editor instead of an organisation setup form", source.includes('onClick={() => { void onOpenWorkspace(user, "customize"); }}>Create Website')],
+  ["instant creator activation migration keeps approval disabled and creates an owned organiser record", (() => { const migration = readFileSync("supabase/migrations/20261101130000_instant_creator_workspace_activation.sql", "utf8"); return migration.includes("new.status := 'approved'") && migration.includes("insert into public.organizers") && migration.includes("applicant_user_id = (select auth.uid())") && migration.includes("status = 'approved'") && migration.includes("create trigger organizer_applications_auto_activate"); })()],
+
 ];
 
 let failed = false;
