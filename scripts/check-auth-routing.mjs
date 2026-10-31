@@ -10,6 +10,7 @@ const checks = [
   ["Google account deletion requires provider reauthentication and resumes the confirmation screen", source.includes('company001:delete-reauth') && source.includes('account_action=delete') && source.includes("reauthenticateGoogleForDeletion") && source.includes("returningFromDeleteReauth")],
   ["Google account password setup supports fresh provider reauthentication", source.includes('company001:password-reauth') && source.includes('account_action=password') && source.includes("reauthenticateGoogleForPassword") && source.includes("returningFromPasswordReauth")],
   ["profile menu closes on outside press and Escape", source.includes("closeMenuOnOutsidePress") && source.includes("closeMenuOnEscape") && source.includes('aria-haspopup="menu"')],
+  ["profile prevents duplicate organiser setup while an application is active", source.includes("const refreshOrganizerWorkspace = async () =>") && source.includes('application.status !== "rejected"') && source.includes("Refresh status")],
   ["email account deletion still verifies the current password", source.includes("if (hasPasswordIdentity)") && source.includes("Password verification failed. Check your password and try again.")],
   ["missing profile roles fail closed", source.includes('const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)') && source.includes(': "unknown";')],
   ["auth changes re-resolve the dashboard destination", source.includes("supabase.auth.onAuthStateChange") && source.includes("resolveSession(session?.user || null)")],
