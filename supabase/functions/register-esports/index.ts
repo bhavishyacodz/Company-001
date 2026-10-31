@@ -196,13 +196,20 @@ Deno.serve(async (req: Request) => {
 
     // The pilot has a 500 MB platform-wide screenshot budget. The remaining
     // 100 MB of the 1 GB Free bucket is deliberately held as an operating reserve.
-    const { data: allEvidence, error: globalEvidenceError } = await admin
-      .from("payment_evidence").select("file_size_bytes").limit(1000);
-    if (globalEvidenceError) {
-      console.error("platform_storage_quota_check_failed");
-      return reply(origin, 503, { error: "Screenshot storage is temporarily unavailable. Please try again." });
+    let platformBytesUsed = 0;
+    let pageFrom = 0;
+    while (true) {
+      const { data: evidencePage, error: globalEvidenceError } = await admin
+        .from("payment_evidence").select("file_size_bytes").order("created_at", { ascending: true }).range(pageFrom, pageFrom + 999);
+      if (globalEvidenceError) {
+        console.error("platform_storage_quota_check_failed");
+        return reply(origin, 503, { error: "Screenshot storage is temporarily unavailable. Please try again." });
+      }
+      const page = evidencePage ?? [];
+      platformBytesUsed += page.reduce((sum, item) => sum + (Number(item.file_size_bytes) || 1_000_000), 0);
+      if (page.length < 1000) break;
+      pageFrom += 1000;
     }
-    const platformBytesUsed = (allEvidence ?? []).reduce((sum, item) => sum + (Number(item.file_size_bytes) || 1_000_000), 0);
     if (platformBytesUsed + fileEntry.size > 500_000_000) {
       return reply(origin, 503, { error: "Company-001's free pilot screenshot capacity is full. Please try again after the platform owner expands storage." });
     }
