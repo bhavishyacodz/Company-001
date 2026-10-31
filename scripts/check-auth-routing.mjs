@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 
 const source = readFileSync("src/main.jsx", "utf8");
+const supabaseClientSource = readFileSync("src/services/supabase/client.js", "utf8");
 const workspaceSource = readFileSync("src/OrganizerWorkspace.jsx", "utf8");
 const dashboardStyles = readFileSync("src/dashboard-yellow.css", "utf8");
 const experienceStyles = readFileSync("src/experience-redesign.css", "utf8");
@@ -29,6 +30,15 @@ const checks = [
   ["login and workspace handoff verify the same authenticated organiser", source.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>") && source.includes("setSignedInUser(candidateUser)") && source.includes('.eq("id", candidateUser.id)') && source.includes('.eq("owner_user_id", candidateUser.id)') && source.includes('setView("organizer")') && source.includes("setUser(data.user)")],
   ["both account entry routes use the verified workspace handoff", source.split("onOpenWorkspace={openOrganizerWorkspace}").length - 1 >= 2 && !source.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}')],
   ["email login verifies organiser workspace before clearing its busy state", (() => { const start = source.indexOf("const authenticate = async"); const end = source.indexOf("const submitApplication", start); const handler = source.slice(start, end); return handler.includes("setBusy(true)") && handler.includes('.eq("owner_user_id", data.user.id)') && handler.includes("finally { setBusy(false); }"); })()],
+  ["browser sessions persist across browser restarts and refresh tokens auto-renew", supabaseClientSource.includes("persistSession: true") && supabaseClientSource.includes("autoRefreshToken: true") && supabaseClientSource.includes("storage: typeof window !== \"undefined\" ? window.localStorage : undefined")],
+  ["first-page session restoration uses Supabase INITIAL_SESSION", source.includes('onAuthStateChange((event, session)') && source.includes('"INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"') && source.includes('event === "INITIAL_SESSION"') ],
+  ["auth bootstrap waits before showing public or profile UI", source.includes('if (!isLiveEventRoute && (!authReady || authResolving))') && source.includes("Restoring your profile…")],
+  ["role and organizer workspace are loaded in parallel", source.includes('Promise.all([\n          supabase.from("profiles").select("platform_role")') && source.includes('supabase.from("organizers").select("id,display_name,slug,status")')],
+  ["verified user and organizer summary are handed directly to Profile", source.includes('initialUser={platformRole === "organizer" ? signedInUser : null}') && source.includes("initialOrganizer={organizerWorkspaceSummary}")],
+  ["verified profile avoids a duplicate role lookup and profile upsert", source.includes('if (initialUser?.id === nextUser.id)') && source.includes('const isParentVerifiedUser = initialUser?.id === user.id') && source.includes('const profileWriteRequest = isParentVerifiedUser')],
+  ["profile data requests run concurrently and show a stable loading action", source.includes("Promise.all([organizerRequest, applicationRequest, profileWriteRequest])") && source.includes("Loading your sites…")],
+  ["normal Google login does not force the account picker", (() => { const start = source.indexOf("const signInWithGoogle = async"); const end = source.indexOf("const authenticate =", start); return !source.slice(start, end).includes("prompt: \"select_account\""); })()],
+  ["organizer workspace data remains attached to the stable Supabase user ID", source.includes('.eq("owner_user_id", user.id)') && source.includes('.eq("applicant_user_id", user.id)')],
   ["workspace tab follows the latest parent auth route", workspaceSource.includes("useEffect(() => { setTab(initialView); }, [initialView])")],
   ["main app and organiser workspace share one Supabase client", source.includes('from "./services/supabase/client.js"') && workspaceSource.includes('from "./services/supabase/client.js"') && !workspaceSource.includes("createClient(")],
   ["organiser My Sites dashboard loads the gold visual layer", workspaceSource.includes('import "./dashboard-yellow.css"') && workspaceSource.includes('import "./experience-redesign.css"') && workspaceSource.includes('className="sites-dashboard"') && experienceStyles.includes(".sites-dashboard,.sites-detail-view{") && experienceStyles.includes(".sites-create-button{")],
