@@ -1261,7 +1261,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 </div>
               ) : null}
             </section>
-            {application && !organizerWorkspace ? (
+            {application && !organizerWorkspace && !(setupOpen && application.status === "rejected") ? (
               <section className="application-status" aria-label="Organiser setup status">
                 <span className="panel-label">ORGANISER SETUP</span>
                 <strong>{application.business_name}</strong>
