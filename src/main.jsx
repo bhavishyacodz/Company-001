@@ -1017,6 +1017,9 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setDeleteOpen(false);
       setDeleteEmail("");
       setDeleteConfirmation("");
+      setDeleteReauthenticated(false);
+      setSettingsOpen(false);
+      setSettingsSection("menu");
       setNotice("Your account and linked organiser data have been deleted.");
     } catch (error) {
       setNotice(error.message || "Could not delete your account. Please contact support before retrying.");
@@ -1123,7 +1126,19 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null); setApplication(null); setNotice("Signed out.");
+    setUser(null);
+    setApplication(null);
+    setSettingsOpen(false);
+    setSettingsSection("menu");
+    setDeleteOpen(false);
+    setDeleteReauthenticated(false);
+    setDeleteEmail("");
+    setDeleteConfirmation("");
+    setDeletePassword("");
+    setAccountCurrentPassword("");
+    setAccountNewPassword("");
+    setAccountConfirmPassword("");
+    setNotice("Signed out.");
   };
 
   if (ownerSessionBlocked) {
