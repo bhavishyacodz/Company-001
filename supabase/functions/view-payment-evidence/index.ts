@@ -32,13 +32,12 @@ Deno.serve(async (req: Request) => {
     if (authError || !user) return reply(401, { error: "Invalid or expired session" });
 
     const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-    const { data: currentAccount, error: currentAccountError } = await admin.auth.admin.getUserById(user.id);
-    if (currentAccountError || !currentAccount?.user) return reply(401, { error: "Invalid or expired session" });
-    const bannedUntil = currentAccount.user.banned_until ? new Date(currentAccount.user.banned_until).getTime() : 0;
-    if ((Number.isFinite(bannedUntil) && bannedUntil > Date.now()) ||
-        currentAccount.user.app_metadata?.account_suspended === true) {
-      return reply(403, { error: "This account is suspended." });
-    }
+    const { data: accountActive, error: accountStatusError } = await admin.rpc(
+      "is_account_active_for_user",
+      { p_user_id: user.id },
+    );
+    if (accountStatusError) throw new Error("Could not verify account access.");
+    if (accountActive !== true) return reply(403, { error: "This account is suspended or unavailable." });
     const { data: profile, error: profileError } = await admin.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
     if (profileError) throw new Error("Could not verify account access.");
     if (profile?.platform_role === "owner") return reply(403, { error: "Platform owner accounts cannot view participant payment evidence. Only the owning organiser can access it." });
