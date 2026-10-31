@@ -113,25 +113,16 @@ The live `main` branch still points to the legacy application shell, so the newe
 
 ## Immediate work queue (strict order)
 
-1. Finish and verify current PR #83 Actions run `41215213832` and Cloudflare Pages preview for exact head `f57ee7f`; run a manual login regression on the preview before release.
-2. Confirm one shared Supabase client invariant passes and local Supabase migration replay plus two-organiser privacy tests complete successfully.
-3. Reconcile the PR #74 → #78 → #79 → #83 stack. PR #83 now includes PR #82's shared-client refactor; avoid duplicate merges. Determine whether PR #82 should be closed as superseded only after the stack is safely integrated.
-4. Investigate the separate Workers Builds failure and check whether it is required. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
-5. Reconcile PR #81 docs and older PR #75–#80 dependencies. Avoid merging conflicting branches.
-6. After the auth/UI stack is integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access.
-   - explicit auth state machine;
-   - missing/failed role lookup becomes unknown, never organiser;
-   - require verified organiser role plus active organiser workspace;
-   - require verified owner role for King Control Room;
-   - eliminate legacy dashboard fallback;
-   - reconcile sign-in, sign-out, role changes, suspension, OAuth callback, session refresh, and direct URL reload;
-   - add route/auth regression tests.
-5. Audit production RLS, Storage policies, Edge Function checks, and participant evidence access. Do not change production policies without migration review and explicit tests.
-6. Extract feature modules incrementally, without visual redesign or schema changes in the same PR.
-7. Improve dashboard/editor after auth and privacy are stable.
-8. Add website document AST/draft-publish architecture only when the editor model is ready.
-9. Add performance/scaling features only when measurements justify them.
-10. Verify exact Cloudflare Pages production deployment before announcing a release.
+1. Finish and verify current PR #83 Actions run `41215213832`, including local Supabase migration replay and two-organiser privacy tests. Confirm the Pages preview for exact head `f57ee7f` remains successful.
+2. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to dashboard, refresh, reopen the dashboard, and verify King Login still requires AAL2. Do not enter real participant or payment data on the preview.
+3. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
+4. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
+5. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
+6. After the auth/UI stack is safely integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access. Do not change production policies without migration review and explicit tests.
+7. Extract feature modules incrementally, without combining unrelated visual redesign or schema changes.
+8. Improve the dashboard/editor after auth and privacy are stable; maintain mobile-first and desktop-compatible layouts.
+9. Add versioned website document AST and draft/publish separation only when the editor model is ready.
+10. Add performance/scaling features only when measurements justify them, and verify the exact Cloudflare Pages production deployment before announcing a release.
 
 ## Release verification standard
 
