@@ -1,5 +1,6 @@
 /* Company-001 full-site visual system refresh.
-   Presentation-only layer: preserves routes, forms, auth, permissions and data flows. */
+   Presentation-only layer: preserves routes, forms, auth, permissions and data flows.
+   Loaded after the legacy stylesheets from src/main.jsx. */
 :root{
   color-scheme:dark;
   --bg:#080a0d;--panel:#101318;--panel-2:#151a20;--surface:#11161b;
