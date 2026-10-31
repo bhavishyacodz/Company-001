@@ -121,7 +121,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [user.id]);
-  useEffect(() => {    if (!error) return;
+  useEffect(() => {\n    if (!error) return;
     const frame = window.requestAnimationFrame(() => {
       const alert = document.getElementById("workspace-alert");
       alert?.scrollIntoView({ behavior: "smooth", block: "center" });
