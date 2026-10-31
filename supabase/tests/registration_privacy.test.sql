@@ -179,7 +179,7 @@ select is((select count(*)::integer from public.registrations), 0, 'A banned org
 select is((select count(*)::integer from public.payment_evidence), 0, 'A banned organizer cannot read payment evidence with an existing token');
 select is((select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'), 0, 'A banned organizer cannot read private screenshots with an existing token');
 select throws_ok(
-  $select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'suspended account attempt')$,
+  $stmt$select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'suspended account attempt')$stmt$,
   '42501', null,
   'A banned organizer cannot use the privileged payment-review RPC'
 );
