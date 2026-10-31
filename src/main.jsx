@@ -391,6 +391,18 @@ function App() {
     }
   };
 
+  const navigateToCreator = (destination = "organizer") => {
+    if (!signedInUser) {
+      setView("account");
+      return;
+    }
+    if (platformRole === "owner") {
+      setView("king-login");
+      return;
+    }
+    void openOrganizerWorkspace(signedInUser, destination);
+  };
+
   const copyPlatformLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.origin + "/");
@@ -427,7 +439,7 @@ function App() {
             <a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a>
           </> : ["site", "templates", "account", "owner", "king-login"].includes(view) ? <>
             <button className={view === "site" ? "nav-text active" : "nav-text"} onClick={() => { setView("site"); setMobileMenu(false); }}>Home</button>
-            <button className="nav-text" onClick={() => { if (signedInUser) void openOrganizerWorkspace(signedInUser, "customize"); else setView("account"); setMobileMenu(false); }}>Create site</button>
+            <button className="nav-text" onClick={() => { navigateToCreator("customize"); setMobileMenu(false); }}>Create site</button>
             <a href={view === "site" ? "#services" : "/#services"} onClick={() => { setView("site"); setMobileMenu(false); }}>Services</a>
             <a href={view === "site" ? "#process" : "/#process"} onClick={() => { setView("site"); setMobileMenu(false); }}>Process</a>
           </> : <>
@@ -551,7 +563,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Creator login <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => { if (signedInUser) void openOrganizerWorkspace(signedInUser, "customize"); else setView("account"); }} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => navigateToCreator("customize")} onOrganiser={() => navigateToCreator("organizer")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
@@ -803,15 +815,12 @@ function KingLoginPanel({ onBack, onSuccess }) {
 function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
-  const [businessName, setBusinessName] = useState("");
-  const [setupOpen, setSetupOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(initialUser);
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
   const [organizerWorkspace, setOrganizerWorkspace] = useState(initialOrganizer);
   const [profileDataLoading, setProfileDataLoading] = useState(Boolean(initialUser && !initialOrganizer));
-  const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(() => {
     try {
@@ -928,7 +937,6 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
   useEffect(() => {
     let active = true;
     if (!user) {
-      setApplication(null);
       setOrganizerWorkspace(null);
       setProfileDataLoading(false);
       return () => { active = false; };
@@ -944,11 +952,10 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
 
     const organizerRequest = initialOrganizer && isParentVerifiedUser
       ? Promise.resolve({ data: initialOrganizer, error: null })
-      : supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle();
-    const applicationRequest = initialOrganizer && isParentVerifiedUser
-      ? Promise.resolve({ data: null, error: null })
-      : supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
-          .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      : supabase.from("organizers")
+          .select("id,display_name,slug,status")
+          .eq("owner_user_id", user.id)
+          .maybeSingle();
     const profileWriteRequest = isParentVerifiedUser
       ? Promise.resolve({ error: null })
       : supabase.from("profiles").upsert({
@@ -957,15 +964,14 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
           platform_role: "organizer",
         }, { onConflict: "id", ignoreDuplicates: true });
 
-    Promise.all([organizerRequest, applicationRequest, profileWriteRequest]).then(([workspaceResult, applicationResult, profileResult]) => {
+    Promise.all([organizerRequest, profileWriteRequest]).then(([workspaceResult, profileResult]) => {
       if (!active) return;
       if (workspaceResult.error) {
-        setNotice("Could not load your saved workspace. Please refresh and try again.");
+        setNotice("Could not load your saved sites. Please refresh and try again.");
       } else {
         setOrganizerWorkspace(workspaceResult.data || null);
       }
-      if (!applicationResult.error) setApplication(applicationResult.data || null);
-      if (profileResult.error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
+      if (profileResult.error) setNotice("Your account is signed in, but profile setup needs attention. Please try again.");
     }).catch(() => {
       if (active) setNotice("Could not load your saved profile details. Please refresh and try again.");
     }).finally(() => {
@@ -1011,7 +1017,7 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
           });
           if (profileError && profileError.code !== "23505") throw profileError;
           setUser(data.user);
-          setNotice("Account created. Set up your workspace to start editing immediately.");
+          setNotice("Account created. Create your site to start editing immediately.");
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
@@ -1045,54 +1051,11 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
         if (organizer) {
           setNotice("Signed in successfully. Your profile is ready.");
         } else {
-          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your websites.");
+          setNotice("Signed in successfully. Create your site to start editing.");
         }
       }
     } catch (error) {
       setNotice(error.message || "Could not complete account action.");
-    } finally { setBusy(false); }
-  };
-
-  const refreshOrganizerWorkspace = async () => {
-    if (!user?.id) return;
-    setBusy(true);
-    setNotice("");
-    try {
-      const [{ data: workspace, error: workspaceError }, { data: latestApplication, error: applicationError }] = await Promise.all([
-        supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle(),
-        supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
-          .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
-      ]);
-      if (workspaceError) throw workspaceError;
-      if (applicationError) throw applicationError;
-      setOrganizerWorkspace(workspace || null);
-      setApplication(latestApplication || null);
-      setNotice(workspace ? "Workspace is ready. Open My Sites to continue." : "Your workspace is still being activated. Please check again shortly.");
-    } catch (error) {
-      setNotice(error.message || "Could not refresh your workspace status.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const submitApplication = async (event) => {
-    event.preventDefault();
-    if (!user) return;
-    setBusy(true); setNotice("");
-    try {
-      const { data, error } = await supabase.from("organizer_applications").insert({
-        applicant_user_id: user.id,
-        business_name: businessName.trim(),
-        category: "general",
-        contact_email: user.email,
-        notes: "Creator workspace setup",
-      }).select("id,business_name,status,decision_note,created_at").single();
-      if (error) throw error;
-      setApplication(data);
-      setNotice("Workspace activated. Opening your template editor…");
-      if (data.status === "approved") await onOpenWorkspace(user);
-    } catch (error) {
-      setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
   };
 
@@ -1334,9 +1297,7 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
                   ? <button className="button button-primary" type="button" disabled aria-busy="true">Loading your sites…</button>
                   : organizerWorkspace
                     ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
-                    : application && application.status !== "rejected"
-                      ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
-                      : <button className="button button-primary" onClick={() => { void onOpenWorkspace(user, "customize"); }}>Create Website <ArrowRight size={14} /></button>}
+                    : <button className="button button-primary" disabled={busy} onClick={() => { void onOpenWorkspace(user, organizerWorkspace ? "organizer" : "customize"); }}>{organizerWorkspace ? "My Sites" : "Create your site"} <ArrowRight size={14} /></button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
@@ -1355,22 +1316,6 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
                 </div>
               ) : null}
             </section>
-            {application && !organizerWorkspace && !(setupOpen && application.status === "rejected") ? (
-              <section className="application-status" aria-label="Organiser setup status">
-                <span className="panel-label">ORGANISER SETUP</span>
-                <strong>{application.business_name}</strong>
-                <span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace(/_/g, " ").toUpperCase()}</span>
-                <p>{application.status === "approved" ? "Your organiser workspace is active." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>
-              </section>
-            ) : setupOpen && !organizerWorkspace && (!application || application.status === "rejected") ? (
-              <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
-                <label>YOUR NAME OR WEBSITE NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Name shown on your creator profile" /></label>
-                <div className="account-delete-actions">
-                  <button className="button button-primary" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
-                  <button className="button button-secondary" type="button" disabled={busy} onClick={() => setSetupOpen(false)}>Cancel</button>
-                </div>
-              </form>
-            ) : null}
             {settingsSection === "security" ? (
               <section className="account-password-zone" aria-labelledby="account-password-title">
                 <div className="account-delete-heading">
