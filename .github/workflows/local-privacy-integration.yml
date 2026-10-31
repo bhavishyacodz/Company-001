@@ -46,8 +46,11 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Test bounded request-body reader
-        run: deno test supabase/functions/_shared/request-body.test.ts
+      - name: Test bounded request bodies and retry-safe account deletion
+        run: >-
+          deno test
+          supabase/functions/_shared/request-body.test.ts
+          supabase/functions/_shared/account-deletion.test.ts
 
       - name: Type-check security-sensitive Edge Functions
         run: >-
