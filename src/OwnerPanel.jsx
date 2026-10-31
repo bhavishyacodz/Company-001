@@ -18,6 +18,9 @@ export default function OwnerPanel({ onBack }) {
   const [applications, setApplications] = useState([]);
   const [consultationRequests, setConsultationRequests] = useState([]);
   const [organizers, setOrganizers] = useState([]);
+  const [financeEntries, setFinanceEntries] = useState([]);
+  const [financeForm, setFinanceForm] = useState({ entry_type: "income", category: "subscription", amount: "", organizer_id: "", note: "" });
+  const [savingFinance, setSavingFinance] = useState(false);
   const [counts, setCounts] = useState({ events: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
@@ -52,22 +55,25 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult, financeResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_forms,max_responses_per_form").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
-        supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review")
+        supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
+        supabase.from("platform_finance_entries").select("id,entry_type,category,amount_paise,note,organizer_id,recorded_by,created_at").order("created_at", { ascending: false }).limit(200)
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
       if (eventResult.error) throw eventResult.error;
       if (consultationResult.error) throw consultationResult.error;
       if (pendingEventResult.error) throw pendingEventResult.error;
+      if (financeResult.error) throw financeResult.error;
       setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
+      setFinanceEntries(financeResult.data || []);
       const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
       if (accountLoadError) {
         setAccountError(accountLoadError.message || "Could not load user accounts.");
@@ -108,6 +114,32 @@ export default function OwnerPanel({ onBack }) {
     } catch (e) {
       setError(e.message || "Could not update the organiser plan.");
     } finally { setPlanBusyId(""); }
+  };
+
+  const saveFinanceEntry = async (event) => {
+    event.preventDefault();
+    const amount = Number(financeForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
+      setError("Enter a valid amount greater than ₹0.");
+      return;
+    }
+    setSavingFinance(true); setError(""); setNotice("");
+    try {
+      const { error: insertError } = await supabase.from("platform_finance_entries").insert({
+        entry_type: financeForm.entry_type,
+        category: financeForm.category,
+        amount_paise: Math.round(amount * 100),
+        note: financeForm.note.trim(),
+        organizer_id: financeForm.organizer_id || null,
+        recorded_by: user.id
+      });
+      if (insertError) throw insertError;
+      setFinanceForm({ entry_type: "income", category: "subscription", amount: "", organizer_id: "", note: "" });
+      setNotice("Finance entry saved. Allocation figures have been refreshed.");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not save the finance entry.");
+    } finally { setSavingFinance(false); }
   };
 
   const signOut = async () => {
@@ -271,6 +303,7 @@ export default function OwnerPanel({ onBack }) {
         <nav className="owner-command-nav" aria-label="Owner dashboard sections">
           <a href="#owner-overview"><LayoutDashboard size={16}/><span>Overview</span></a>
           <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>
+          <a href="#owner-finance"><WalletCards size={16}/><span>Finance & reinvestment</span></a>
           <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
           <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
           <a href="#owner-events"><CalendarCheck size={16}/><span>Event publishing</span><b>{counts.pendingEvents}</b></a>
@@ -286,6 +319,42 @@ export default function OwnerPanel({ onBack }) {
           <div className="owner-metric"><span>EVENTS TO REVIEW</span><strong>{counts.pendingEvents}</strong><small>Awaiting publication decision</small></div>
           <div className="owner-metric"><span>ALL EVENTS</span><strong>{counts.events}</strong><small>Total event records</small></div>
         </div>
+        <section id="owner-finance" className="owner-card">
+          <div className="owner-section-head"><div><span className="panel-label">01 / FINANCE & REINVESTMENT</span><h2>Money in. Costs out. Growth planned.</h2><p>Record confirmed plan payments and actual expenses. The allocation below is a planning guide only; it does not move money automatically.</p></div></div>
+          <div className="owner-inbox-summary">
+            <div><strong>₹{(financeEntries.filter(entry => entry.entry_type === "income").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Recorded income</span></div>
+            <div><strong>₹{(financeEntries.filter(entry => entry.entry_type === "expense").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Recorded expenses</span></div>
+            <div><strong>₹{((financeEntries.reduce((sum, entry) => sum + (entry.entry_type === "income" ? 1 : -1) * Number(entry.amount_paise || 0), 0)) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Remaining balance</span></div>
+          </div>
+          <div className="owner-finance-allocation">
+            <div><span className="panel-label">SUGGESTED SPLIT OF RECORDED INCOME</span><p>Use this as a budget guide after confirming receipts. Review actual costs before spending.</p></div>
+            {[
+              ["Infrastructure", 50, "#4b94d1"],
+              ["Emergency reserve", 20, "#4ba77a"],
+              ["Product development", 20, "#a18bd4"],
+              ["Fees & refunds reserve", 10, "#d1a34d"]
+            ].map(([label, percent, color]) => {
+              const income = financeEntries.filter(entry => entry.entry_type === "income").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100;
+              const amount = income * Number(percent) / 100;
+              return <div className="owner-finance-allocation-row" key={label}>
+                <span><i style={{ background: color }}/>{label}</span><strong>₹{amount.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><small>{percent}%</small>
+                <div className="owner-finance-bar"><span style={{ width: percent + "%", background: color }}/></div>
+              </div>;
+            })}
+          </div>
+          <form className="owner-finance-form" onSubmit={saveFinanceEntry}>
+            <div><span className="panel-label">RECORD A REAL TRANSACTION</span><h3>Add income or expense</h3><p>Only record money actually received or spent. Plan upgrades remain manual.</p></div>
+            <label>Entry type<select value={financeForm.entry_type} onChange={event => setFinanceForm(current => ({ ...current, entry_type: event.target.value, category: event.target.value === "income" ? "subscription" : "infrastructure" }))}><option value="income">Income received</option><option value="expense">Expense paid</option></select></label>
+            <label>Category<select value={financeForm.category} onChange={event => setFinanceForm(current => ({ ...current, category: event.target.value }))}>{financeForm.entry_type === "income" ? <><option value="subscription">Premium subscription</option><option value="founding-pilot">Founding pilot payment</option><option value="other-income">Other income</option></> : <><option value="infrastructure">Hosting / infrastructure</option><option value="payment-fee">Payment fee</option><option value="refund">Refund</option><option value="development">Product development</option><option value="other-expense">Other expense</option></>}</select></label>
+            <label>Amount (₹)<input type="number" min="0.01" max="100000000" step="0.01" value={financeForm.amount} onChange={event => setFinanceForm(current => ({ ...current, amount: event.target.value }))} required placeholder="500"/></label>
+            <label>Related organiser (optional)<select value={financeForm.organizer_id} onChange={event => setFinanceForm(current => ({ ...current, organizer_id: event.target.value }))}><option value="">Not linked to an organiser</option>{organizers.map(item => <option key={item.id} value={item.id}>{item.display_name}</option>)}</select></label>
+            <label className="owner-finance-note">Note<input value={financeForm.note} onChange={event => setFinanceForm(current => ({ ...current, note: event.target.value }))} maxLength={500} placeholder="e.g. Starter plan payment confirmed"/></label>
+            <button className="button button-primary" type="submit" disabled={savingFinance}>{savingFinance ? "Saving…" : "Save finance entry"}</button>
+          </form>
+          <div className="owner-finance-ledger"><div className="owner-section-head"><div><span className="panel-label">RECENT TRANSACTIONS</span><h3>Finance ledger</h3></div><span className="owner-muted">Latest 200 entries</span></div>
+            {financeEntries.length === 0 ? <p className="owner-muted">No transactions recorded yet. When a plan payment is actually received or a bill is paid, record it here.</p> : <div className="owner-table-wrap"><table><thead><tr><th>TYPE</th><th>CATEGORY</th><th>AMOUNT</th><th>NOTE</th><th>DATE</th></tr></thead><tbody>{financeEntries.map(entry => <tr key={entry.id}><td><span className={"status-chip " + (entry.entry_type === "income" ? "approved" : "pending")}><span/>{entry.entry_type}</span></td><td>{entry.category.replaceAll("-", " ")}</td><td><strong>{entry.entry_type === "income" ? "+" : "−"}₹{(Number(entry.amount_paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong></td><td>{entry.note || "—"}</td><td>{new Date(entry.created_at).toLocaleDateString("en-IN")}</td></tr>)}</tbody></table></div>}
+          </div>
+        </section>
         <section id="owner-enquiries" className="owner-card">
           <div className="owner-section-head"><div><span className="panel-label">01 / CUSTOMER PIPELINE</span><h2>Consultation enquiries</h2><p>Private inbox for website, landing-page, dashboard and digital-tool requests.</p></div><button className="button button-secondary" onClick={load} disabled={loading}><ArrowRight size={14} /> Refresh</button></div>
           <div className="owner-inbox-summary">
