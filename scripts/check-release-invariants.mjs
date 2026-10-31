@@ -630,6 +630,22 @@ const checks = [
   },
 
   {
+    name: "public event pages do not expose platform login entry points to participants",
+    run: () => {
+      const app = read("src/main.jsx");
+      const headerStart = app.indexOf('<div className="top-actions">');
+      const headerEnd = app.indexOf('</div>\\n      </header>', headerStart);
+      const publicHeader = headerStart >= 0 && headerEnd > headerStart
+        ? app.slice(headerStart, headerEnd)
+        : "";
+      return publicHeader.includes("{!isLiveEventRoute && <>")
+        && publicHeader.includes('className="owner-shortcut king-login"')
+        && publicHeader.includes('className="account-entry"')
+        && publicHeader.includes('className="menu-button"');
+    },
+  },
+
+  {
     name: "participant records and payment evidence remain strictly organizer-owned",
     run: () => {
       const privacy = read("supabase/migrations/20261030043305_organizer_registration_privacy.sql");
