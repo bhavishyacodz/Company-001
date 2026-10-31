@@ -74,8 +74,10 @@ const checks = [
         && sql.includes("status = 'approved'")
         && sql.includes("revoke all on function public.auto_activate_organizer_application() from public, anon, authenticated")
         && sql.includes("if current_user = 'postgres' then")
-        && account.includes("Workspace activated. Opening your template editor")
-        && account.includes('if (data.status === "approved") await onOpenWorkspace(user);');
+        && account.includes('from("organizer_applications").insert({')
+        && account.includes('notes: "Creator workspace activation"')
+        && account.includes('const navigateToCreator = (destination = "organizer")')
+        && !account.includes("const submitApplication");
     },
   },
   {
@@ -302,7 +304,7 @@ const checks = [
         && account.includes("<small>{user.email}</small>")
         && account.includes('aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}')
         && account.includes("My Sites")
-        && account.includes("Create Website")
+        && account.includes("Create your site")
         && account.includes("settingsSection === \"security\"")
         && account.includes("onClick={signOut}")
         && css.includes(".profile-overview")
