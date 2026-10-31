@@ -540,7 +540,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         </div>
         <section className="ig-websites-section" aria-labelledby="ig-websites-title">
           <div className="ig-section-heading"><div><span>YOUR WORK</span><h2 id="ig-websites-title">Your websites</h2></div><span>{events.length} total</span></div>
-          {events.length===0 ? <div className="ig-empty-websites"><div className="ig-empty-icon"><Globe2 size={22}/></div><strong>No websites yet</strong><p>Your websites will appear here after you create one.</p><button type="button" onClick={()=>{resetForm();changeWorkspaceTab("customize");}}>Create your first website <ArrowRight size={15}/></button></div> :
+          {events.length===0 ? <div className="ig-empty-websites"><div className="ig-empty-icon"><CalendarDays size={22}/></div><strong>No websites yet</strong><p>Your websites will appear here after you create one.</p><button type="button" onClick={()=>{resetForm();changeWorkspaceTab("customize");}}>Create your first website <ArrowRight size={15}/></button></div> :
             <div className="ig-website-list">{visibleEvents.map(ev=><article className="ig-website-row" key={ev.id}>
               <div className="ig-website-thumb"><span>{(ev.title || "W").trim().slice(0,1).toUpperCase()}</span></div>
               <div className="ig-website-info"><strong>{ev.title}</strong><small>/{organizer.slug}/{ev.slug}</small><span className={"ig-website-status status-"+ev.status}>{ev.status==="published"?"Live":ev.status==="pending_review"?"In review":ev.status==="draft"?"Draft":ev.status.replace(/_/g," ")}</span></div>
