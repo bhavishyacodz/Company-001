@@ -82,11 +82,11 @@ const checks = [
         && account.includes("const resolveSession = async (user)")
         && account.includes("if (isLiveEventRoute) {")
         && account.includes('.eq("owner_user_id", user.id)')
-        && account.includes("setOrganizerWorkspaceReady(true)")
+        && account.includes("const openOrganizerWorkspace = async () =>")
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
-        && account.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}');
+        && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
     },
   },
   {
@@ -588,7 +588,7 @@ const checks = [
         && app.includes('if (role !== "organizer")')
         && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
         && app.includes('if (profile?.platform_role === "owner")')
-        && app.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}')
+        && app.includes('onOpenWorkspace={openOrganizerWorkspace}')
         && app.includes('company001:google-owner-blocked')
         && owner.includes('if (!user || role !== "owner")')
         && owner.includes('supabase.auth.signOut()')
