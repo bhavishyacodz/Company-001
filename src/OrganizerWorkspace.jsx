@@ -3,6 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Gamepad2, Music2, Trophy, GraduationCap, Palette, UsersRound, BookOpen, Copy, Undo2, Redo2, LogOut, KeyRound } from "lucide-react";
 import "./workspace.css";
 import "./dashboard-yellow.css";
+// Load the product redesign after legacy workspace styles so authenticated screens retain it.
+import "./experience-redesign.css";
 const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
 
 const EVENT_TEMPLATES = [
