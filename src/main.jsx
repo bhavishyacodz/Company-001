@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
 import {
@@ -39,6 +39,7 @@ function App() {
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [authResolving, setAuthResolving] = useState(false);
+  const authResolutionRef = useRef(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -77,11 +78,10 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    let requestVersion = 0;
     let resolvedUserId = null;
     const protectedViews = ["organizer", "registrations", "customize"];
     const resolveSession = async (user) => {
-      const version = ++requestVersion;
+      const version = ++authResolutionRef.current;
       if (!active) return;
       if (!user) {
         resolvedUserId = null;
@@ -107,7 +107,7 @@ function App() {
           .select("platform_role")
           .eq("id", user.id)
           .maybeSingle();
-        if (!active || version !== requestVersion) return;
+        if (!active || version !== authResolutionRef.current) return;
 
         // A missing profile or failed role lookup is unknown, never an organiser.
         const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)
@@ -190,7 +190,7 @@ function App() {
       })
       .catch(() => {
         if (!active) return;
-        requestVersion += 1;
+        authResolutionRef.current += 1;
         resolvedUserId = null;
         setSignedInUser(null);
         setPlatformRole(null);
@@ -279,6 +279,45 @@ function App() {
     }
   };
 
+  const openOrganizerWorkspace = async () => {
+    if (!signedInUser) {
+      setView("account");
+      return;
+    }
+    const version = ++authResolutionRef.current;
+    setAuthResolving(true);
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles").select("platform_role").eq("id", signedInUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (profileError || profile?.platform_role !== "organizer") {
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      const { data: organizer, error: organizerError } = await supabase
+        .from("organizers").select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (organizerError || !organizer) {
+        setPlatformRole("organizer");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      setPlatformRole("organizer");
+      setOrganizerWorkspaceReady(true);
+      setView("organizer");
+    } catch {
+      if (version !== authResolutionRef.current) return;
+      setPlatformRole("unknown");
+      setOrganizerWorkspaceReady(false);
+      setView("account");
+    } finally {
+      if (version === authResolutionRef.current) setAuthResolving(false);
+    }
+  };
+
   const handleUseTemplate = async (templateKey) => {
     setRequestedTemplate(templateKey);
     try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
@@ -309,7 +348,7 @@ function App() {
   };
 
   if ((!authReady || authResolving) && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
-  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }} onOpenKingLogin={() => setView("king-login")} />;
+  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
   if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
   if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
