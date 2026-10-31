@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(39);
+select plan(43);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -103,6 +103,22 @@ select ok(
 select ok(
   not has_table_privilege('anon', 'public.payment_evidence', 'SELECT'),
   'Anonymous visitors have no direct SELECT grant on payment-evidence metadata'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'SELECT'),
+  'Anonymous visitors have no direct SELECT grant on organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'INSERT'),
+  'Anonymous visitors cannot create organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'UPDATE'),
+  'Anonymous visitors cannot modify organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'DELETE'),
+  'Anonymous visitors cannot delete organizer delegation records'
 );
 set local role anon;
 select is(
