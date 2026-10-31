@@ -117,8 +117,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [user.id]);
-  useEffect(() => {
-    if (!error) return;
+  useEffect(() => {    if (!error) return;
     const frame = window.requestAnimationFrame(() => {
       const alert = document.getElementById("workspace-alert");
       alert?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -237,8 +236,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     setNotice("");
     if (!user?.email || !user?.id) {
       setError("Please sign in again before changing your password.");
-      return;
-    }
+      return;    }
     if (newPassword.length < 12) {
       setError("Choose a new password with at least 12 characters.");
       return;
@@ -357,8 +355,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
           ? "Changes saved. The event is temporarily unpublished and must pass owner review again."
           : "Event changes saved. Publishing still requires owner approval.");
       } else {
-        const { error: saveError } = await supabase.from("events").insert(payload);
-        if (saveError) throw saveError;
+        const { error: saveError } = await supabase.from("events").insert(payload);        if (saveError) throw saveError;
         setNotice("Event draft created in Supabase.");
       }
       if (editingId) {
@@ -477,8 +474,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   );
   const selectedSite = events.find(ev => ev.id === selectedSiteId) || null;
   const visiblePaymentRecords = registrations.filter(r =>
-    (paymentEventFilter === "all" || r.event_id === paymentEventFilter) &&
-    (paymentFilter === "all" || (paymentFilter === "needs_review" ? ["pending","under_review"].includes(r.payment_status) : r.payment_status === paymentFilter)) &&
+    (paymentEventFilter === "all" || r.event_id === paymentEventFilter) &&    (paymentFilter === "all" || (paymentFilter === "needs_review" ? ["pending","under_review"].includes(r.payment_status) : r.payment_status === paymentFilter)) &&
     [r.participant_name,r.participant_email,r.confirmation_reference,events.find(ev=>ev.id===r.event_id)?.title].filter(Boolean).join(" ").toLowerCase().includes(paymentSearch.trim().toLowerCase())
   );
   const analyticsEvents = events.filter(ev => registrationEventFilter === "all" || ev.id === registrationEventFilter);
@@ -487,7 +483,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   if (!organizer) return <main className="workspace-shell"><section className="workspace-card"><button className="account-back" onClick={onBack}><ArrowLeft size={14}/> Back</button><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Your organiser workspace is not set up yet.</h1><p>Signed in as {user.email}. Open your account page and create your organiser workspace. Once it is created, your events and registrations will appear here.</p><button className="button button-primary" onClick={onBack}>Return to website <ArrowRight size={14}/></button></section></main>;
   return <main className="workspace-shell"><div className="workspace-wrap">
     <header className={"workspace-heading sites-topbar "+(tab==="organizer"||tab==="site"?"sites-topbar-simple":"")}><div><div className="sites-brand-mark" aria-hidden="true">C<span>—</span>001</div>{tab==="organizer"||tab==="site"?<span className="sites-profile-avatar" title={organizer.display_name}>{String(organizer.display_name||"O").trim().charAt(0).toUpperCase()}</span>:null}{tab!=="organizer"&&tab!=="site"?<><h1>{organizer.display_name}</h1><p>Your organiser workspace · {organizer.status}</p></>:null}</div><div className="workspace-heading-actions">{tab==="organizer"||tab==="site"||tab==="profile"?<button type="button" className="button button-secondary sites-profile-button" onClick={()=>setTab("profile")}><UserRound size={14}/> Profile</button>:null}<button className="button button-secondary" onClick={load} aria-label="Refresh workspace"><RefreshCw size={14}/></button><button className="button button-secondary" onClick={signOut}><LogOut size={14}/> Sign out</button></div></header>
-    {tab==="site" || tab==="fields" ? <nav className="workspace-tabs sites-context-nav" aria-label="Site workspace"><button className={tab==="site"?"active":""} onClick={()=>setTab("site")}>Site overview</button><button className={tab==="fields"?"active":""} onClick={()=>setTab("fields")}>Form fields</button><button onClick={()=>setTab("organizer")}>My Sites</button><button className={tab==="profile"?"active":""} onClick={()=>setTab("profile")}>Profile</button></nav> : tab!=="organizer" ? <nav className="workspace-tabs" aria-label="Organiser workspace sections"><button onClick={()=>setTab("organizer")}>My Sites</button><button className={tab==="profile"?"active":""} onClick={()=>setTab("profile")}><UserRound size={14}/> Profile</button><button className={tab==="customize"?"active":""} onClick={()=>{if(tab==="customize"&&isDirty&&!window.confirm("You have unsaved event changes. Start a fresh draft and discard them?"))return;resetForm();changeWorkspaceTab("customize")}}>Create form</button><button className={tab==="registrations"?"active":""} onClick={()=>changeWorkspaceTab("registrations")}>Responses ({registrations.length})</button><button className={tab==="payments"?"active":""} onClick={()=>changeWorkspaceTab("payments")}>Payments ({registrations.filter(r=>r.payment_status==="pending"||r.payment_status==="under_review").length})</button><button className={tab==="analytics"?"active":""} onClick={()=>changeWorkspaceTab("analytics")}>Insights</button><button className={tab==="security"?"active":""} onClick={()=>changeWorkspaceTab("security")}><KeyRound size={14}/> Account security</button></nav> : null}
+    {["organizer","site","fields","profile"].includes(tab) ? <nav className="workspace-tabs sites-context-nav" aria-label="Your sites"><button className={tab==="organizer"?"active":""} onClick={()=>setTab("organizer")}>My Sites</button><button className={tab==="profile"?"active":""} onClick={()=>setTab("profile")}><UserRound size={14}/> Profile</button></nav> : null}
     {error ? <p id="workspace-alert" className="workspace-alert" role="alert" tabIndex={-1}>{error}</p> : null}{notice ? <p id="workspace-notice" className="workspace-notice" role="status">{notice}</p> : null}
     {tab==="organizer" ? <section className="sites-dashboard" aria-labelledby="sites-dashboard-title">
       <div className="sites-dashboard-heading">
@@ -502,7 +498,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
             <span className="sites-site-thumb">{thumb?<img src={thumb} alt="" loading="lazy"/>:<span className="sites-site-thumb-fallback"><TemplateIcon size={25}/></span>}</span>
             <span className="sites-site-copy"><strong>{ev.title||"Untitled site"}</strong><small>{window.location.host}/{organizer.slug}/{ev.slug}</small><span className="sites-site-meta"><span className={"sites-status sites-status-"+ev.status}>{statusLabel}</span><span>{count} {count===1?"registration":"registrations"}</span></span></span>
           </button>
-          <div className="sites-card-actions"><button type="button" className="button button-secondary" onClick={()=>{setSelectedSiteId(ev.id);setTab("site");}}>Open</button><button type="button" className="button button-primary" onClick={()=>{setSelectedSiteId(ev.id);editEvent(ev);setTab("customize");}}>Edit</button></div>
+          <div className="sites-card-actions"><button type="button" className="button button-secondary" onClick={()=>{setSelectedSiteId(ev.id);if(ev.status==="published"){window.open(publicEventUrl(ev),"_blank","noopener,noreferrer");}else{setTab("site");}}}>{ev.status==="published"?"Preview":"Preview"}</button><button type="button" className="button button-primary" onClick={()=>{setSelectedSiteId(ev.id);editEvent(ev);setTab("customize");}}>Edit</button></div>
         </article>;})}</div>}
       </div>
       <p className="sites-dashboard-footnote">Your sites and participant records are private to your organiser account.</p>
@@ -524,13 +520,10 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       <button type="button" className="sites-back-link" onClick={()=>setTab("organizer")}>← Back to My Sites</button>
       {selectedSite ? <>
         <div className="sites-detail-heading"><div><span className="sites-eyebrow">SITE WORKSPACE</span><h2>{selectedSite.title||"Untitled site"}</h2><p>{window.location.origin}/{organizer.slug}/{selectedSite.slug}</p></div><span className={"sites-status sites-status-"+selectedSite.status}>{selectedSite.status==="pending_review"?"Pending review":selectedSite.status==="published"?"Published":selectedSite.status==="draft"?"Draft":selectedSite.status}</span></div>
-        <div className="sites-detail-grid">
-          <button type="button" className="sites-detail-action" onClick={()=>{editEvent(selectedSite);setTab("customize");}}><span className="sites-action-icon">✎</span><strong>Edit Website</strong><small>Change design, text and event details</small><span className="sites-action-arrow">→</span></button>
+        {selectedSite.status==="published" ? <><div className="sites-detail-grid">
           <button type="button" className="sites-detail-action" onClick={()=>{setRegistrationEventFilter(selectedSite.id);setTab("registrations");}}><span className="sites-action-icon">♙</span><strong>Registrations</strong><small>{registrations.filter(r=>r.event_id===selectedSite.id).length} participant records</small><span className="sites-action-arrow">→</span></button>
-          <button type="button" className="sites-detail-action" onClick={()=>setTab("fields")}><span className="sites-action-icon">☷</span><strong>Form fields</strong><small>See exactly what this site's form asks</small><span className="sites-action-arrow">→</span></button>
-          <button type="button" className="sites-detail-action" onClick={()=>{setPaymentSearch("");setPaymentEventFilter(selectedSite.id);setPaymentFilter("all");setTab("payments");}}><span className="sites-action-icon">₹</span><strong>Payments</strong><small>Review this site's payment records</small><span className="sites-action-arrow">→</span></button>
-          <button type="button" className="sites-detail-action" onClick={()=>{setRegistrationEventFilter(selectedSite.id);setTab("analytics");}}><span className="sites-action-icon">▥</span><strong>Insights</strong><small>View this site's registration activity</small><span className="sites-action-arrow">→</span></button>
-        </div>
+          <button type="button" className="sites-detail-action" onClick={()=>setTab("fields")}><span className="sites-action-icon">☷</span><strong>Registration form</strong><small>View the questions attendees answer</small><span className="sites-action-arrow">→</span></button>
+        </div></> : <p className="sites-dashboard-footnote">This site is still a draft. Publish it when it is ready to unlock registrations and participant details.</p>}
         <div className="sites-detail-link-row"><div><strong>Public website link</strong><small>{window.location.origin}/{organizer.slug}/{selectedSite.slug}</small></div><button type="button" className="button button-secondary" onClick={()=>copyEventLink(selectedSite)}><Copy size={14}/> Copy link</button>{selectedSite.status==="published"?<a className="button button-secondary" href={publicEventUrl(selectedSite)} target="_blank" rel="noreferrer"><ExternalLink size={14}/> Open site</a>:null}</div>
         <p className="sites-dashboard-footnote">Only your organiser account can access this site's private registrations and payment evidence.</p>
       </> : <div className="sites-empty-state"><strong>Site not found</strong><p>This site may have been removed or is no longer available.</p><button type="button" className="button button-secondary" onClick={()=>setTab("organizer")}>Return to My Sites</button></div>}
