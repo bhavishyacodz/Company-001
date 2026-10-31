@@ -121,7 +121,7 @@ function App() {
           if (role === "owner") {
             try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
             await supabase.auth.signOut();
-            if (active && version === requestVersion) {
+            if (active && version === authResolutionRef.current) {
               resolvedUserId = null;
               setSignedInUser(null);
               setPlatformRole(null);
@@ -155,7 +155,7 @@ function App() {
           .select("id")
           .eq("owner_user_id", user.id)
           .maybeSingle();
-        if (!active || version !== requestVersion) return;
+        if (!active || version !== authResolutionRef.current) return;
         if (organizerError) {
           setPlatformRole("unknown");
           setOrganizerWorkspaceReady(false);
@@ -175,7 +175,7 @@ function App() {
         setView(protectedViews.includes(savedView) ? savedView : "organizer");
         setAuthResolving(false);
       } catch {
-        if (!active || version !== requestVersion) return;
+        if (!active || version !== authResolutionRef.current) return;
         setPlatformRole("unknown");
         setOrganizerWorkspaceReady(false);
         setView(isLiveEventRoute ? "site" : "account");
