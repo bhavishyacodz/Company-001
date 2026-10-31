@@ -46,6 +46,14 @@ Deno.serve(async (req: Request) => {
   try {
     const { data: authResult, error: authError } = await admin.auth.getUser(token);
     if (authError || !authResult.user) return response(origin, 401, { error: "Your session is invalid or expired. Sign in again." });
+
+    // Enforce King Login MFA on the server, not only in the React route.
+    // A password-only owner session (AAL1) must not list, suspend, restore or delete accounts.
+    const { data: assurance, error: assuranceError } = await admin.auth.mfa.getAuthenticatorAssuranceLevel(token);
+    if (assuranceError || assurance?.currentLevel !== "aal2") {
+      return response(origin, 403, { error: "Complete King Login multi-factor verification before managing accounts." });
+    }
+
     const actor = authResult.user;
     const actorProfile = await must(admin.from("profiles").select("platform_role").eq("id", actor.id).maybeSingle());
     if (actorProfile?.platform_role !== "owner") {
