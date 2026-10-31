@@ -61,6 +61,14 @@ begin
   if tg_op = 'INSERT' and new.status <> 'draft' then
     raise exception 'New themes must start as drafts' using errcode = '42501';
   end if;
+  if tg_op = 'UPDATE' and old.status = 'published' and new.status = 'published'
+     and (new.name is distinct from old.name
+       or new.slug is distinct from old.slug
+       or new.description is distinct from old.description
+       or new.category is distinct from old.category
+       or new.design is distinct from old.design) then
+    raise exception 'Published themes are immutable. Move the theme to drafts before editing.' using errcode = '55000';
+  end if;
   if tg_op = 'UPDATE' and new.status is distinct from old.status then
     if not (select private.is_platform_owner_aal2()) then
       raise exception 'Only an MFA-verified platform owner can publish or archive a theme' using errcode = '42501';
