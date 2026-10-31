@@ -778,6 +778,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
+  const [deleteReauthenticated, setDeleteReauthenticated] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [accountCurrentPassword, setAccountCurrentPassword] = useState("");
   const [accountNewPassword, setAccountNewPassword] = useState("");
@@ -836,6 +837,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (window.sessionStorage.getItem("company001:delete-reauth") === "1") {
         window.sessionStorage.removeItem("company001:delete-reauth");
         setDeleteOpen(true);
+        setDeleteReauthenticated(true);
         setNotice("Google sign-in refreshed. Confirm your email and type DELETE to continue.");
       }
     } catch { /* Optional session flag. */ }
@@ -969,6 +971,10 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       user.identities?.some(identity => identity.provider === "email") ||
       user.app_metadata?.providers?.includes("email")
     );
+    if (!hasPasswordIdentity && !deleteReauthenticated) {
+      setNotice("Reconfirm with Google before deleting your account.");
+      return;
+    }
     setDeletingAccount(true);
     try {
       if (hasPasswordIdentity) {
@@ -1068,6 +1074,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   };
 
   const reauthenticateGoogleForDeletion = async () => {
+    setDeleteReauthenticated(false);
     setNotice("");
     try {
       window.sessionStorage.setItem("company001:delete-reauth", "1");
@@ -1226,8 +1233,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                       )}
                       <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
                       <div className="account-delete-actions">
-                        <button className="button button-danger" type="submit" disabled={deletingAccount || !(user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email")) && !deletePassword}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
-                        <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
+                        <button className="button button-danger" type="submit" disabled={deletingAccount || !(user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email")) && !deleteReauthenticated}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
+                        <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); setDeleteReauthenticated(false); }}>Cancel</button>
                       </div>
                     </form>
                   ) : null}
