@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Activity, RefreshCw, Search } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  "https://zkzgkovwktljfuuuhivk.supabase.co",
-  "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB"
-);
+import { supabase } from "./services/supabase/client.js";
 
 const actionLabel = action => (action || "activity").replace(/_/g, " ");
 

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Gamepad2, Music2, Trophy, GraduationCap, Palette, UsersRound, BookOpen, Copy, Undo2, Redo2, LogOut, KeyRound } from "lucide-react";
 import "./workspace.css";
-const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
+import { supabase } from "./services/supabase/client.js";
 
 const EVENT_TEMPLATES = [
   { key:"esports-001", category:"esports", name:"eSports tournament", label:"eSports", icon:Gamepad2, description:"Gaming brackets, player IDs, squads and entry rules.", title:"Nexus Open Qualifiers", fieldLabel:"GAME / TITLE", fieldPlaceholder:"e.g. BGMI, Valorant, Free Fire", teamSize:4, gameTitle:"BGMI", sampleDescription:"Join the open qualifiers, check your match schedule, and follow organiser updates.", sampleRules:"Use your own account. Cheating and abusive conduct are not allowed. Follow the match schedule and organiser decisions." },
