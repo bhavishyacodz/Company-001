@@ -115,10 +115,11 @@ function App() {
         if (organizerGoogleCallback) {
           window.history.replaceState({}, document.title, window.location.pathname);
           const pendingDeleteReauthUser = window.sessionStorage.getItem("company001:delete-reauth");
+          const pendingPasswordReauthUser = window.sessionStorage.getItem("company001:password-reauth");
           const returningFromDeleteReauth = pendingDeleteReauthUser === user.id;
-          if (pendingDeleteReauthUser && !returningFromDeleteReauth) {
-            window.sessionStorage.removeItem("company001:delete-reauth");
-          }
+          const returningFromPasswordReauth = pendingPasswordReauthUser === user.id;
+          if (pendingDeleteReauthUser && !returningFromDeleteReauth) window.sessionStorage.removeItem("company001:delete-reauth");
+          if (pendingPasswordReauthUser && !returningFromPasswordReauth) window.sessionStorage.removeItem("company001:password-reauth");
           if (role === "owner") {
             try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
             await supabase.auth.signOut();
@@ -132,7 +133,7 @@ function App() {
             }
             return;
           }
-          if (returningFromDeleteReauth && role === "organizer") {
+          if ((returningFromDeleteReauth || returningFromPasswordReauth) && role === "organizer") {
             setView("account");
             setAuthResolving(false);
             return;
@@ -845,6 +846,10 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         setDeleteOpen(true);
         setDeleteReauthenticated(true);
         setNotice("Google sign-in refreshed. Confirm your email and type DELETE to continue.");
+      } else if (window.sessionStorage.getItem("company001:password-reauth") === user.id) {
+        window.sessionStorage.removeItem("company001:password-reauth");
+        setSettingsSection("security");
+        setNotice("Google sign-in refreshed. Re-enter your new password and try again.");
       }
     } catch { /* Optional session flag. */ }
   }, [user?.id]);
@@ -1079,6 +1084,24 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
     }
   };
 
+  const reauthenticateGoogleForPassword = async () => {
+    setNotice("");
+    try {
+      window.sessionStorage.setItem("company001:password-reauth", user.id);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google&account_action=password",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      try { window.sessionStorage.removeItem("company001:password-reauth"); } catch { /* Optional session flag. */ }
+      setNotice(error.message || "Could not restart Google sign-in. Please try again.");
+    }
+  };
+
   const reauthenticateGoogleForDeletion = async () => {
     setDeleteReauthenticated(false);
     setNotice("");
@@ -1209,7 +1232,10 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                   {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
                     <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
                   ) : (
-                    <p className="account-password-help">You signed in with Google. Create an email password here; your Google sign-in will continue to work.</p>
+                    <div className="account-password-help">
+                      <p>You signed in with Google. Create an email password here; your Google sign-in will continue to work.</p>
+                      <button className="button button-secondary" type="button" onClick={reauthenticateGoogleForPassword}>Reconfirm with Google</button>
+                    </div>
                   )}
                   <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
                   <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
