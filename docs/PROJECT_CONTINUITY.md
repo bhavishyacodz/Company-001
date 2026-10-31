@@ -103,8 +103,8 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
 - Cloudflare Pages preview for exact head `3928da0815114ace44202dfefee3cb4e48bec3b0`: successful. Preview URL: https://5c7985ab.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev
-- The separate `Workers Builds: company-001` check was still in progress at the latest check. The repository's production host remains Cloudflare Pages; do not merge until the check is reconciled with branch protection. Branch-protection status could not be read with the connected GitHub permissions.
-- Local privacy integration run `41193197868`: release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed; local Supabase startup/migration replay/two-organiser privacy tests were still in progress at last check.
+- The separate `Workers Builds: company-001` check completed with failure for this commit, as it did for earlier PR previews. The repository's production host remains Cloudflare Pages and the exact Pages preview succeeded. Do not merge until this check is reconciled with branch protection. Branch-protection status could not be read with the connected GitHub permissions.
+- Local privacy integration run `41193197868`: release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed; local Supabase startup completed, while migration replay and two-organiser privacy tests were still in progress at last check.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
 ## Immediate work queue (strict order)
