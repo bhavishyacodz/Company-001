@@ -1,5 +1,8 @@
-import { assertEquals } from "jsr:@std/assert@1";
 import { readBodyLimited } from "./request-body.ts";
+
+function assertEquals(actual: unknown, expected: unknown) {
+  if (actual !== expected) throw new Error(`Expected ${String(expected)}, received ${String(actual)}`);
+}
 
 Deno.test("readBodyLimited accepts a body at the configured limit", async () => {
   const request = new Request("https://example.test/register", {
