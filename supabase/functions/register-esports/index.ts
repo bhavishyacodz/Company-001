@@ -234,8 +234,15 @@ Deno.serve(async (req: Request) => {
       if (page.length < 1000) break;
       pageFrom += 1000;
     }
-    if (platformBytesUsed + fileEntry.size > 500_000_000) {
-      return reply(origin, 503, { error: "Company-001's free pilot screenshot capacity is full. Please try again after the platform owner expands storage." });
+    const { data: platformSettings, error: platformSettingsError } = await admin
+      .from("platform_storage_settings").select("screenshot_quota_bytes").eq("id", 1).maybeSingle();
+    if (platformSettingsError) {
+      console.error("platform_storage_settings_check_failed");
+      return reply(origin, 503, { error: "Screenshot storage is temporarily unavailable. Please try again." });
+    }
+    const platformQuota = Math.max(1_000_000, Number(platformSettings?.screenshot_quota_bytes) || 500_000_000);
+    if (platformBytesUsed + fileEntry.size > platformQuota) {
+      return reply(origin, 503, { error: "Company-001's shared screenshot capacity is full. Please try again after the platform owner expands storage." });
     }
   }
 
