@@ -8,12 +8,12 @@ import {
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
-import "./premium-refresh.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
-// Load authenticated dashboard styling after every screen/component stylesheet.
-// This prevents legacy component CSS from winning after the login route mounts.
+// Load all premium/authenticated themes after every screen/component stylesheet.
+// This prevents legacy component CSS from overriding the profile, dashboard and editor themes after login.
+import "./premium-refresh.css";
 import "./dashboard-yellow.css";
 import "./experience-redesign.css";
 
