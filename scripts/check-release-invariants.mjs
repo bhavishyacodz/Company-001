@@ -181,6 +181,11 @@ const checks = [
     },
   },
   {
+    name: "owner account directory responses are not cacheable",
+    run: () => read("supabase/functions/manage-user-accounts/index.ts")
+      .includes('"Cache-Control": "no-store"'),
+  },
+  {
     name: "anonymous visitors have no direct organizer delegation privileges",
     run: () => {
       const migration = read("supabase/migrations/20261030100000_revoke_anon_organizer_event_access.sql");
