@@ -8,6 +8,22 @@ import "./experience-redesign.css";
 import PlanUsagePanel from "./PlanUsagePanel.jsx";
 const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
 
+async function loadAllOrganizerRegistrations(organizerId) {
+  const rows = [];
+  const pageSize = 1000;
+  for (let from = 0; from < 5000; from += pageSize) {
+    const { data, error } = await supabase.from("registrations")
+      .select("id,event_id,confirmation_reference,participant_name,participant_email,game_id,team_name,custom_fields,payment_status,registration_status,created_at,payment_evidence(id,review_status,created_at)")
+      .eq("organizer_id", organizerId)
+      .order("created_at", { ascending: false })
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows;
+}
+
 const EVENT_TEMPLATES = [
   { key:"esports-001", category:"esports", name:"eSports tournament", label:"eSports", icon:Gamepad2, description:"Gaming brackets, player IDs, squads and entry rules.", title:"Nexus Open Qualifiers", fieldLabel:"GAME / TITLE", fieldPlaceholder:"e.g. BGMI, Valorant, Free Fire", teamSize:4, gameTitle:"BGMI", sampleDescription:"Join the open qualifiers, check your match schedule, and follow organiser updates.", sampleRules:"Use your own account. Cheating and abusive conduct are not allowed. Follow the match schedule and organiser decisions." },
   { key:"garba-001", category:"garba", name:"Garba / Navratri", label:"Garba", icon:Music2, description:"Pass registration, venue details, session timings and dress notes.", title:"Navratri Garba Night", fieldLabel:"EVENT TYPE / SESSION", fieldPlaceholder:"e.g. Family pass, Day 2 evening", teamSize:1, gameTitle:"Garba Night", sampleDescription:"Celebrate Navratri with an evening of Garba. Check the selected session, venue details and entry instructions before registering.", sampleRules:"Carry your registration confirmation. Follow venue staff instructions and respect other attendees. Entry depends on venue capacity and safety rules." },
@@ -86,15 +102,14 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
       if (orgError) throw orgError;
       setOrganizer(org || null);
       if (!org) { setEvents([]); setRegistrations([]); setUsage({ files: 0, bytes: 0 }); return; }
-      const [ev, regs, evidence] = await Promise.all([
+      const [ev, registrationRows, evidence] = await Promise.all([
         supabase.from("events").select("id,title,slug,template_key,category,game_title,description,rules,entry_fee_minor,team_size,starts_at,registration_closes_at,payment_instructions,payment_qr_public_url,branding,status,created_at").eq("organizer_id",org.id).order("created_at",{ascending:false}),
-        supabase.from("registrations").select("id,event_id,confirmation_reference,participant_name,participant_email,game_id,team_name,custom_fields,payment_status,registration_status,created_at,payment_evidence(id,review_status,created_at)").eq("organizer_id",org.id).order("created_at",{ascending:false}).limit(500),
+        loadAllOrganizerRegistrations(org.id),
         supabase.from("payment_evidence").select("file_size_bytes").eq("organizer_id",org.id).limit(1000)
       ]);
       if (ev.error) throw ev.error;
-      if (regs.error) throw regs.error;
       if (evidence.error) throw evidence.error;
-      setEvents(ev.data || []); setRegistrations(regs.data || []);
+      setEvents(ev.data || []); setRegistrations(registrationRows || []);
       const evidenceRows = evidence.data || [];
       setUsage({ files: evidenceRows.length, bytes: evidenceRows.reduce((total, item) => total + (Number(item.file_size_bytes) || 1000000), 0) });
       try {
