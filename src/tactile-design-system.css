@@ -352,3 +352,48 @@
 @media(prefers-reduced-motion:reduce){
   .tactile-home *, .tactile-home *::before,.tactile-home *::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* Motion performance: reveal once per section; never run a scroll handler per frame. */
+.tactile-home{
+  scroll-behavior:smooth;
+  overscroll-behavior-x:none;
+}
+.tactile-home [data-reveal]{
+  opacity:1;
+  transform:none;
+}
+.tactile-home.tactile-motion-ready [data-reveal]{
+  opacity:0;
+  transform:translate3d(0,18px,0);
+  transition:opacity .48s var(--c001-motion),transform .48s var(--c001-motion);
+}
+.tactile-home.tactile-motion-ready [data-reveal].is-visible{
+  opacity:1;
+  transform:translate3d(0,0,0);
+}
+.tactile-mascot,.tactile-mascot-arm-right,.tactile-bento-card,.tactile-service-card{
+  backface-visibility:hidden;
+}
+.tactile-mascot{will-change:transform}
+@media(hover:hover) and (pointer:fine){
+  .tactile-bento-card:hover,.tactile-service-card:hover{will-change:transform}
+}
+@media(hover:none), (pointer:coarse){
+  .tactile-brand-pill:active,.tactile-center-pill:active,.tactile-icon-button:active,
+  .tactile-menu-grid>a:active,.tactile-menu-grid>button:active{
+    transform:scale(.985);
+  }
+  .tactile-bento-card:hover,.tactile-service-card:hover{
+    transform:none;
+    box-shadow:var(--c001-shadow-soft);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .tactile-home{scroll-behavior:auto}
+  .tactile-home.tactile-motion-ready [data-reveal]{
+    opacity:1;
+    transform:none;
+    transition:none;
+  }
+}
