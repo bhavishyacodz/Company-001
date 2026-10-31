@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; PR #83 login/dashboard regression hardening in progress)
+Last verified: 2026-10-31 (UTC; PR #83 auth/UI regression and privacy checks passed; release stack still unmerged)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -58,8 +58,8 @@ Production/main base observed during the 2026-10-31 review:
 ### PR #81 — Architecture foundation
 - URL: https://github.com/bhavishyacodz/Company-001/pull/81
 - Branch: chore/architecture-baseline
-- Head: b0519138513561cee3bafbcd5a9c660a226f150f at latest verification
-- Latest Actions run `41215770727`: completed successfully. The PR remains documentation-only.
+- Head: 3ffa3c67002e7c9d9ea8f39a52c16a5d6f918e43 at latest verification
+- Latest Actions run `41216239547`: completed successfully. The PR remains documentation-only.
 - State: open, draft, not merged.
 - Adds architecture, development workflow, routing audit, and PR template documentation only. No runtime/database changes.
 - This file is being added to this branch as the durable handover.
