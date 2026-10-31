@@ -762,6 +762,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [organizerCategory, setOrganizerCategory] = useState("esports");
+  const [setupOpen, setSetupOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
@@ -1161,7 +1162,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
               <div className="profile-overview-actions" style={{ marginTop: 24 }}>
                 {organizerWorkspace
                   ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
-                  : <button className="button button-primary" onClick={() => document.getElementById("organizer-setup")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Create Website <ArrowRight size={14} /></button>}
+                  : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
@@ -1180,27 +1181,23 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 </div>
               ) : null}
             </section>
-            {organizerWorkspace ? (
-              <section className="application-status" aria-label="Organiser details">
-                <span className="panel-label">ORGANISER DETAILS</span>
-                <strong>{organizerWorkspace.display_name || "Your organiser workspace"}</strong>
-                {organizerWorkspace.slug ? <p>company-001.pages.dev/{organizerWorkspace.slug}</p> : null}
-                <span className="status-chip approved"><span />{(organizerWorkspace.status || "active").replace(/_/g, " ").toUpperCase()}</span>
-              </section>
-            ) : application ? (
+            {application && !organizerWorkspace ? (
               <section className="application-status" aria-label="Organiser setup status">
                 <span className="panel-label">ORGANISER SETUP</span>
                 <strong>{application.business_name}</strong>
                 <span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace(/_/g, " ").toUpperCase()}</span>
                 <p>{application.status === "approved" ? "Your organiser workspace is active." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>
               </section>
-            ) : (
+            ) : setupOpen && !organizerWorkspace ? (
               <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
+                <div className="account-delete-actions">
+                  <button className="button button-primary" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
+                  <button className="button button-secondary" type="button" disabled={busy} onClick={() => setSetupOpen(false)}>Cancel</button>
+                </div>
               </form>
-            )}
+            ) : null}
             {settingsSection === "security" ? (
               <section className="account-password-zone" aria-labelledby="account-password-title">
                 <div className="account-delete-heading">
