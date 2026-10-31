@@ -166,12 +166,18 @@ const checks = [
     run: () => {
       const endpoint = read("supabase/functions/register-esports/index.ts");
       const consultation = read("supabase/functions/request-consultation/index.ts");
+      const evidence = read("supabase/functions/view-payment-evidence/index.ts");
+      const selfDeletion = read("supabase/functions/delete-account/index.ts");
+      const ownerManagement = read("supabase/functions/manage-user-accounts/index.ts");
       const reader = read("supabase/functions/_shared/request-body.ts");
       const tests = read("supabase/functions/_shared/request-body.test.ts");
       return endpoint.includes("readBodyLimited(req, 4_000_000)")
         && endpoint.includes('req.headers.get("cf-connecting-ip")')
         && endpoint.includes('split(",").at(-1)')
         && consultation.includes("readBodyLimited(req, 12_000)")
+        && evidence.includes("readBodyLimited(req, 2_048)")
+        && selfDeletion.includes("readBodyLimited(req, 4_096)")
+        && ownerManagement.includes("readBodyLimited(req, 4_096)")
         && consultation.includes('req.headers.get("cf-connecting-ip")')
         && consultation.includes('split(",").at(-1)')
         && consultation.includes('new TextDecoder("utf-8", { fatal: true })')
@@ -185,7 +191,8 @@ const checks = [
   {
     name: "owner account directory responses are not cacheable",
     run: () => read("supabase/functions/manage-user-accounts/index.ts")
-      .includes('"Cache-Control": "no-store"'),
+      .includes('"Cache-Control": "no-store"')
+      && read("supabase/functions/delete-account/index.ts").includes('"Cache-Control": "no-store"'),
   },
   {
     name: "anonymous visitors have no direct organizer delegation privileges",
