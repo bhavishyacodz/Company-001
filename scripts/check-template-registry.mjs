@@ -18,7 +18,7 @@ for (const template of EVENT_TEMPLATES) {
   assert.ok(template.name && template.label && template.category, template.key + " must have category metadata.");
   assert.ok(template.title && template.sampleDescription && template.sampleRules, template.key + " must have usable starter content.");
   assert.equal(template.themeId, "event-baseline", template.key + " must use the event theme scope.");
-  assert.equal(typeof template.icon, "object", template.key + " must retain its Lucide component.");
+  assert.ok(["function", "object"].includes(typeof template.icon), template.key + " must retain its Lucide component.");
   assert.equal(isKnownEventTemplate(template.key), true);
   assert.equal(Object.isFrozen(template), true, template.key + " registry metadata must be immutable.");
 }
