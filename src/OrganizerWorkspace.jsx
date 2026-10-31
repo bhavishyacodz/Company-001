@@ -41,6 +41,9 @@ const getWhiteContrastRatio = (hex) => {
 
 export default function OrganizerWorkspace({ user, initialView = "organizer", initialTemplateKey = "esports-001", onBack }) {
   const [tab, setTab] = useState(initialView);
+  // Keep the visible workspace tab aligned when the parent auth router resolves a newer destination.
+  // Internal tab clicks remain local because initialView only changes on a parent route transition.
+  useEffect(() => { setTab(initialView); }, [initialView]);
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
