@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC)
+Last verified: 2026-10-31 (UTC; PR #83 auth-routing work in progress)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -86,6 +86,24 @@ Production/main base observed during the 2026-10-31 review:
 - PR #80 organizer plans/storage usage: open, draft, based on PR #79 branch.
 - PR #81 and #82 are separate documentation/client-refactor PRs based on main.
 - Reconcile dependencies, file overlap, database migrations, CI, and exact previews before merging or retargeting any stacked PR.
+
+## Active post-login dashboard issue and fix
+
+The live `main` branch still points to the legacy application shell, so the newer yellow/gold 3D organiser dashboard is not yet in production. The intended dashboard styling is present in the open PR #78/#79 stack (including `dashboard-yellow.css` and `experience-redesign.css`). This explains why production can still show the older workspace even when a newer dashboard design exists in GitHub preview branches.
+
+### PR #83 — Post-login dashboard routing fix
+- URL: https://github.com/bhavishyacodz/Company-001/pull/83
+- Branch: `fix/post-login-dashboard-routing`
+- Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
+- Latest verified head at this checkpoint: `3928da0815114ace44202dfefee3cb4e48bec3b0`
+- State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
+- Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
+- The account-panel handoff revalidates the organiser profile and workspace before opening the dashboard, including accounts whose profile row is created during onboarding.
+- Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
+- Adds `scripts/check-auth-routing.mjs` to the release test gate.
+- Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
+- Cloudflare Pages preview check was still running at last check. Do not claim a preview URL or production deployment until the exact head's check completes.
+- No production code, production database, RLS/Storage policy, or participant data was changed.
 
 ## Immediate work queue (strict order)
 
