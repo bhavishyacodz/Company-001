@@ -165,11 +165,14 @@ const checks = [
     name: "registration endpoint enforces streaming body limits and proxy-safe IP selection",
     run: () => {
       const endpoint = read("supabase/functions/register-esports/index.ts");
+      const consultation = read("supabase/functions/request-consultation/index.ts");
       const reader = read("supabase/functions/_shared/request-body.ts");
       const tests = read("supabase/functions/_shared/request-body.test.ts");
       return endpoint.includes("readBodyLimited(req, 4_000_000)")
         && endpoint.includes('req.headers.get("cf-connecting-ip")')
         && endpoint.includes('split(",").at(-1)')
+        && consultation.includes('req.headers.get("cf-connecting-ip")')
+        && consultation.includes('split(",").at(-1)')
         && reader.includes("reader.read()")
         && reader.includes("total > maxBytes")
         && reader.includes("reader.cancel()")
