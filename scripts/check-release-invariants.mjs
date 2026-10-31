@@ -80,7 +80,7 @@ const checks = [
       return account.includes('storage: window.localStorage')
         && account.includes('window.localStorage.getItem("company001:selected-template")')
         && account.includes("const resolveSession = async (user)")
-        && account.includes("if (isLiveEventRoute) return;")
+        && account.includes("if (isLiveEventRoute) {")
         && account.includes('.eq("owner_user_id", user.id)')
         && account.includes("setOrganizerWorkspaceReady(true)")
         && account.includes('const handleUseTemplate = async (templateKey)')
