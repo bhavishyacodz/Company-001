@@ -279,16 +279,18 @@ function App() {
     }
   };
 
-  const openOrganizerWorkspace = async () => {
-    if (!signedInUser) {
+  const openOrganizerWorkspace = async (candidateUser = signedInUser) => {
+    if (!candidateUser?.id) {
+      setOrganizerWorkspaceReady(false);
       setView("account");
       return;
     }
     const version = ++authResolutionRef.current;
     setAuthResolving(true);
+    setSignedInUser(candidateUser);
     try {
       const { data: profile, error: profileError } = await supabase
-        .from("profiles").select("platform_role").eq("id", signedInUser.id).maybeSingle();
+        .from("profiles").select("platform_role").eq("id", candidateUser.id).maybeSingle();
       if (version !== authResolutionRef.current) return;
       if (profileError || profile?.platform_role !== "organizer") {
         setPlatformRole("unknown");
@@ -297,7 +299,7 @@ function App() {
         return;
       }
       const { data: organizer, error: organizerError } = await supabase
-        .from("organizers").select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
+        .from("organizers").select("id").eq("owner_user_id", candidateUser.id).maybeSingle();
       if (version !== authResolutionRef.current) return;
       if (organizerError || !organizer) {
         setPlatformRole("organizer");
@@ -904,7 +906,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         if (organizerError) throw organizerError;
         if (organizer) {
           setNotice("Signed in. Opening your organiser dashboard…");
-          onOpenWorkspace();
+          onOpenWorkspace(data.user);
         } else {
           setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
         }
@@ -929,7 +931,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (error) throw error;
       setApplication(data);
       setNotice("Workspace activated. Opening your template editor…");
-      if (data.status === "approved") onOpenWorkspace();
+      if (data.status === "approved") onOpenWorkspace(user);
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
