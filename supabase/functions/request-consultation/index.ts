@@ -24,7 +24,11 @@ Deno.serve(async (req: Request) => {
   if (str(raw.website, 200)) return reply(origin, 200, { ok: true });
   const name = str(raw.name, 100), email = str(raw.email, 254).toLowerCase(), phone = str(raw.phone, 40), project_type = str(raw.project_type, 40), requirements = str(raw.requirements, 3000), preferred_time = str(raw.preferred_time, 160);
   if (name.length < 2 || !validEmail(email) || !projectTypes.has(project_type) || requirements.length < 15 || requirements.length > 3000) return reply(origin, 400, { error: "Please check your name, email, project type and project details." });
-  const forwarded = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // Prefer the edge-provided client IP; do not trust a client-supplied first
+  // X-Forwarded-For entry when the gateway appends its observed peer address.
+  const forwarded = req.headers.get("cf-connecting-ip")?.trim()
+    || req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim()
+    || "unknown";
   const ipHash = await sha256(forwarded + (Deno.env.get("RATE_LIMIT_PEPPER") ?? supabaseUrl));
   const windowStart = new Date(Math.floor(Date.now() / 600000) * 600000).toISOString();
   const { data: allowed, error: limitError } = await admin.rpc("consume_registration_rate_limit", { p_ip_hash: ipHash, p_window_start: windowStart, p_limit: 3 });
