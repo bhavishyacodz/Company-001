@@ -14,6 +14,7 @@ on:
       - "scripts/check-release-invariants.mjs"
       - "package.json"
       - ".github/workflows/local-privacy-integration.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -74,3 +75,79 @@ jobs:
 
       - name: Run two-organizer privacy integration tests
         run: supabase test db
+
+  deploy-production:
+    name: Deploy Supabase production
+    runs-on: ubuntu-latest
+    needs: privacy-integration
+    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    timeout-minutes: 30
+    env:
+      SUPABASE_PROJECT_REF: zkzgkovwktljfuuuhivk
+    steps:
+      - name: Check whether production credentials are configured
+        id: credentials
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          if [[ -n "$SUPABASE_ACCESS_TOKEN" && -n "$SUPABASE_DB_PASSWORD" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Report missing deployment credentials
+        if: steps.credentials.outputs.ready != 'true'
+        run: |
+          echo "Supabase production deployment was safely skipped." >> "$GITHUB_STEP_SUMMARY"
+          echo "Add SUPABASE_ACCESS_TOKEN and SUPABASE_DB_PASSWORD under GitHub Settings > Secrets and variables > Actions, then run this workflow again." >> "$GITHUB_STEP_SUMMARY"
+          echo "No production database or Edge Function changes were made by this job." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Checkout
+        if: steps.credentials.outputs.ready == 'true'
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        if: steps.credentials.outputs.ready == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+
+      - name: Link production project
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Preview pending production migrations
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase --yes db push --linked --include-all --dry-run --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Apply tested production migrations
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase --yes db push --linked --include-all --password "$SUPABASE_DB_PASSWORD"
+
+      - name: Deploy security-sensitive Edge Functions
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy register-esports --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy request-consultation --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy view-payment-evidence --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy delete-account --project-ref "$SUPABASE_PROJECT_REF"
+          supabase functions deploy manage-user-accounts --project-ref "$SUPABASE_PROJECT_REF"
+
+      - name: Confirm production function versions
+        if: steps.credentials.outputs.ready == 'true'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase functions list --project-ref "$SUPABASE_PROJECT_REF"
