@@ -9,6 +9,7 @@ import {
 import "./styles.css";
 import "./premium-refresh.css";
 import "./experience-redesign.css";
+import "./tactile-design-system.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
@@ -411,7 +412,7 @@ function App() {
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
 
   return (
-    <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined, "--event-hero-title-size": `${Math.max(42,Math.min(104,Number(eventData?.branding?.heroTitleSize)||72))}px`, "--event-hero-title-align": ["left","center","right"].includes(eventData?.branding?.heroTitleAlign) ? eventData.branding.heroTitleAlign : "left", "--event-hero-title-color": /^#[0-9a-fA-F]{6}$/.test(eventData?.branding?.heroTitleColor||"") ? eventData.branding.heroTitleColor : "#ffffff", "--event-hero-title-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.heroTitleX)||0))}px`, "--event-hero-title-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.heroTitleY)||0))}px`, "--event-hero-copy-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.descriptionX)||0))}px`, "--event-hero-copy-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.descriptionY)||0))}px` } : undefined}>
+    <div className={`app accent-${accent} ${view === "site" && !isLiveEventRoute ? "company-home-mode" : ""}`} data-design-theme="tactile" style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined, "--event-hero-title-size": `${Math.max(42,Math.min(104,Number(eventData?.branding?.heroTitleSize)||72))}px`, "--event-hero-title-align": ["left","center","right"].includes(eventData?.branding?.heroTitleAlign) ? eventData.branding.heroTitleAlign : "left", "--event-hero-title-color": /^#[0-9a-fA-F]{6}$/.test(eventData?.branding?.heroTitleColor||"") ? eventData.branding.heroTitleColor : "#ffffff", "--event-hero-title-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.heroTitleX)||0))}px`, "--event-hero-title-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.heroTitleY)||0))}px`, "--event-hero-copy-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.descriptionX)||0))}px`, "--event-hero-copy-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.descriptionY)||0))}px` } : undefined}>
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
@@ -554,7 +555,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Organiser login <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => document.getElementById("process")?.scrollIntoView({ behavior: "smooth" })} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+        </main> : <CompanyHome onStart={() => setView("templates")} onTemplates={() => setView("templates")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
