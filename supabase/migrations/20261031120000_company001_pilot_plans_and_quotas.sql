@@ -92,12 +92,19 @@ as $$
 declare
   free_count integer;
 begin
-  if new.plan_key = 'free'
-    and (tg_op = 'INSERT' or old.plan_key is distinct from 'free') then
-    select count(*) into free_count
-    from public.organizers
-    where plan_key = 'free'
-      and (tg_op = 'INSERT' or id <> new.id);
+  if new.plan_key = 'free' then
+    if tg_op = 'INSERT' then
+      select count(*) into free_count
+      from public.organizers
+      where plan_key = 'free';
+    elsif old.plan_key is distinct from 'free' then
+      select count(*) into free_count
+      from public.organizers
+      where plan_key = 'free' and id <> new.id;
+    else
+      free_count := 0;
+    end if;
+
     if free_count >= 10 then
       raise exception 'The ten free pilot organiser slots are full. Request a paid plan or contact Company-001.';
     end if;
