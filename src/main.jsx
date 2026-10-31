@@ -1249,7 +1249,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                   </div>
                   {deleteOpen ? (
                     <form className="account-delete-form" onSubmit={deleteAccount}>
-                      <p className="account-delete-warning">Confirm your account email, current password, and type DELETE.</p>
+                      <p className="account-delete-warning">{user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? "Confirm your account email, current password, and type DELETE." : "Reconfirm with Google, confirm your account email, and type DELETE."}</p>
                       <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
                       {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
                         <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
