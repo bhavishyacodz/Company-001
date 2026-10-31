@@ -304,7 +304,7 @@ const checks = [
       const app = read("src/main.jsx");
       return app.includes('if (platformRole === "owner") {')
         && app.includes('setView("owner");')
-        && app.includes('if (!signedInUser) {')
+        && app.includes('if (!signedInUser || platformRole !== "organizer") {')
         && app.includes('setView("account");');
     },
   },
@@ -584,11 +584,12 @@ const checks = [
       const app = read("src/main.jsx");
       const owner = read("src/OwnerPanel.jsx");
       const workspace = read("src/OrganizerWorkspace.jsx");
-      return app.includes('if (initialRole === "owner")')
-        && app.includes('else if (initialRole === "organizer")')
+      return app.includes('if (role === "owner")')
+        && app.includes('if (role !== "organizer")')
         && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
         && app.includes('if (profile?.platform_role === "owner")')
-        && app.includes('onOpenWorkspace={() => setView("organizer")}')
+        && app.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}')
+        && app.includes('company001:google-owner-blocked')
         && owner.includes('if (!user || role !== "owner")')
         && owner.includes('supabase.auth.signOut()')
         && workspace.includes('onClick={signOut}');
