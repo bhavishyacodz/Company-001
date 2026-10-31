@@ -616,10 +616,13 @@ const checks = [
     name: "owner account management enforces MFA on the server, not only in the UI",
     run: () => {
       const edge = read("supabase/functions/manage-user-accounts/index.ts");
-      return edge.includes("admin.auth.mfa.getAuthenticatorAssuranceLevel(token)")
-        && edge.includes('assurance?.currentLevel !== "aal2"')
+      return edge.includes("admin.auth.getUser(token)")
+        && edge.includes("readVerifiedJwtClaims(token)")
+        && edge.includes('claims?.aal !== "aal2"')
+        && edge.includes('claims?.role !== "authenticated"')
         && edge.includes("Complete King Login multi-factor verification")
-        && edge.indexOf("getAuthenticatorAssuranceLevel(token)") < edge.indexOf('admin.from("profiles").select("platform_role")');
+        && edge.indexOf("admin.auth.getUser(token)") < edge.indexOf("readVerifiedJwtClaims(token)")
+        && edge.indexOf("readVerifiedJwtClaims(token)") < edge.indexOf('admin.from("profiles").select("platform_role")');
     },
   },
   {
