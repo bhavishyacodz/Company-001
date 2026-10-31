@@ -205,7 +205,7 @@ const checks = [
         && tests.includes("banned organizer cannot read participant registrations with an existing token")
         && tests.includes("banned organizer cannot read payment evidence with an existing token")
         && tests.includes("banned organizer cannot read private screenshots with an existing token")
-        && tests.includes("account also disables an account");
+        && tests.includes("server-managed suspension flag also disables an account");
     },
   },
   {
