@@ -32,6 +32,14 @@ jobs:
         run: npm run test:release
       - name: Build site
         run: npm run build
+      - name: Verify Cloudflare Pages security headers
+        run: |
+          test -s dist/_headers
+          grep -q "X-Content-Type-Options: nosniff" dist/_headers
+          grep -q "X-Frame-Options: DENY" dist/_headers
+          grep -q "Strict-Transport-Security: max-age=31536000" dist/_headers
+          grep -q "frame-ancestors 'none'" dist/_headers
+          grep -q "Cache-Control: no-cache, no-store, must-revalidate" dist/_headers
       - name: Smoke-test consultation endpoint (no database write)
         env:
           CONSULTATION_URL: https://zkzgkovwktljfuuuhivk.supabase.co/functions/v1/request-consultation
