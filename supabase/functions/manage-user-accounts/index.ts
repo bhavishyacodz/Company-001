@@ -25,6 +25,22 @@ function response(origin: string, status: number, body: Record<string, unknown>)
     },
   });
 }
+function readVerifiedJwtClaims(token: string): Record<string, unknown> | null {
+  try {
+    const encoded = token.split(".")[1];
+    if (!encoded) return null;
+    const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const parsed = JSON.parse(new TextDecoder().decode(bytes));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function fail(message: string): never { throw new Error(message); }
 async function must<T>(promise: PromiseLike<{ data: T; error: { message: string } | null }>): Promise<T> {
   const result = await promise;
@@ -46,7 +62,14 @@ Deno.serve(async (req: Request) => {
   try {
     const { data: authResult, error: authError } = await admin.auth.getUser(token);
     if (authError || !authResult.user) return response(origin, 401, { error: "Your session is invalid or expired. Sign in again." });
+
+    // getUser(token) has validated the signature, expiry and identity for this exact JWT.
+    // Read its signed AAL claim only after that verification; do not trust client-supplied metadata.
     const actor = authResult.user;
+    const claims = readVerifiedJwtClaims(token);
+    if (claims?.sub !== actor.id || claims?.role !== "authenticated" || claims?.aal !== "aal2") {
+      return response(origin, 403, { error: "Complete King Login multi-factor verification before managing accounts." });
+    }
     const actorProfile = await must(admin.from("profiles").select("platform_role").eq("id", actor.id).maybeSingle());
     if (actorProfile?.platform_role !== "owner") {
       return response(origin, 403, { error: "Only the verified platform owner can manage user accounts." });

@@ -59,6 +59,7 @@ jobs:
           supabase/functions/register-esports/index.ts
           supabase/functions/request-consultation/index.ts
           supabase/functions/view-payment-evidence/index.ts
+          supabase/functions/delete-payment-evidence/index.ts
           supabase/functions/delete-account/index.ts
           supabase/functions/manage-user-accounts/index.ts
 

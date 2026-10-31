@@ -78,7 +78,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
               <span>COMPANY<span className="tactile-brand-dash">—</span>001</span>
             </button>
             <nav className="tactile-center-pill" aria-label="Main navigation">
-              <button onClick={onTemplates}>Catalog</button>
+              <button onClick={onTemplates}>Create site</button>
               <span aria-hidden="true" />
               <a href="#manifesto">Manifesto</a>
             </nav>
@@ -92,7 +92,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
               </button>
               {menuOpen && <div className="tactile-popover" id="tactile-menu">
                 <div className="tactile-promo">
-                  <div><span>MADE TO MAKE THINGS HAPPEN</span><strong>Good ideas<br/>look good here.</strong><button onClick={() => { closeMenu(); onTemplates(); }}>Explore templates <ArrowUpRight size={14}/></button></div>
+                  <div><span>MADE TO MAKE THINGS HAPPEN</span><strong>Good ideas<br/>look good here.</strong><button onClick={() => { closeMenu(); onTemplates(); }}>Create your site <ArrowUpRight size={14}/></button></div>
                   <div className="tactile-promo-art" aria-hidden="true"><span/><i>✳</i><b>001</b></div>
                 </div>
                 <div className="tactile-menu-grid">
@@ -113,7 +113,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
             <h1>Big ideas.<br/><em>Beautifully</em> put<br/>into motion.</h1>
             <p>Build a website, bring an event to life, or turn a messy workflow into something wonderfully simple.</p>
             <div className="tactile-hero-actions">
-              <button className="tactile-primary-button" onClick={onTemplates}>Explore the catalog <ArrowUpRight size={17}/></button>
+              <button className="tactile-primary-button" onClick={onTemplates}>Create your site <ArrowUpRight size={17}/></button>
               <button className="tactile-text-button" onClick={onOrganiser}>Open your studio <ArrowRight size={16}/></button>
             </div>
             <div className="tactile-proof"><span><ShieldCheck size={15}/> Privacy-first by design</span><span><Zap size={15}/> Made to feel effortless</span></div>
@@ -147,7 +147,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
             <h2>Your event.<br/>Your own<br/><em>world.</em></h2>
             <p>Publish event pages, collect registrations and keep every detail together.</p>
             <span className="tactile-doodle doodle-face" aria-hidden="true"><i/><b/><em/></span>
-            <span className="tactile-card-cta">EXPLORE TEMPLATES <ArrowRight size={14}/></span>
+            <span className="tactile-card-cta">CREATE YOUR SITE <ArrowRight size={14}/></span>
           </button>
         </div>
       </section>
@@ -177,7 +177,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
         </div>
       </section>
 
-      <section className="tactile-faq" id="faq" data-reveal><span className="tactile-section-index">06 / GOOD TO KNOW</span><h2>Questions, <em>answered.</em></h2><div><details><summary>Can organisers browse templates without signing in?<ArrowRight size={16}/></summary><p>Yes. The public template catalog is designed to be explored before creating an account.</p></details><details><summary>Can I manage my event from my phone?<ArrowRight size={16}/></summary><p>The experience is designed for mobile and desktop, with responsive organiser tools.</p></details><details><summary>Who can see participant details?<ArrowRight size={16}/></summary><p>Participant information and payment evidence are intended to remain private to the event's organiser.</p></details></div></section>
+      <section className="tactile-faq" id="faq" data-reveal><span className="tactile-section-index">06 / GOOD TO KNOW</span><h2>Questions, <em>answered.</em></h2><div><details><summary>Can I create a website without choosing a template?<ArrowRight size={16}/></summary><p>Yes. Sign in, open the editor and start with a simple default website. You can customise it and save a private draft.</p></details><details><summary>Can I manage my event from my phone?<ArrowRight size={16}/></summary><p>The experience is designed for mobile and desktop, with responsive organiser tools.</p></details><details><summary>Who can see participant details?<ArrowRight size={16}/></summary><p>Participant information and payment evidence are intended to remain private to the event's organiser.</p></details></div></section>
 
       <section className="tactile-contact" id="contact" data-reveal>
         <div className="tactile-contact-copy"><span className="tactile-section-index">07 / LET'S TALK</span><h2>Have a good<br/><em>idea?</em></h2><p>Tell us what you're trying to make. We'll help turn the rough idea into a clear plan before you commit to anything.</p><div className="tactile-contact-promise"><ShieldCheck size={18}/><span><b>No payment to enquire.</b><small>Review the scope and quote before work begins.</small></span></div></div>

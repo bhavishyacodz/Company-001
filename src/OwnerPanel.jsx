@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog, Palette, Save, Eye, Plus, Pencil } from "lucide-react";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
@@ -34,6 +34,11 @@ export default function OwnerPanel({ onBack }) {
   const [accountActionTarget, setAccountActionTarget] = useState(null);
   const [accountConfirmEmail, setAccountConfirmEmail] = useState("");
   const [accountConfirmWord, setAccountConfirmWord] = useState("");
+  const [themes, setThemes] = useState([]);
+  const [themeError, setThemeError] = useState("");
+  const [themeBusy, setThemeBusy] = useState(false);
+  const [editingThemeId, setEditingThemeId] = useState("");
+  const [themeForm, setThemeForm] = useState({ name: "", description: "", category: "general", primaryColor: "#6379df", backgroundColor: "#f5f6fb", fontFamily: "Inter", heroStyle: "centered" });
 
   const load = async () => {
     setLoading(true); setError("");
@@ -63,6 +68,9 @@ export default function OwnerPanel({ onBack }) {
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
+      const { data: themeData, error: themeLoadError } = await supabase.from("site_themes").select("id,name,slug,description,category,design,status,created_at,updated_at,published_at").order("updated_at", { ascending: false }).limit(100);
+      setThemes(themeLoadError ? [] : (themeData || []));
+      setThemeError(themeLoadError ? "Theme storage is not ready yet. Apply the new Supabase migration before using this workshop." : "");
       const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
       if (accountLoadError) {
         setAccountError(accountLoadError.message || "Could not load user accounts.");
@@ -143,6 +151,45 @@ export default function OwnerPanel({ onBack }) {
       (accountFilter === "suspended" ? account.suspended : !account.suspended);
     return matchesQuery && matchesFilter;
   });
+
+  const resetThemeEditor = () => { setEditingThemeId(""); setThemeForm({ name: "", description: "", category: "general", primaryColor: "#6379df", backgroundColor: "#f5f6fb", fontFamily: "Inter", heroStyle: "centered" }); };
+  const editTheme = (theme) => {
+    setEditingThemeId(theme.status === "published" ? "" : theme.id);
+    setThemeForm({ name: theme.name || "", description: theme.description || "", category: theme.category || "general", primaryColor: theme.design?.primaryColor || "#6379df", backgroundColor: theme.design?.backgroundColor || "#f5f6fb", fontFamily: theme.design?.fontFamily || "Inter", heroStyle: theme.design?.heroStyle || "centered" });
+    document.getElementById("owner-theme-workshop")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const saveTheme = async (event) => {
+    event.preventDefault();
+    if (role !== "owner" || !user?.id) return;
+    const name = themeForm.name.trim();
+    if (name.length < 2) { setThemeError("Give this theme a name of at least 2 characters."); return; }
+    setThemeBusy(true); setThemeError(""); setNotice("");
+    const slug = name.toLowerCase().normalize("NFKD").replace(/[\\u0300-\\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 76) || "theme";
+    const payload = { name, slug: editingThemeId ? undefined : slug + "-" + Date.now().toString(36), description: themeForm.description.trim(), category: themeForm.category, design: { primaryColor: themeForm.primaryColor, backgroundColor: themeForm.backgroundColor, fontFamily: themeForm.fontFamily, heroStyle: themeForm.heroStyle } };
+    try {
+      const result = editingThemeId
+        ? await supabase.from("site_themes").update({ name: payload.name, description: payload.description, category: payload.category, design: payload.design }).eq("id", editingThemeId).select("id").single()
+        : await supabase.from("site_themes").insert({ ...payload, created_by: user.id, status: "draft" }).select("id").single();
+      if (result.error) throw result.error;
+      setNotice(editingThemeId ? "Theme draft saved." : "New private theme draft created.");
+      resetThemeEditor();
+      const { data, error: refreshError } = await supabase.from("site_themes").select("id,name,slug,description,category,design,status,created_at,updated_at,published_at").order("updated_at", { ascending: false }).limit(100);
+      if (refreshError) throw refreshError;
+      setThemes(data || []);
+    } catch (e) { setThemeError(e.message || "Could not save this theme."); }
+    finally { setThemeBusy(false); }
+  };
+  const changeThemeStatus = async (theme, status) => {
+    if (!["published", "draft", "archived"].includes(status) || role !== "owner") return;
+    setThemeBusy(true); setThemeError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("site_themes").update({ status }).eq("id", theme.id);
+      if (updateError) throw updateError;
+      setThemes(current => current.map(item => item.id === theme.id ? { ...item, status, published_at: status === "published" ? new Date().toISOString() : null } : item));
+      setNotice(status === "published" ? "Theme published. It is now available for creators." : status === "draft" ? "Theme moved back to private drafts." : "Theme archived and hidden from creators.");
+    } catch (e) { setThemeError(e.message || "Could not update theme status."); }
+    finally { setThemeBusy(false); }
+  };
 
   const changeOwnerPassword = async (event) => {
     event.preventDefault();
@@ -239,6 +286,7 @@ export default function OwnerPanel({ onBack }) {
         <header className="owner-heading"><div><div className="section-kicker owner-live-kicker"><span className="owner-live-dot" /> COMPANY-001 / KING CONTROL ROOM</div><h1>Good to have you back.</h1><p>Your platform command centre. Review activity, manage access, approve events and keep everything organised from one place.</p></div><div className="owner-heading-actions"><span className="owner-secure-label"><ShieldCheck size={14}/> OWNER ACCESS</span><button className="button button-secondary" onClick={load} disabled={loading}><RefreshCw size={14}/> Refresh data</button><button className="button button-secondary" onClick={onBack}>Public site <ExternalLink size={14} /></button><button className="button button-secondary" onClick={signOut}><LogOut size={14}/> Sign out</button></div></header>
         <nav className="owner-command-nav" aria-label="Owner dashboard sections">
           <a href="#owner-overview"><LayoutDashboard size={16}/><span>Overview</span></a>
+          <a href="#owner-theme-workshop"><Palette size={16}/><span>Theme Workshop</span><b>{themes.filter(theme => theme.status === "draft").length}</b></a>
           <a href="#owner-enquiries"><Inbox size={16}/><span>Enquiries</span><b>{newConsultationCount}</b></a>
           <a href="#owner-applications"><UserCheck size={16}/><span>Organiser approvals</span><b>{applications.filter(a => a.status === "pending").length}</b></a>
           <a href="#owner-access"><Shield size={16}/><span>Access control</span></a>
@@ -331,6 +379,32 @@ export default function OwnerPanel({ onBack }) {
               {account.role !== "owner" && account.id !== user?.id ? <div className="owner-user-account-actions">{account.suspended ? <button className="button button-primary" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"restore")}><RotateCcw size={14}/> Restore account</button> : <button className="button button-secondary" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"suspend")}><Ban size={14}/> Suspend account</button>}<button className="button button-danger" disabled={Boolean(accountBusyId)} onClick={() => openAccountAction(account,"delete")}><Trash2 size={14}/> Delete account</button></div> : null}
             </article>)}</div>}
             <p className="owner-muted">Suspending keeps account data but blocks authentication. Deletion is permanent. Both actions require the exact account email; deletion additionally requires typing DELETE.</p>
+          </div>
+        </section>
+        <section id="owner-theme-workshop" className="owner-module-anchor">
+          <div className="owner-module-heading"><span className="panel-label">PRIVATE DESIGN STUDIO</span><h2>Theme Workshop</h2><p>Create and refine themes here. Drafts are visible only to your MFA-verified King account. Creators see a theme only after you publish it.</p></div>
+          <div className="owner-card owner-theme-workshop">
+            <div className="owner-theme-toolbar"><div><span className="panel-label">THEME LIBRARY</span><strong>{themes.length} saved themes</strong><small>{themes.filter(theme => theme.status === "published").length} published · {themes.filter(theme => theme.status === "draft").length} private drafts</small></div><button type="button" className="button button-secondary" onClick={resetThemeEditor}><Plus size={14}/> New theme</button></div>
+            {themeError ? <p className="owner-alert" role="alert">{themeError}</p> : null}
+            <div className="owner-theme-columns">
+              <div className="owner-theme-list"><h3>Published Themes</h3>{themes.filter(theme => theme.status === "published").length === 0 ? <p className="owner-muted">Nothing published yet. Your creators will not see any themes until you approve one.</p> : themes.filter(theme => theme.status === "published").map(theme => <article className="owner-theme-item" key={theme.id}><div className="owner-theme-swatch" style={{ background: theme.design?.primaryColor || "#6379df" }}/><div><strong>{theme.name}</strong><small>{theme.category} · Published</small></div><button type="button" className="button button-secondary" onClick={() => editTheme(theme)}><Pencil size={13}/> Edit</button><button type="button" className="button button-secondary" disabled={themeBusy} onClick={() => changeThemeStatus(theme,"draft")}>Unpublish</button></article>)}</div>
+              <div className="owner-theme-list"><h3>Private Drafts</h3>{themes.filter(theme => theme.status === "draft").length === 0 ? <p className="owner-muted">No private theme drafts yet. Start one using the editor.</p> : themes.filter(theme => theme.status === "draft").map(theme => <article className="owner-theme-item" key={theme.id}><div className="owner-theme-swatch" style={{ background: theme.design?.primaryColor || "#6379df" }}/><div><strong>{theme.name}</strong><small>{theme.category} · Private draft</small></div><button type="button" className="button button-secondary" onClick={() => editTheme(theme)}><Pencil size={13}/> Edit</button><button type="button" className="button button-primary" disabled={themeBusy} onClick={() => changeThemeStatus(theme,"published")}><Eye size={13}/> Publish</button></article>)}</div>
+            </div>
+            <form className="owner-theme-editor" onSubmit={saveTheme}>
+              <div className="owner-theme-editor-heading"><div><span className="panel-label">{editingThemeId ? "EDIT THEME" : "NEW PRIVATE THEME"}</span><h3>{editingThemeId ? "Refine this theme" : "Create a theme draft"}</h3></div><span className="owner-theme-preview-chip" style={{ background: themeForm.primaryColor, color: "#fff" }}>Preview accent</span></div>
+              <div className="owner-theme-form-grid">
+                <label>Theme name<input required minLength={2} maxLength={100} value={themeForm.name} onChange={event => setThemeForm(current => ({ ...current, name: event.target.value }))} placeholder="e.g. Aurora Night"/></label>
+                <label>Category<select value={themeForm.category} onChange={event => setThemeForm(current => ({ ...current, category: event.target.value }))}><option value="general">General</option><option value="esports">eSports</option><option value="sports">Sports</option><option value="cultural">Cultural</option><option value="workshop">Workshop</option><option value="community">Community</option></select></label>
+                <label className="owner-theme-wide">Description<textarea rows={2} maxLength={500} value={themeForm.description} onChange={event => setThemeForm(current => ({ ...current, description: event.target.value }))} placeholder="What makes this theme special?"/></label>
+                <label>Primary colour<div className="owner-theme-color"><input type="color" value={themeForm.primaryColor} onChange={event => setThemeForm(current => ({ ...current, primaryColor: event.target.value }))}/><code>{themeForm.primaryColor}</code></div></label>
+                <label>Page background<div className="owner-theme-color"><input type="color" value={themeForm.backgroundColor} onChange={event => setThemeForm(current => ({ ...current, backgroundColor: event.target.value }))}/><code>{themeForm.backgroundColor}</code></div></label>
+                <label>Typography<select value={themeForm.fontFamily} onChange={event => setThemeForm(current => ({ ...current, fontFamily: event.target.value }))}><option>Inter</option><option>DM Sans</option><option>Space Grotesk</option><option>Poppins</option><option>Montserrat</option><option>Playfair Display</option></select></label>
+                <label>Hero layout<select value={themeForm.heroStyle} onChange={event => setThemeForm(current => ({ ...current, heroStyle: event.target.value }))}><option value="centered">Centered</option><option value="editorial">Editorial</option><option value="bold">Bold</option></select></label>
+              </div>
+              <div className="owner-theme-live-preview" style={{ background: themeForm.backgroundColor, color: "#242943" }}><div className="owner-theme-preview-hero" style={{ background: themeForm.primaryColor, fontFamily: themeForm.fontFamily }}><span>THEME PREVIEW</span><strong>{themeForm.name || "Your theme name"}</strong><small>{themeForm.description || "Your event design will appear here."}</small></div><div className="owner-theme-preview-content"><span>EVENT DETAILS</span><strong>Bring your next event to life.</strong><button type="button" style={{ background: themeForm.primaryColor }}>Preview button</button></div></div>
+              <div className="owner-theme-editor-actions"><button type="button" className="button button-secondary" onClick={resetThemeEditor}>Clear editor</button><button type="submit" className="button button-primary" disabled={themeBusy}>{themeBusy ? "Saving…" : <><Save size={14}/> Save private draft</>}</button></div>
+            </form>
+            <p className="owner-muted">Publishing makes a theme public to creators. Editing a published theme starts a separate private draft. The live published version remains unchanged until you explicitly publish the new draft.</p>
           </div>
         </section>
         <section id="owner-security" className="owner-module-anchor"><div className="owner-module-heading"><span className="panel-label">08 / ACCOUNT SECURITY</span><h2>King Login password</h2><p>Change the password for your current owner account. Your current password is verified before the new one is saved.</p></div><div className="owner-card owner-security-card"><form className="account-form" onSubmit={changeOwnerPassword} autoComplete="off"><label>CURRENT PASSWORD<input type="password" value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} autoComplete="current-password" required minLength={1} /></label><label>NEW PASSWORD<input type="password" value={newPassword} onChange={event => setNewPassword(event.target.value)} autoComplete="new-password" required minLength={12} aria-describedby="owner-password-guidance" /></label><label>CONFIRM NEW PASSWORD<input type="password" value={confirmPassword} onChange={event => setConfirmPassword(event.target.value)} autoComplete="new-password" required minLength={12} /></label><p id="owner-password-guidance" className="owner-muted">Use at least 12 characters. A unique passphrase is recommended. Do not reuse your website or email password.</p><button className="button button-primary" type="submit" disabled={changingPassword}>{changingPassword ? "Updating password…" : "Change King Login password"} <KeyRound size={14}/></button></form></div></section>

@@ -74,28 +74,28 @@ const checks = [
         && sql.includes("status = 'approved'")
         && sql.includes("revoke all on function public.auto_activate_organizer_application() from public, anon, authenticated")
         && sql.includes("if current_user = 'postgres' then")
-        && account.includes("Workspace activated. Opening your template editor")
-        && account.includes('if (data.status === "approved") await onOpenWorkspace(user);');
+        && account.includes('from("organizer_applications").insert({')
+        && account.includes('notes: "Creator workspace activation"')
+        && account.includes('const navigateToCreator = (destination = "organizer")')
+        && !account.includes("const submitApplication");
     },
   },
   {
-    name: "saved sessions restore account routing and template selection avoids login loops",
+    name: "saved sessions restore creator routing without a public template catalogue",
     run: () => {
       const account = read("src/main.jsx");
       const client = read("src/services/supabase/client.js");
-      return account.includes('import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js"')
-        && client.includes("persistSession: true")
+      return client.includes("persistSession: true")
         && client.includes("autoRefreshToken: true")
         && client.includes("detectSessionInUrl: true")
-        && client.includes('storage: typeof window !== "undefined" ? window.localStorage : undefined')
-        && account.includes('window.localStorage.getItem("company001:selected-template")')
+        && client.includes("window.localStorage")
         && account.includes("const resolveSession = async (user)")
-        && account.includes("if (isLiveEventRoute) {")
+        && account.includes('if (role === "owner") {')
+        && account.includes('if (role !== "organizer") {')
         && account.includes('.eq("owner_user_id", user.id)')
-        && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
-        && account.includes('const handleUseTemplate = async (templateKey)')
-        && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
-        && account.includes('onBack={() => setView("templates")}')
+        && account.includes('const openOrganizerWorkspace = async (candidateUser = signedInUser, destination = "organizer") =>')
+        && account.includes('view === "templates" ? <main className="public-templates-shell">')
+        && !account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
     },
   },
@@ -304,7 +304,7 @@ const checks = [
         && account.includes("<small>{user.email}</small>")
         && account.includes('aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}')
         && account.includes("My Sites")
-        && account.includes("Create Website")
+        && account.includes("Create your site")
         && account.includes("settingsSection === \"security\"")
         && account.includes("onClick={signOut}")
         && css.includes(".profile-overview")
@@ -313,14 +313,14 @@ const checks = [
   },
 
   {
-    name: "template selection preserves restricted owner routing",
+    name: "default creator routing preserves restricted owner access",
     run: () => {
       const app = read("src/main.jsx");
-      return app.includes('if (platformRole === "owner") {')
+      return app.includes('if (role === "owner") {')
         && app.includes('setView("king-login");')
         && app.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()")
         && app.includes('assurance?.currentLevel === "aal2"')
-        && app.includes('if (!signedInUser || platformRole !== "organizer") {')
+        && app.includes('if (role !== "organizer") {')
         && app.includes('setView("account");');
     },
   },
@@ -330,7 +330,7 @@ const checks = [
     run: () => {
       const editor = read("src/OrganizerWorkspace.jsx");
       return editor.includes('editingStatus==="published"?"Save changes & request review":"Save changes"')
-        && editor.includes('"Create event draft"')
+        && editor.includes('"Save draft"')
         && editor.includes('saving?"Saving…":<><Save size={14}/>');
     },
   },
@@ -610,6 +610,30 @@ const checks = [
         && owner.includes('if (!user || role !== "owner")')
         && owner.includes('supabase.auth.signOut()')
         && workspace.includes('onClick={signOut}');
+    },
+  },
+  {
+    name: "owner account management enforces MFA on the server, not only in the UI",
+    run: () => {
+      const edge = read("supabase/functions/manage-user-accounts/index.ts");
+      return edge.includes("admin.auth.getUser(token)")
+        && edge.includes("readVerifiedJwtClaims(token)")
+        && edge.includes('claims?.aal !== "aal2"')
+        && edge.includes('claims?.role !== "authenticated"')
+        && edge.includes("Complete King Login multi-factor verification")
+        && edge.indexOf("admin.auth.getUser(token)") < edge.indexOf("readVerifiedJwtClaims(token)")
+        && edge.indexOf("readVerifiedJwtClaims(token)") < edge.indexOf('admin.from("profiles").select("platform_role")');
+    },
+  },
+  {
+    name: "every deployed payment-evidence endpoint is tracked and type-checked",
+    run: () => {
+      const removeEvidence = read("supabase/functions/delete-payment-evidence/index.ts");
+      const workflow = read(".github/workflows/local-privacy-integration.yml");
+      return removeEvidence.includes('admin.from("payment_evidence")')
+        && removeEvidence.includes('admin.storage.from("payment-evidence").remove')
+        && removeEvidence.includes('organizer?.owner_user_id !== user.id')
+        && workflow.includes("supabase/functions/delete-payment-evidence/index.ts");
     },
   },
   {
