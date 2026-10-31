@@ -785,7 +785,6 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
-  const [organizerCategory, setOrganizerCategory] = useState("esports");
   const [setupOpen, setSetupOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -1346,8 +1345,7 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
               </section>
             ) : setupOpen && !organizerWorkspace && (!application || application.status === "rejected") ? (
               <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
-                <label>YOUR NAME OR WEBSITE NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
-                <label><select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
+                <label>YOUR NAME OR WEBSITE NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Name shown on your creator profile" /></label>
                 <div className="account-delete-actions">
                   <button className="button button-primary" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
                   <button className="button button-secondary" type="button" disabled={busy} onClick={() => setSetupOpen(false)}>Cancel</button>
