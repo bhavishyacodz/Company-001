@@ -77,8 +77,11 @@ function App() {
       if (!active) return null;
       setSignedInUser(user || null);
       if (!user) { setPlatformRole(null); return null; }
-      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      const role = profile?.platform_role || "organizer";
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
+      // Never infer organizer privileges when the role lookup itself failed.
+      // A genuinely new OAuth user has no profile row yet and is onboarded
+      // through AccountPanel; a query error must fail closed instead.
+      const role = profileError ? "unknown" : (profile?.platform_role || "organizer");
       if (active) setPlatformRole(role);
       return role;
     };
