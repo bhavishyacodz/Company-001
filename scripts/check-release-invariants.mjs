@@ -189,6 +189,19 @@ const checks = [
     },
   },
   {
+    name: "Cloudflare Pages publishes baseline browser security headers",
+    run: () => {
+      const headers = read("public/_headers");
+      return headers.includes("X-Content-Type-Options: nosniff")
+        && headers.includes("X-Frame-Options: DENY")
+        && headers.includes("Referrer-Policy: strict-origin-when-cross-origin")
+        && headers.includes("Permissions-Policy: camera=(), microphone=(), geolocation=()")
+        && headers.includes("Strict-Transport-Security: max-age=31536000")
+        && headers.includes("frame-ancestors 'none'")
+        && headers.includes("Cache-Control: no-cache, no-store, must-revalidate");
+    },
+  },
+  {
     name: "account deletion failure paths are tested before Auth removal",
     run: () => {
       const helper = read("supabase/functions/_shared/account-deletion.ts");
