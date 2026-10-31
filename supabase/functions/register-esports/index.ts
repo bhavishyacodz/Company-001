@@ -92,7 +92,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: event, error: eventError } = await admin
     .from("events")
-    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, branding, organizers!inner(slug,status)")
+    .select("id, organizer_id, title, category, entry_fee_minor, status, registration_closes_at, branding, organizers!inner(slug,status,owner_user_id)")
     .eq("slug", eventSlug)
     .eq("organizers.slug", organizerSlug)
     .eq("status", "published")
@@ -104,6 +104,18 @@ Deno.serve(async (req: Request) => {
     return reply(origin, 503, { error: "Could not verify this event right now." });
   }
   if (!event) return reply(origin, 404, { error: "This registration page is not available." });
+  const organizerOwnerId = (event.organizers as { owner_user_id?: string } | null)?.owner_user_id;
+  if (!organizerOwnerId) return reply(origin, 503, { error: "Could not verify this event right now." });
+  const { data: organizerOwner, error: organizerOwnerError } = await admin.auth.admin.getUserById(organizerOwnerId);
+  if (organizerOwnerError || !organizerOwner?.user) {
+    console.error("organizer_account_check_failed");
+    return reply(origin, 503, { error: "Could not verify this event right now." });
+  }
+  const ownerBannedUntil = organizerOwner.user.banned_until ? new Date(organizerOwner.user.banned_until).getTime() : 0;
+  if ((Number.isFinite(ownerBannedUntil) && ownerBannedUntil > now) ||
+      organizerOwner.user.app_metadata?.account_suspended === true) {
+    return reply(origin, 404, { error: "This registration page is not available." });
+  }
   if ((event.category ?? "esports") === "esports" && gameId.length < 2) {
     return reply(origin, 400, { error: "Enter your in-game ID to register for this eSports event." });
   }
