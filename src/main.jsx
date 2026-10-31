@@ -229,9 +229,9 @@ function App() {
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
-        <button className="banner-link" onClick={() => isLiveEventRoute ? setView("account") : document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
-          {isLiveEventRoute ? "Organiser sign in" : "Explore services"} <ArrowRight size={14} />
-        </button>
+        {!isLiveEventRoute && <button className="banner-link" onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
+          Explore services <ArrowRight size={14} />
+        </button>}
       </div>
 
       <header className={isLiveEventRoute ? "topbar" : "topbar company-topbar"}>
@@ -254,8 +254,10 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          {!isLiveEventRoute && <>
+            <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
+            <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          </>}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
