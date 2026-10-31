@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(51);
+select plan(54);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -164,11 +164,15 @@ select is((
 reset role;
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
 select is(private.is_active_account(), true, 'An unsuspended organizer account is active');
+select is(public.is_account_active_for_user('10000000-0000-4000-8000-000000000001'::uuid), true, 'Trusted server lookup confirms an active organizer account');
 
 update auth.users
 set banned_until = now() + interval '1 day'
 where id = '10000000-0000-4000-8000-000000000001';
 
+set local role service_role;
+select is(public.is_account_active_for_user('10000000-0000-4000-8000-000000000001'::uuid), false, 'Trusted server lookup detects an Auth ban');
+reset role;
 set local role authenticated;
 select is(private.is_active_account(), false, 'A banned account is inactive immediately');
 select is((select count(*)::integer from public.registrations), 0, 'A banned organizer cannot read participant registrations with an existing token');
@@ -212,6 +216,12 @@ select ok(
   has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
   and has_function_privilege('service_role', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
   'Service role can execute both account-deletion RPCs'
+);
+select ok(
+  not has_function_privilege('anon', 'public.is_account_active_for_user(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.is_account_active_for_user(uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.is_account_active_for_user(uuid)', 'EXECUTE'),
+  'Only trusted service-role functions can query account suspension status'
 );
 
 
