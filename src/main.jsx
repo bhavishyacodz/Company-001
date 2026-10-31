@@ -33,7 +33,6 @@ const getSafeHttpsImageUrl = (value) => {
 
 function App() {
   const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return saved === "profile" ? "account" : ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
-  const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
   const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
   const [organizerWorkspaceSummary, setOrganizerWorkspaceSummary] = useState(null);
@@ -373,31 +372,6 @@ function App() {
     }
   };
 
-  const handleUseTemplate = async (templateKey) => {
-    setRequestedTemplate(templateKey);
-    try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
-    if (platformRole === "owner") {
-      // Owner access always passes through the dedicated MFA verification screen.
-      setView("king-login");
-      return;
-    }
-    if (!signedInUser || platformRole !== "organizer") {
-      setView("account");
-      return;
-    }
-    if (organizerWorkspaceSummary?.id) {
-      setOrganizerWorkspaceReady(true);
-      setView("customize");
-      return;
-    }
-    const { data: organizer, error } = await supabase.from("organizers")
-      .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
-    const ready = !error && Boolean(organizer);
-    if (ready) setOrganizerWorkspaceSummary(organizer);
-    setOrganizerWorkspaceReady(ready);
-    setView(ready ? "customize" : "account");
-  };
-
   const copyPlatformLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.origin + "/");
@@ -410,7 +384,7 @@ function App() {
 
   if (!isLiveEventRoute && (!authReady || authResolving)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / SECURE ACCESS</div><h1>Restoring your profile…</h1><p>Checking your saved Google session and loading your workspace.</p></section></main>;
   if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
-  if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey="esports-001" onBack={() => setView("site")} />;
   if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
 
