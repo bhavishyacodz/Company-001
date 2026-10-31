@@ -51,7 +51,7 @@ jobs:
 
       - name: Type-check security-sensitive Edge Functions
         run: >-
-          deno check
+          deno check --node-modules-dir=auto
           supabase/functions/register-esports/index.ts
           supabase/functions/request-consultation/index.ts
           supabase/functions/view-payment-evidence/index.ts
