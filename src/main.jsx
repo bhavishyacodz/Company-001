@@ -88,16 +88,28 @@ function App() {
         const initialUser = data.session?.user || null;
         const initialRole = await refresh(initialUser);
         if (active) {
-          const savedView = window.sessionStorage.getItem("company001:last-view");
-          if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-          if (data.session?.user && !isLiveEventRoute) {
+          const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
+          if (organizerGoogleCallback) {
+            window.history.replaceState({}, document.title, window.location.pathname);
             if (initialRole === "owner") {
-              if (active) setView("owner");
-            } else if (initialRole === "organizer") {
-              const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-              if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
-            } else if (active) {
+              try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
+              await supabase.auth.signOut();
+              if (active) setView("account");
+            } else {
               setView("account");
+            }
+          } else {
+            const savedView = window.sessionStorage.getItem("company001:last-view");
+            if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
+            if (data.session?.user && !isLiveEventRoute) {
+              if (initialRole === "owner") {
+                if (active) setView("owner");
+              } else if (initialRole === "organizer") {
+                const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
+                if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
+              } else if (active) {
+                setView("account");
+              }
             }
           }
         }
@@ -490,7 +502,15 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(() => {
+    try {
+      if (window.sessionStorage.getItem("company001:google-owner-blocked") === "1") {
+        window.sessionStorage.removeItem("company001:google-owner-blocked");
+        return "Google sign-in is for organiser accounts only. Use King Login for the platform-owner account.";
+      }
+    } catch { /* Optional one-time notice. */ }
+    return "";
+  });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -553,6 +573,24 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data, error }) => { if (!error) setApplication(data); });
   }, [user]);
+
+  const signInWithGoogle = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setNotice(error.message || "Could not start Google sign-in.");
+      setBusy(false);
+    }
+  };
 
   const authenticate = async (event) => {
     event.preventDefault();
@@ -757,6 +795,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
+            <button className="account-google-button" type="button" onClick={signInWithGoogle} disabled={busy}><span className="account-google-mark" aria-hidden="true">G</span><span>{busy ? "Connecting…" : "Continue with Google"}</span></button>
+            <div className="account-auth-divider"><span>OR USE EMAIL</span></div>
             <form className="account-form" onSubmit={authenticate}>
               {mode === "signup" ? <label>YOUR DISPLAY NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How organisers see your name" /></label> : null}
               <label>EMAIL ADDRESS<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
