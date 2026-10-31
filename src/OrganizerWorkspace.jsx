@@ -490,7 +490,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
           </div>
           <div className="dashboard-hero-foot"><span>YOUR SPACE</span><strong>{organizer.display_name}</strong><span className="dashboard-foot-separator"/> <span>/{organizer.slug}</span></div>
         </div>
-        <div className="dashboard-stage" aria-label="Decorative three-dimensional event stage illustration">
+        <div className="dashboard-stage" aria-label="Form creation and response overview">
           <div className="dashboard-stage-grid"/>
           <div className="dashboard-orbit dashboard-orbit-one"/>
           <div className="dashboard-orbit dashboard-orbit-two"/>
@@ -500,7 +500,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
             <div className="dashboard-stage-bottom"><strong>CREATE<br/>YOUR FORM.</strong><span>CREATE → SHARE → COLLECT</span></div>
           </div>
           <div className="dashboard-float-card dashboard-float-live"><span className="dashboard-card-pulse"/> LIVE FORMS <strong>{events.filter(e=>e.status==="published").length.toString().padStart(2,"0")}</strong></div>
-          <div className="dashboard-float-card dashboard-float-review"><span>NEW RESPONSES</span><strong>{events.filter(e=>e.status==="pending_review").length.toString().padStart(2,"0")}</strong><small>Received today</small></div>
+          <div className="dashboard-float-card dashboard-float-review"><span>RESPONSES</span><strong>{registrations.length.toString().padStart(2,"0")}</strong><small>Participant submissions</small></div>
           <div className="dashboard-stage-index">C—001 <span>FOR EVERY EVENT</span></div>
         </div>
       </section>
