@@ -831,7 +831,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       .then(({ data, error }) => { if (!error) setOrganizerWorkspace(data || null); });
     supabase.from("profiles").upsert({
       id: user.id,
-      display_name: user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer",
+      display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer",
       platform_role: "organizer",
     }, { onConflict: "id", ignoreDuplicates: true }).then(({ error }) => {
       if (error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
@@ -1088,7 +1088,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                   ? <img className="profile-avatar-large" src={getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)} alt="Profile" />
                   : <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>}
                 <div className="profile-overview-identity">
-                  <strong>{user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer"}</strong>
+                  <strong>{user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer"}</strong>
                   <small>{user.email}</small>
                 </div>
               </div>
