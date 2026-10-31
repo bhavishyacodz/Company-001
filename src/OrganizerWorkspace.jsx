@@ -80,9 +80,14 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const { data: org, error: orgError } = await supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle();
+      const [{ data: org, error: orgError }, { data: profile, error: profileError }] = await Promise.all([
+        supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle(),
+        supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle()
+      ]);
       if (orgError) throw orgError;
+      if (profileError) throw profileError;
       setOrganizer(org || null);
+      setProfileDisplayName(profile?.display_name || user.user_metadata?.display_name || user.user_metadata?.full_name || user.email?.split("@")[0] || "");
       setProfileOrganizerName(org?.display_name || "");
       if (!org) { setEvents([]); setRegistrations([]); return; }
       const [ev, regs] = await Promise.all([
