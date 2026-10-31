@@ -53,6 +53,23 @@ Deno.serve(async (req: Request) => {
     const { data: userResult, error: userError } = await admin.auth.getUser(token);
     if (userError || !userResult.user) return response(origin, 401, { error: "Your session is invalid or expired. Please sign in again." });
     const user = userResult.user;
+    // getUser() verifies the JWT signature; auth_time then enforces a fresh
+    // interactive sign-in before this destructive operation is allowed.
+    let authTime: number | null = null;
+    try {
+      const payloadPart = token.split(".")[1];
+      if (payloadPart) {
+        const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+        const decoded = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+        if (Number.isFinite(decoded.auth_time)) authTime = decoded.auth_time;
+      }
+    } catch {
+      authTime = null;
+    }
+    const now = Math.floor(Date.now() / 1000);
+    if (authTime === null || authTime > now + 60 || now - authTime > 10 * 60) {
+      return response(origin, 401, { error: "For security, sign in again before deleting your account." });
+    }
 
     const bodyBytes = await readBodyLimited(req, 4_096);
     if (!bodyBytes) return response(origin, 413, { error: "Request is too large." });
