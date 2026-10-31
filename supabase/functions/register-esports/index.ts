@@ -52,7 +52,7 @@ Deno.serve(async (req: Request) => {
     form = await new Request(req.url, {
       method: "POST",
       headers: req.headers,
-      body: bodyBytes,
+      body: new Blob([bodyBytes.buffer as ArrayBuffer]),
     }).formData();
   } catch {
     return reply(origin, 400, { error: "Invalid registration form." });
