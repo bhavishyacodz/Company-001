@@ -196,6 +196,8 @@ const checks = [
       return migration.includes("private.is_active_account()")
         && migration.includes("u.banned_until")
         && migration.includes("raw_app_meta_data ->> 'account_suspended'")
+        && migration.includes("public.is_account_active_for_user(p_user_id uuid)")
+        && migration.includes("grant execute on function public.is_account_active_for_user(uuid) to service_role")
         && migration.includes("(select private.is_active_account())")
         && migration.includes("create policy registrations_read_own_organizer_only")
         && migration.includes("create policy payment_evidence_read_own_organizer_only")
@@ -211,10 +213,10 @@ const checks = [
     run: () => {
       const evidence = read("supabase/functions/view-payment-evidence/index.ts");
       const registration = read("supabase/functions/register-esports/index.ts");
-      return evidence.includes("admin.auth.admin.getUserById(user.id)")
-        && evidence.includes("currentAccount.user.app_metadata?.account_suspended")
-        && registration.includes("admin.auth.admin.getUserById(organizerOwnerId)")
-        && registration.includes("organizerOwner.user.app_metadata?.account_suspended");
+      return evidence.includes('"is_account_active_for_user"')
+        && evidence.includes("p_user_id: user.id")
+        && registration.includes('"is_account_active_for_user"')
+        && registration.includes("p_user_id: organizerOwnerId");
     },
   },
   {
