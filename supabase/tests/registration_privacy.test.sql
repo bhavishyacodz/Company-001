@@ -31,6 +31,11 @@ insert into public.organizers (id, owner_user_id, display_name, slug, status) va
 -- The production policy allows only the platform owner to publish events.
 -- Seed published test events under that owner's simulated JWT identity.
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',
+  true
+);
 
 insert into public.events (id, organizer_id, title, slug, status) values
   ('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Privacy Event A', 'privacy-event-a', 'published'),
