@@ -95,16 +95,18 @@ The live `main` branch still points to the legacy application shell, so the newe
 - URL: https://github.com/bhavishyacodz/Company-001/pull/83
 - Branch: `fix/post-login-dashboard-routing`
 - Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
-- Latest verified head at this checkpoint: `3928da0815114ace44202dfefee3cb4e48bec3b0`
+- Latest verified head at this checkpoint: `9e5a114bdd40ae51c6766327a718bf1d70c9c241`
 - State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
 - Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
-- The account-panel handoff revalidates the organiser profile and workspace before opening the dashboard, including accounts whose profile row is created during onboarding.
+- Root cause found during this session: the main `view === "account"` route passed a shortcut callback that marked the organiser workspace ready without verifying it; the other account route depended on parent `signedInUser` state that could still be stale immediately after password login. This combination could bounce users back to the account page or mount the wrong dashboard state.
+- Fix now routes both account entry points through one verified workspace handoff, passes the actual authenticated user from login/onboarding, waits for verification before clearing the login busy state, and rechecks both the profile role and organiser workspace.
+- Owner routing now checks Supabase MFA assurance and only opens the owner dashboard at AAL2. Template selection routes owners through King Login rather than directly opening the owner dashboard.
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
-- Cloudflare Pages preview for exact head `3928da0815114ace44202dfefee3cb4e48bec3b0`: successful. Preview URL: https://5c7985ab.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev
-- The separate `Workers Builds: company-001` check completed with failure for this commit, as it did for earlier PR previews. The repository's production host remains Cloudflare Pages and the exact Pages preview succeeded. Do not merge until this check is reconciled with branch protection. Branch-protection status could not be read with the connected GitHub permissions.
-- Local privacy integration run `41193197868`: release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed; local Supabase startup completed, while migration replay and two-organiser privacy tests were still in progress at last check.
+- Cloudflare Pages preview for earlier baseline head `3928da0`: successful at https://5c7985ab.company-001.pages.dev. Latest head `9e5a114` Pages preview was still building at last check; do not reuse the older preview as proof of the new handoff fix.
+- The separate `Workers Builds: company-001` check completed with failure on earlier PR previews and points to the distinct Cloudflare Workers service; Cloudflare Pages checks succeeded independently. Cloudflare docs describe Pages and Workers as separate Git integrations/checks. Branch-protection status could not be read with the connected GitHub permissions, so do not assume the Workers check is non-blocking.
+- No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
 ## Immediate work queue (strict order)
