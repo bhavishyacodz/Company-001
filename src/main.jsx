@@ -212,9 +212,9 @@ function App() {
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
-        <button className="banner-link" onClick={() => isLiveEventRoute ? setView("account") : document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
-          {isLiveEventRoute ? "Organiser sign in" : "Explore services"} <ArrowRight size={14} />
-        </button>
+        {!isLiveEventRoute && <button className="banner-link" onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
+          Explore services <ArrowRight size={14} />
+        </button>}
       </div>
 
       <header className={isLiveEventRoute ? "topbar" : "topbar company-topbar"}>
