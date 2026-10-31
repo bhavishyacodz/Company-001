@@ -127,6 +127,9 @@ const CSS_TOKEN_MAP = Object.freeze({
  * No arbitrary CSS text, selectors, HTML, or script values are accepted.
  */
 export function applyThemeTokens(element, theme, expectedTarget) {
+  if (!["platform", "event"].includes(expectedTarget)) {
+    return { valid: false, errors: ["An explicit platform or event theme scope is required."] };
+  }
   const result = validateTheme(theme, expectedTarget);
   if (!result.valid) return result;
   if (!element?.style?.setProperty) return { valid: false, errors: ["A valid theme scope element is required."] };
