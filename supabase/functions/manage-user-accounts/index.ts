@@ -16,6 +16,7 @@ function response(origin: string, status: number, body: Record<string, unknown>)
     status,
     headers: {
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       "Access-Control-Allow-Origin": allowed ? (origin || "*") : allowedOrigins[0],
       "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
