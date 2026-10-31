@@ -87,8 +87,8 @@ export default function OwnerPanel({ onBack }) {
   const changeOrganizerPlan = async (organizer, planKey) => {
     const plans = {
       free: { storage_quota_bytes: 40000000, max_screenshot_bytes: 1000000, max_screenshots: 40, max_forms: 1, max_responses_per_form: 100 },
-      starter: { storage_quota_bytes: 200000000, max_screenshot_bytes: 3000000, max_screenshots: 200, max_forms: 3, max_responses_per_form: 500 },
-      business: { storage_quota_bytes: 1000000000, max_screenshot_bytes: 3000000, max_screenshots: 1000, max_forms: 10, max_responses_per_form: 2000 }
+      starter: { storage_quota_bytes: 200000000, max_screenshot_bytes: 3000000, max_screenshots: 200, max_forms: 3, max_responses_per_form: 250 },
+      business: { storage_quota_bytes: 1000000000, max_screenshot_bytes: 3000000, max_screenshots: 1000, max_forms: 10, max_responses_per_form: 500 }
     };
     if (!plans[planKey] || organizer.plan_key === planKey) return;
     if (!window.confirm("Change " + organizer.display_name + " to the " + planKey.toUpperCase() + " plan? Only do this after checking payment and available platform storage.")) return;
