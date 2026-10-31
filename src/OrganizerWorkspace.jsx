@@ -468,7 +468,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         <div className="dashboard-stat"><span>EVENTS</span><strong>{events.length.toString().padStart(2,"0")}</strong><small>All your builds</small></div>
         <div className="dashboard-stat"><span>LIVE NOW</span><strong>{events.filter(e=>e.status==="published").length.toString().padStart(2,"0")}</strong><small>Public event pages</small></div>
         <div className="dashboard-stat"><span>REGISTRATIONS</span><strong>{registrations.length.toString().padStart(2,"0")}</strong><small>Participants received</small></div>
-        <button className="dashboard-stat dashboard-stat-action" onClick={()=>changeWorkspaceTab("payments")}><span>PAYMENTS TO REVIEW</span><strong>{registrations.filter(r=>r.payment_status==="pending"||r.payment_status==="under_review").length.toString().padStart(2,"0")} <ArrowUpRight size={17}/></strong><small>Open review queue</small></button>
+        <button className="dashboard-stat dashboard-stat-action" onClick={()=>changeWorkspaceTab("payments")}><span>PAYMENTS TO REVIEW</span><strong>{registrations.filter(r=>r.payment_status==="pending"||r.payment_status==="under_review").length.toString().padStart(2,"0")} <ArrowRight size={17}/></strong><small>Open review queue</small></button>
       </section>
       <section className="workspace-card dashboard-template-section">
         <div className="dashboard-section-heading"><div><span className="dashboard-section-index">01 / THE STARTING POINT</span><h2>Start with a spark.</h2><p>Choose a direction. Make it yours. Publish when it feels right.</p></div><span className="dashboard-side-note">7 CURATED FORMATS <span>↗</span></span></div>
