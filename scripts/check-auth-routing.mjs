@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 const source = readFileSync("src/main.jsx", "utf8");
 const workspaceSource = readFileSync("src/OrganizerWorkspace.jsx", "utf8");
 const dashboardStyles = readFileSync("src/dashboard-yellow.css", "utf8");
+const experienceStyles = readFileSync("src/experience-redesign.css", "utf8");
 const checks = [
   ["missing profile roles fail closed", source.includes('const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)') && source.includes(': "unknown";')],
   ["auth changes re-resolve the dashboard destination", source.includes("supabase.auth.onAuthStateChange") && source.includes("resolveSession(session?.user || null)")],
@@ -19,7 +20,7 @@ const checks = [
   ["workspace tab follows the latest parent auth route", workspaceSource.includes("useEffect(() => { setTab(initialView); }, [initialView])")],
   ["main app and organiser workspace share one Supabase client", source.includes('from "./services/supabase/client.js"') && workspaceSource.includes('from "./services/supabase/client.js"') && !workspaceSource.includes("createClient(")],
   ["organiser dashboard keeps its gold visual layer", workspaceSource.includes('import "./dashboard-yellow.css"') && workspaceSource.includes('className="dashboard-signature"')],
-  ["gold dashboard styles include the signature panel, tabs, and mobile layout", dashboardStyles.includes(".dashboard-signature{") && dashboardStyles.includes(".workspace-tabs button.active") && dashboardStyles.includes("@media(max-width:760px)") && dashboardStyles.includes("@media(max-width:520px)")],
+  ["gold dashboard styles include the signature panel and experience overrides", dashboardStyles.includes(".dashboard-signature{") && experienceStyles.includes(".dashboard-signature{") && experienceStyles.includes(".workspace-tabs button.active") && experienceStyles.includes("@media(max-width:760px)") && experienceStyles.includes("@media(max-width:520px)")],
   ["dashboard visual styles load after legacy workspace styles", workspaceSource.indexOf('import "./workspace.css"') < workspaceSource.indexOf('import "./dashboard-yellow.css"') && workspaceSource.indexOf('import "./dashboard-yellow.css"') < workspaceSource.indexOf('import "./experience-redesign.css"')],
   ["owner dashboard routing requires verified AAL2", source.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()") && source.includes('assurance?.currentLevel === "aal2"') && source.includes('setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login")')],
   ["template selection cannot bypass owner MFA", (() => { const start = source.indexOf("const handleUseTemplate = async"); const end = source.indexOf("const copyPlatformLink", start); const handler = source.slice(start, end); return handler.includes('if (platformRole === "owner")') && handler.includes('setView("king-login")') && !handler.includes('setView("owner")'); })()],
