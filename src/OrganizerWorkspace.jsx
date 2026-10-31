@@ -5,6 +5,7 @@ import "./workspace.css";
 import "./dashboard-yellow.css";
 // Load the product redesign after legacy workspace styles so authenticated screens retain it.
 import "./experience-redesign.css";
+import PlanUsagePanel from "./PlanUsagePanel.jsx";
 const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
 
 const EVENT_TEMPLATES = [
@@ -45,6 +46,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [usage, setUsage] = useState({ files: 0, bytes: 0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const savingLock = useRef(false);
@@ -80,17 +82,21 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
   const load = async () => {
     setLoading(true); setError("");
     try {
-      const { data: org, error: orgError } = await supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle();
+      const { data: org, error: orgError } = await supabase.from("organizers").select("id,display_name,slug,status,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_forms,max_responses_per_form").eq("owner_user_id", user.id).maybeSingle();
       if (orgError) throw orgError;
       setOrganizer(org || null);
-      if (!org) { setEvents([]); setRegistrations([]); return; }
-      const [ev, regs] = await Promise.all([
+      if (!org) { setEvents([]); setRegistrations([]); setUsage({ files: 0, bytes: 0 }); return; }
+      const [ev, regs, evidence] = await Promise.all([
         supabase.from("events").select("id,title,slug,template_key,category,game_title,description,rules,entry_fee_minor,team_size,starts_at,registration_closes_at,payment_instructions,payment_qr_public_url,branding,status,created_at").eq("organizer_id",org.id).order("created_at",{ascending:false}),
-        supabase.from("registrations").select("id,event_id,confirmation_reference,participant_name,participant_email,game_id,team_name,custom_fields,payment_status,registration_status,created_at,payment_evidence(id,review_status,created_at)").eq("organizer_id",org.id).order("created_at",{ascending:false}).limit(500)
+        supabase.from("registrations").select("id,event_id,confirmation_reference,participant_name,participant_email,game_id,team_name,custom_fields,payment_status,registration_status,created_at,payment_evidence(id,review_status,created_at)").eq("organizer_id",org.id).order("created_at",{ascending:false}).limit(500),
+        supabase.from("payment_evidence").select("file_size_bytes").eq("organizer_id",org.id).limit(1000)
       ]);
       if (ev.error) throw ev.error;
       if (regs.error) throw regs.error;
+      if (evidence.error) throw evidence.error;
       setEvents(ev.data || []); setRegistrations(regs.data || []);
+      const evidenceRows = evidence.data || [];
+      setUsage({ files: evidenceRows.length, bytes: evidenceRows.reduce((total, item) => total + (Number(item.file_size_bytes) || 1000000), 0) });
       try {
         const savedEditor = JSON.parse(window.localStorage.getItem(`company001:editor:${user.id}`) || "null");
         if (savedEditor?.eventId) {
@@ -294,6 +300,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     setSaving(true); setError(""); setNotice("");
     try {
       if (!organizer || organizer.status !== "approved") throw new Error("Your organiser account must be approved before creating events.");
+      if (!editingId && events.length >= (Number(organizer.max_forms) || 1)) throw new Error("Your current plan allows up to " + (Number(organizer.max_forms) || 1) + " form(s). Request a plan upgrade to create another form.");
       const title = String(form.title || "").trim();
       if (title.length < 2) throw new Error("Enter an event title with at least 2 characters.");
       if (title.length > 140) throw new Error("Event titles can be at most 140 characters.");
@@ -511,6 +518,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
         <div className="dashboard-stat"><span>RESPONSES</span><strong>{registrations.length.toString().padStart(2,"0")}</strong><small>Submissions received</small></div>
         <button className="dashboard-stat dashboard-stat-action" onClick={()=>changeWorkspaceTab("payments")}><span>PAYMENTS TO CHECK</span><strong>{registrations.filter(r=>r.payment_status==="pending"||r.payment_status==="under_review").length.toString().padStart(2,"0")} <ArrowRight size={17}/></strong><small>Review submitted proofs</small></button>
       </section>
+      <PlanUsagePanel organizer={organizer} events={events} registrations={registrations} usage={usage} user={user} onRefresh={load} />
       {events.length===0 ? <section className="dashboard-onboarding">
         <div className="dashboard-onboarding-head"><div><span className="dashboard-section-index">YOUR FIRST FORM / THE QUICK START</span><h2>Three simple steps. Start collecting.</h2><p>No coding or complicated setup. Choose an event look, add your questions, then publish your registration link.</p></div><span className="dashboard-onboarding-count">0 <i>/ 3</i></span></div>
         <div className="dashboard-onboarding-steps">
