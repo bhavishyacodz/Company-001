@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; PR #83 auth-routing work in progress)
+Last verified: 2026-10-31 (UTC; PR #83 login/dashboard regression hardening in progress)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -58,7 +58,8 @@ Production/main base observed during the 2026-10-31 review:
 ### PR #81 — Architecture foundation
 - URL: https://github.com/bhavishyacodz/Company-001/pull/81
 - Branch: chore/architecture-baseline
-- Head: 773f898c81a7fa21e2d2a637cbd9cfb14b73e151 at last verification
+- Head: b0519138513561cee3bafbcd5a9c660a226f150f at latest verification
+- Latest Actions run `41215770727`: completed successfully. The PR remains documentation-only.
 - State: open, draft, not merged.
 - Adds architecture, development workflow, routing audit, and PR template documentation only. No runtime/database changes.
 - This file is being added to this branch as the durable handover.
@@ -95,7 +96,7 @@ The live `main` branch still points to the legacy application shell, so the newe
 - URL: https://github.com/bhavishyacodz/Company-001/pull/83
 - Branch: `fix/post-login-dashboard-routing`
 - Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
-- Latest verified head at this checkpoint: `f57ee7f7fb0852a5ce85638d605ab2f83f017891`
+- Latest verified head at this checkpoint: `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`
 - State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
 - Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
 - Root cause found during this session: the main `view === "account"` route passed a shortcut callback that marked the organiser workspace ready without verifying it; the other account route depended on parent `signedInUser` state that could still be stale immediately after password login. This combination could bounce users back to the account page or mount the wrong dashboard state.
@@ -107,8 +108,8 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
-- Cloudflare Pages preview for exact latest head `f57ee7f`: successful. Preview URL: https://d0757b54.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev. This is a preview only, not production.
-- The separate `Workers Builds: company-001` check is still in progress for latest head `f57ee7f`; earlier PR previews showed it failing against a distinct Workers service while Pages succeeded independently. Cloudflare docs describe Pages and Workers as separate Git integrations/checks. Branch-protection status could not be read with the connected GitHub permissions, so do not assume the Workers check is non-blocking.
+- Cloudflare Pages preview for exact baseline head `5878f54`: successful. Preview URL: https://bbbd8da5.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev. Latest test-only head `c2bd0a9` Pages build was still in progress at last check. This is a preview only, not production.
+- The separate `Workers Builds: company-001` check failed for the baseline head and prior PR previews, pointing to a distinct Workers service. The latest exact-head Pages preview succeeded; branch-protection status returns 403 to the connected GitHub integration, so required-check status remains unverified. Do not assume the Workers check is non-blocking.
 - PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
 - PR #83 remains draft and based on PR #79's `feat/full-site-black-gold-ux-refresh` branch. It must not be merged independently of its UX base and earlier dependencies.
 - No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
@@ -116,8 +117,8 @@ The live `main` branch still points to the legacy application shell, so the newe
 
 ## Immediate work queue (strict order)
 
-1. Finish and verify current PR #83 Actions run `41215213832`, including local Supabase migration replay and two-organiser privacy tests. Confirm the Pages preview for exact head `f57ee7f` remains successful.
-2. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to dashboard, refresh, reopen the dashboard, and verify King Login still requires AAL2. Do not enter real participant or payment data on the preview.
+1. Finish and verify PR #83 Actions run `41216029159` for exact head `c2bd0a9`, including local Supabase migration replay and two-organiser privacy tests; confirm the exact-head Pages preview.
+2. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to dashboard, refresh, reopen the dashboard, and verify King Login still requires AAL2. The connected tools cannot perform the user's Google/password login, so user-side manual confirmation is still required. Do not enter real participant or payment data on the preview.
 3. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
 4. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
 5. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
