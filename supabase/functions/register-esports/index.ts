@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { readBodyLimited } from "../_shared/request-body.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -38,11 +39,24 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? "*";
   if (req.method === "OPTIONS") return new Response("ok", { headers: jsonHeaders(origin) });
   if (req.method !== "POST") return reply(origin, 405, { error: "Method not allowed." });
-  const contentLength = Number(req.headers.get("content-length") ?? "0");
-  if (contentLength > 4_000_000) return reply(origin, 413, { error: "Request is too large." });
+  let bodyBytes: Uint8Array | null;
+  try {
+    bodyBytes = await readBodyLimited(req, 4_000_000);
+  } catch {
+    return reply(origin, 400, { error: "Invalid registration form." });
+  }
+  if (!bodyBytes) return reply(origin, 413, { error: "Request is too large." });
 
   let form: FormData;
-  try { form = await req.formData(); } catch { return reply(origin, 400, { error: "Invalid registration form." }); }
+  try {
+    form = await new Request(req.url, {
+      method: "POST",
+      headers: req.headers,
+      body: bodyBytes,
+    }).formData();
+  } catch {
+    return reply(origin, 400, { error: "Invalid registration form." });
+  }
 
   // Honeypot for basic automated submissions.
   if (clean(form.get("website"), 200)) return reply(origin, 200, { ok: true });
@@ -59,9 +73,11 @@ Deno.serve(async (req: Request) => {
     return reply(origin, 400, { error: "Please check the required registration details." });
   }
 
-  const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("cf-connecting-ip")
-    ?? "unknown";
+  // Prefer the edge-provided client IP. When using the gateway's forwarded
+  // chain, use its rightmost address rather than a client-supplied first entry.
+  const forwarded = req.headers.get("cf-connecting-ip")?.trim()
+    || req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim()
+    || "unknown";
   const ipHash = await sha256(forwarded + (Deno.env.get("RATE_LIMIT_PEPPER") ?? supabaseUrl));
   const now = Date.now();
   const windowStart = new Date(Math.floor(now / 600000) * 600000).toISOString();
