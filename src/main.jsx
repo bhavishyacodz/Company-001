@@ -225,9 +225,15 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"].includes(event)) return;
       const nextUserId = session?.user?.id || null;
-      if (event === "SIGNED_IN" && nextUserId === lastScheduledUserId) return;
+      const isDuplicateUserEvent = nextUserId === lastScheduledUserId;
       if (event === "SIGNED_OUT") lastScheduledUserId = null;
       else lastScheduledUserId = nextUserId;
+      // INITIAL_SESSION and SIGNED_IN can describe the same restored browser session.
+      // Resolve that user only once; still release the first-render gate for INITIAL_SESSION.
+      if (isDuplicateUserEvent) {
+        if (event === "INITIAL_SESSION") setAuthReady(true);
+        return;
+      }
 
       window.setTimeout(() => {
         if (!active) return;
