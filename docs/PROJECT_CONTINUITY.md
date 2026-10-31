@@ -102,7 +102,9 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
-- Cloudflare Pages preview check was still running at last check. Do not claim a preview URL or production deployment until the exact head's check completes.
+- Cloudflare Pages preview for exact head `3928da0815114ace44202dfefee3cb4e48bec3b0`: successful. Preview URL: https://5c7985ab.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev
+- The separate `Workers Builds: company-001` check was still in progress at the latest check. The repository's production host remains Cloudflare Pages; do not merge until the check is reconciled with branch protection. Branch-protection status could not be read with the connected GitHub permissions.
+- Local privacy integration run `41193197868`: release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed; local Supabase startup/migration replay/two-organiser privacy tests were still in progress at last check.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
 ## Immediate work queue (strict order)
