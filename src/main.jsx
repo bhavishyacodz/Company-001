@@ -77,8 +77,11 @@ function App() {
       if (!active) return null;
       setSignedInUser(user || null);
       if (!user) { setPlatformRole(null); return null; }
-      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      const role = profile?.platform_role || "organizer";
+      const { data: profile, error: profileError } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
+      // Never infer organizer privileges when the role lookup itself failed.
+      // A genuinely new OAuth user has no profile row yet and is onboarded
+      // through AccountPanel; a query error must fail closed instead.
+      const role = profileError ? "unknown" : (profile?.platform_role || "organizer");
       if (active) setPlatformRole(role);
       return role;
     };
@@ -88,16 +91,28 @@ function App() {
         const initialUser = data.session?.user || null;
         const initialRole = await refresh(initialUser);
         if (active) {
-          const savedView = window.sessionStorage.getItem("company001:last-view");
-          if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-          if (data.session?.user && !isLiveEventRoute) {
+          const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
+          if (organizerGoogleCallback) {
+            window.history.replaceState({}, document.title, window.location.pathname);
             if (initialRole === "owner") {
-              if (active) setView("owner");
-            } else if (initialRole === "organizer") {
-              const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-              if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
-            } else if (active) {
+              try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
+              await supabase.auth.signOut();
+              if (active) setView("account");
+            } else {
               setView("account");
+            }
+          } else {
+            const savedView = window.sessionStorage.getItem("company001:last-view");
+            if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
+            if (data.session?.user && !isLiveEventRoute) {
+              if (initialRole === "owner") {
+                if (active) setView("king-login");
+              } else if (initialRole === "organizer") {
+                const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
+                if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
+              } else if (active) {
+                setView("account");
+              }
             }
           }
         }
@@ -431,6 +446,73 @@ function KingLoginPanel({ onBack, onSuccess }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [noticeType, setNoticeType] = useState("error");
+  const [step, setStep] = useState("credentials");
+  const [factorId, setFactorId] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+
+  const prepareOwnerMfa = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      const verifiedFactor = (factors?.totp || []).find(factor => factor.status === "verified");
+      if (verifiedFactor) {
+        setFactorId(verifiedFactor.id);
+        setStep("challenge");
+        setNoticeType("success");
+        setNotice("Owner identity confirmed. Enter the current code from your authenticator app.");
+        return;
+      }
+      const { data: enrollment, error: enrollmentError } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "Company-001 King Login " + new Date().toISOString(),
+      });
+      if (enrollmentError) throw enrollmentError;
+      if (!enrollment?.id || !enrollment?.totp?.qr_code || !enrollment?.totp?.secret) {
+        throw new Error("Authenticator setup could not be prepared. Please try again.");
+      }
+      setFactorId(enrollment.id);
+      setQrCode(enrollment.totp.qr_code);
+      setTotpSecret(enrollment.totp.secret);
+      setStep("enroll");
+      setNoticeType("success");
+      setNotice("First-time security setup: add this account to your authenticator app, then verify a current six-digit code.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const resumeOwnerSession = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const currentUser = sessionData.session?.user;
+      if (!currentUser) return;
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles").select("platform_role").eq("id", currentUser.id).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.platform_role !== "owner") return;
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance?.currentLevel === "aal2") {
+        onSuccess();
+        return;
+      }
+      await prepareOwnerMfa();
+    };
+    resumeOwnerSession().catch(error => {
+      if (active) {
+        setNoticeType("error");
+        setNotice(error.message || "Could not verify the owner security session.");
+        setBusy(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
 
   const authenticateOwner = async (event) => {
     event.preventDefault();
@@ -440,18 +522,13 @@ function KingLoginPanel({ onBack, onSuccess }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("platform_role")
-        .eq("id", data.user.id)
-        .maybeSingle();
+        .from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
       if (profileError) throw profileError;
       if (profile?.platform_role !== "owner") {
         await supabase.auth.signOut();
         throw new Error("This account does not have platform-owner access. Use Organiser Login instead.");
       }
-      setNoticeType("success");
-      setNotice("Owner verified. Opening the private control panel…");
-      onSuccess();
+      await prepareOwnerMfa();
     } catch (error) {
       setNoticeType("error");
       setNotice(error.message || "Could not sign in to the owner panel.");
@@ -460,20 +537,77 @@ function KingLoginPanel({ onBack, onSuccess }) {
     }
   };
 
+  const verifyOwnerCode = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setNotice("");
+    try {
+      const code = verifyCode.replace(/\s/g, "");
+      if (!/^\d{6}$/.test(code)) throw new Error("Enter the six-digit code from your authenticator app.");
+      if (!factorId) throw new Error("The authenticator session expired. Sign in again to restart setup.");
+      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+      if (verifyError) throw verifyError;
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance?.currentLevel !== "aal2") {
+        throw new Error("The second factor was not confirmed. No owner access has been granted.");
+      }
+      setNoticeType("success");
+      setNotice("Two-factor verification complete. Opening the private control panel…");
+      onSuccess();
+    } catch (error) {
+      setNoticeType("error");
+      setNotice(error.message || "The authenticator code could not be verified.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const leaveKingLogin = async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
+      if (profile?.platform_role === "owner") await supabase.auth.signOut();
+    }
+    onBack();
+  };
+
   return (
     <main className="account-shell">
-      <section className="account-card">
-        <button className="account-back" type="button" onClick={onBack}><ArrowRight size={14} /> Back to website</button>
+      <section className="account-card king-mfa-card">
+        <button className="account-back" type="button" onClick={leaveKingLogin}><ArrowRight size={14} /> Back to website</button>
         <div className="section-kicker">COMPANY-001 / RESTRICTED ACCESS</div>
         <h1>King Login.</h1>
-        <p className="account-lead">Private platform-owner sign in. Only an account already assigned the owner role in Supabase can enter the control panel.</p>
-        <form className="account-form" onSubmit={authenticateOwner}>
-          <label>OWNER EMAIL<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="username" placeholder="Your owner email" /></label>
-          <label>PASSWORD<input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" placeholder="Your account password" /></label>
-          <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Verifying owner…" : "Sign in to control panel"} <ShieldCheck size={15} /></button>
-        </form>
+        <p className="account-lead">Private platform-owner sign in. Owner access requires your password and a verified authenticator code.</p>
+        {step === "credentials" ? (
+          <form className="account-form" onSubmit={authenticateOwner}>
+            <label>OWNER EMAIL<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="username" placeholder="Your owner email" /></label>
+            <label>PASSWORD<input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" placeholder="Your account password" /></label>
+            <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Verifying owner…" : "Continue to secure verification"} <ShieldCheck size={15} /></button>
+          </form>
+        ) : (
+          <form className="account-form king-mfa-form" onSubmit={verifyOwnerCode}>
+            {step === "enroll" ? (
+              <div className="king-mfa-setup">
+                <h2>Set up your authenticator</h2>
+                <p>Scan this QR code with an authenticator app. If scanning is unavailable, enter the setup key manually.</p>
+                <img className="king-mfa-qr" src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(qrCode)} alt="Authenticator setup QR code" />
+                <span className="king-mfa-secret-label">MANUAL SETUP KEY</span>
+                <code className="king-mfa-secret">{totpSecret}</code>
+                <p className="king-mfa-warning">Keep this setup key private. Company-001 does not store a copy of it in your profile.</p>
+              </div>
+            ) : (
+              <div className="king-mfa-setup">
+                <h2>Two-factor verification</h2>
+                <p>Enter the current six-digit code from your authenticator app to open the owner control panel.</p>
+              </div>
+            )}
+            <label>AUTHENTICATOR CODE<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={verifyCode} onChange={event => setVerifyCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required placeholder="000000" /></label>
+            <button className="button button-primary full-width" disabled={busy || verifyCode.length !== 6} type="submit">{busy ? "Verifying…" : step === "enroll" ? "Verify & enable MFA" : "Verify & open King Control Room"} <ShieldCheck size={15} /></button>
+          </form>
+        )}
         {notice ? <p className={noticeType === "success" ? "account-notice" : "owner-alert"} role="status">{notice}</p> : null}
-        <p className="account-footnote">Owner access is verified against your Supabase profile. This page does not create owner accounts or store passwords.</p>
+        <p className="account-footnote">Your owner role is checked in Supabase. A password-only session cannot access protected owner data.</p>
       </section>
     </main>
   );
@@ -490,7 +624,15 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(() => {
+    try {
+      if (window.sessionStorage.getItem("company001:google-owner-blocked") === "1") {
+        window.sessionStorage.removeItem("company001:google-owner-blocked");
+        return "Google sign-in is for organiser accounts only. Use King Login for the platform-owner account.";
+      }
+    } catch { /* Optional one-time notice. */ }
+    return "";
+  });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
@@ -524,6 +666,12 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         setNotice("This Gmail belongs to King Login. Normal User access is disabled for this account.");
         return;
       }
+      if (profile?.platform_role && profile.platform_role !== "organizer") {
+        await supabase.auth.signOut();
+        setUser(null);
+        setNotice("This account does not have organizer access. Please contact platform support.");
+        return;
+      }
       setOwnerSessionBlocked(false);
       setUser(nextUser);
     };
@@ -553,6 +701,24 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data, error }) => { if (!error) setApplication(data); });
   }, [user]);
+
+  const signInWithGoogle = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setNotice(error.message || "Could not start Google sign-in.");
+      setBusy(false);
+    }
+  };
 
   const authenticate = async (event) => {
     event.preventDefault();
@@ -757,6 +923,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
+            <button className="account-google-button" type="button" onClick={signInWithGoogle} disabled={busy}><span className="account-google-mark" aria-hidden="true">G</span><span>{busy ? "Connecting…" : "Continue with Google"}</span></button>
+            <div className="account-auth-divider"><span>OR USE EMAIL</span></div>
             <form className="account-form" onSubmit={authenticate}>
               {mode === "signup" ? <label>YOUR DISPLAY NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How organisers see your name" /></label> : null}
               <label>EMAIL ADDRESS<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>

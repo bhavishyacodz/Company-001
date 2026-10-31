@@ -593,6 +593,20 @@ const checks = [
     },
   },
   {
+    name: "Google OAuth is organizer-only and cannot route an owner into King dashboard",
+    run: () => {
+      const app = read("src/main.jsx");
+      const kingLogin = app.slice(app.indexOf("function KingLoginPanel"), app.indexOf("function AccountPanel"));
+      return app.includes('provider: "google"')
+        && app.includes('auth_flow=organizer_google')
+        && app.includes('initialRole === "owner"')
+        && app.includes('company001:google-owner-blocked')
+        && app.includes("Google sign-in is for organiser accounts only.")
+        && app.includes("Continue with Google")
+        && !kingLogin.includes("signInWithOAuth");
+    },
+  },
+  {
     name: "self-service account deletion reauthenticates and requires explicit confirmation",
     run: () => {
       const account = read("src/main.jsx");
@@ -701,6 +715,25 @@ const checks = [
     },
   },
 
+
+  {
+    name: "King Login requires verified TOTP and AAL2 before owner access",
+    run: () => {
+      const app = read("src/main.jsx");
+      const kingLogin = app.slice(app.indexOf("function KingLoginPanel"), app.indexOf("function AccountPanel"));
+      const ownerMigration = read("supabase/migrations/20261031100000_require_aal2_for_platform_owner.sql");
+      const ownerTests = read("supabase/tests/owner_mfa.test.sql");
+      return kingLogin.includes("supabase.auth.mfa.listFactors()")
+        && kingLogin.includes('factorType: "totp"')
+        && kingLogin.includes("supabase.auth.mfa.challengeAndVerify")
+        && kingLogin.includes('assurance?.currentLevel !== "aal2"')
+        && app.includes('if (active) setView("king-login");')
+        && ownerMigration.includes("auth.jwt() ->> 'aal'")
+        && ownerMigration.includes("= 'aal2'")
+        && ownerTests.includes("owner with aal1 cannot pass owner authorization")
+        && ownerTests.includes("owner with aal2 can pass owner authorization");
+    },
+  },
   ];
 
 let failed = false;
