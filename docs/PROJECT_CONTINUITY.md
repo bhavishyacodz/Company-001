@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; user confirmed Google OAuth now returns successfully after updating Supabase Auth URL Configuration)
+Last verified: 2026-10-31 (UTC; user confirmed Google OAuth redirect works after updating Supabase Auth URL Configuration; post-login dashboard visual confirmation still pending)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -58,8 +58,8 @@ Production/main base observed during the 2026-10-31 review:
 ### PR #81 — Architecture foundation
 - URL: https://github.com/bhavishyacodz/Company-001/pull/81
 - Branch: chore/architecture-baseline
-- Head: 3ffa3c67002e7c9d9ea8f39a52c16a5d6f918e43 at latest verification
-- Latest Actions run `41216239547`: completed successfully. The PR remains documentation-only.
+- Head: `0fe434d5e3d369de999aea50a6c09945f80db446` (latest verified after recording OAuth fix and refreshed work queue).
+- Latest Actions run `41216239547`: completed successfully before the continuity-only update. Recheck checks for the new head before merge. The PR remains documentation-only.
 - State: open, draft, not merged.
 - Adds architecture, development workflow, routing audit, and PR template documentation only. No runtime/database changes.
 - This file is being added to this branch as the durable handover.
@@ -109,7 +109,8 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Baseline head `5878f5471ff7d3a95153d31d8f4ebfe819204216`: Actions run `41215659098` completed successfully, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration tests.
 - Baseline test head `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`: Actions run `41216029159` completed successfully: release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration all passed.
-- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: Actions run `41217571388` (OAuth regression assertions) completed successfully. Privacy run `41217573622` also completed successfully, including local Supabase migration replay and two-organiser privacy integration. Release invariants, frontend build, bounded request/account-deletion tests, and Edge Function type checks passed. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
+- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: PR metadata still reports this exact head. OAuth regression run `41217571388` was reported successful in the PR; privacy run `41217573622` completed successfully on the exact head, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
+- User manually updated Supabase Authentication → URL Configuration and explicitly confirmed Google Login redirect now works. The remaining user-side regression is confirming that the post-login page is the new yellow/gold dashboard and that refresh/reopen restores the correct workspace.
 - Cloudflare Pages preview for exact latest head `9899218`: successful. Preview URL: https://e994caa6.company-001.pages.dev. Earlier baseline preview: https://fc138a01.company-001.pages.dev. These are previews only, not production.
 - The separate `Workers Builds: company-001` check failed for the baseline head and prior PR previews, pointing to a distinct Workers service. The latest exact-head Pages preview succeeded; branch-protection status returns 403 to the connected GitHub integration, so required-check status remains unverified. Do not assume the Workers check is non-blocking.
 - PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
@@ -126,10 +127,20 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Recent Auth logs show the latest Google sign-in authorize requests were initiated from `https://company-001.pages.dev`, not the commit-preview hostname. An earlier attempt from `https://feat-organizer-google-login.company-001.pages.dev` is also logged. Verify the final browser address bar after Google sign-in; do not assume a successful auth event proves the redirect target.
 - Added release assertions that Google OAuth uses the current origin and callback marker; these are being tested on PR #83 head `9899218`.
 
+## Latest dependency-chain review (2026-10-31)
+
+- PR #74 (`security/retry-safe-account-deletion`) remains open on `main`; head `d7dfe1c96efac8d8915ccf6e2ae2cc6e5cdbdcc7`. Workflows `41181119916` (Pages/build) and `41181119921` (local privacy integration) succeeded. Its changes include retry-safe account deletion, request-body limits, suspension enforcement, owner AAL2 database checks, and registration/payment-evidence privacy tests. Do not merge without reviewing the complete migration and release diff against the current main.
+- PR #78 (`feat/combined-google-login-yellow-dashboard`) remains draft and is based on PR #74; head `3909252e0204cf822af094e3916ec6dfa1e554b5`. It supplies the yellow 3D dashboard layer and Google login. The workflow-run lookup returned no PR-triggered runs for this exact head; verify current checks before any merge.
+- PR #79 (`feat/full-site-black-gold-ux-refresh`) remains draft and is based on PR #78; head `9fda7e1c65678d53fd334047240e22bca64ee0cd`. It supplies the broader public-site/organiser/King visual refresh. The workflow-run lookup returned no PR-triggered runs for this exact head; verify current checks before any merge.
+- PR #83 (`fix/post-login-dashboard-routing`) remains draft, based on PR #79; exact head `9899218b261d731c0dbfa22462c703bab774c185`. It incorporates the shared Supabase client refactor from PR #82, so #82 must not be independently merged on top of this stack.
+- PR #75 (organiser-only Google sign-in) remains open and reports `mergeable=false`; PR #76 (organiser profile tab) remains open based on #75; PR #77 (signature dashboard UI) remains draft and based on #74; PR #80 (plans/storage usage) remains draft and based on #79. These are not part of the direct #74 → #78 → #79 → #83 release path; reconcile overlaps before selecting any of them.
+- PR #81 continuity/architecture documentation branch head is now `0fe434d5e3d369de999aea50a6c09945f80db446`, open and draft. Its previous workflow run succeeded before this documentation-only head update; recheck exact-head checks.
+- PR #82 shared-client refactor remains open/draft, but its changes are already included in #83. Keep it out of the merge path unless explicitly reconciled.
+- No PR in this chain has been merged as part of this session, and production has not been deployed.
+
 ## Immediate work queue (strict order)
 
-1. Finish and verify PR #83 Actions run `41216029159` for exact head `c2bd0a9`, including local Supabase migration replay and two-organiser privacy tests; confirm the exact-head Pages preview.
-2. OAuth redirect allow-list is now user-confirmed working. Run the remaining manual regression on the exact preview: confirm the post-login page is the new dashboard, refresh and confirm session/tab restoration, reopen the site, and verify King Login still requires AAL2. Do not enter real participant or payment data on the preview.
+1. User has confirmed Google OAuth redirect works after adding production and Pages-preview Redirect URLs in Supabase. The remaining manual regression is to confirm the new yellow/gold dashboard appears after login, refresh preserves the session and selected workspace tab, reopen restores the dashboard, and King Login still requires AAL2. Do not enter real participant or payment data on the preview.
 4. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
 5. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
 6. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
