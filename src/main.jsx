@@ -555,7 +555,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Organiser login <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => setView("templates")} onTemplates={() => setView("templates")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => setView("templates")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
