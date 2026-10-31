@@ -943,8 +943,10 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
     const organizerRequest = initialOrganizer && isParentVerifiedUser
       ? Promise.resolve({ data: initialOrganizer, error: null })
       : supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle();
-    const applicationRequest = supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
-      .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const applicationRequest = initialOrganizer && isParentVerifiedUser
+      ? Promise.resolve({ data: null, error: null })
+      : supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
+          .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const profileWriteRequest = isParentVerifiedUser
       ? Promise.resolve({ error: null })
       : supabase.from("profiles").upsert({
