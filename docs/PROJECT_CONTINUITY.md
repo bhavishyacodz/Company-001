@@ -102,12 +102,15 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Fix now routes both account entry points through one verified workspace handoff, passes the actual authenticated user from login/onboarding, waits for verification before clearing the login busy state, and rechecks both the profile role and organiser workspace.
 - The shared Supabase client refactor from PR #82 has now been incorporated into PR #83's stack: the app shell, organiser workspace, company home, organiser access panel, owner panel, audit log, and event review all use `src/services/supabase/client.js`. Release invariants enforce exactly one `createClient()` factory in `src/`.
 - Owner routing now checks Supabase MFA assurance and only opens the owner dashboard at AAL2. Template selection routes owners through King Login rather than directly opening the owner dashboard.
+- Further UI-state fix: `OrganizerWorkspace` now synchronizes its local selected tab when the parent auth router resolves a new `initialView`, avoiding a stale tab after overlapping login/session restoration callbacks.
+- Added regression invariants for the route-to-tab synchronization, one shared Supabase client across app/workspace, and the gold dashboard stylesheet/component being present.
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
 - Cloudflare Pages preview for exact latest head `f57ee7f`: successful. Preview URL: https://d0757b54.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev. This is a preview only, not production.
 - The separate `Workers Builds: company-001` check is still in progress for latest head `f57ee7f`; earlier PR previews showed it failing against a distinct Workers service while Pages succeeded independently. Cloudflare docs describe Pages and Workers as separate Git integrations/checks. Branch-protection status could not be read with the connected GitHub permissions, so do not assume the Workers check is non-blocking.
 - PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
+- PR #83 remains draft and based on PR #79's `feat/full-site-black-gold-ux-refresh` branch. It must not be merged independently of its UX base and earlier dependencies.
 - No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
