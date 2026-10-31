@@ -777,6 +777,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [accountNewPassword, setAccountNewPassword] = useState("");
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [changingAccountPassword, setChangingAccountPassword] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState("menu");
 
   useEffect(() => {
     let active = true;
@@ -1054,8 +1056,8 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       <section className="account-card">
         <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button>
         <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
-        <h1>{user ? "Your profile & workspace." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">{user ? "Your account details, workspace status, and template shortcuts are all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
+        <h1>{user ? "Your profile." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
+        <p className="account-lead">{user ? "Your account and websites, all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
@@ -1070,84 +1072,103 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           </>
         ) : (
           <div className="account-signed-in">
-            <section className="profile-overview" aria-label="Account overview">
-              <div className="profile-overview-top">
-                {getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture) ? <img className="profile-avatar-large" src={getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)} alt="Profile" /> : <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>}
+            <section className="profile-overview" aria-label="Your profile" style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="menu-button"
+                aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}
+                aria-expanded={settingsOpen}
+                onClick={() => setSettingsOpen(value => !value)}
+                style={{ position: "absolute", top: 14, right: 14, zIndex: 3 }}
+              >
+                {settingsOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <div className="profile-overview-top" style={{ paddingRight: 48 }}>
+                {getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)
+                  ? <img className="profile-avatar-large" src={getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)} alt="Profile" />
+                  : <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>}
                 <div className="profile-overview-identity">
-                  <span className="panel-label">YOUR ACCOUNT</span>
                   <strong>{user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer"}</strong>
                   <small>{user.email}</small>
                 </div>
-                <span className="profile-live-pill"><span /> SIGNED IN</span>
               </div>
-              <div className="profile-overview-meta">
-                <div><small>ACCOUNT TYPE</small><strong>Organiser</strong></div>
-                <div><small>MEMBER SINCE</small><strong>{user.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "Recently"}</strong></div>
-                <div><small>SESSION</small><strong>Saved on this device</strong></div>
+              <div className="profile-overview-actions" style={{ marginTop: 24 }}>
+                {organizerWorkspace
+                  ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
+                  : <button className="button button-primary" onClick={() => document.getElementById("organizer-setup")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Create Website <ArrowRight size={14} /></button>}
               </div>
-              <div className="profile-overview-actions">
-                {organizerWorkspace ? <button className="button button-primary" onClick={onOpenWorkspace}>Open My Sites <ArrowRight size={14} /></button> : <button className="button button-primary" onClick={() => document.getElementById("organizer-setup")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Create Website <ArrowRight size={14} /></button>}
-                <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
-                <button className="profile-signout" onClick={signOut}>Sign out</button>
-              </div>
-            </section>
-            <section className="account-password-zone" aria-labelledby="account-password-title">
-              <div className="account-delete-heading">
-                <div>
-                  <span className="panel-label">ACCOUNT SETTINGS / SECURITY</span>
-                  <h3 id="account-password-title">Change password</h3>
-                  <p>Update the password you use to sign in. Your events, workspace, and registrations will not be affected.</p>
+              {settingsOpen ? (
+                <div className="profile-settings-menu" role="menu" style={{
+                  position: "absolute", top: 58, right: 14, zIndex: 5, minWidth: 190,
+                  padding: 8, borderRadius: 14, background: "var(--panel, #171717)",
+                  border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 16px 40px rgba(0,0,0,.35)"
+                }}>
+                  <button type="button" className="profile-settings-item" role="menuitem" onClick={() => { setSettingsOpen(false); setSettingsSection("security"); }}
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
+                    <KeyRound size={16} /> Settings & security
+                  </button>
+                  <button type="button" className="profile-settings-item" role="menuitem" onClick={signOut}
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
+                    <ArrowRight size={16} /> Sign out
+                  </button>
                 </div>
-                <span className="account-password-icon"><KeyRound size={20}/></span>
-              </div>
-              <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
-                <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
-                <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
-                <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
-                <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password you do not use on other websites.</p>
-                <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating password…" : "Change password"} <KeyRound size={14}/></button>
-              </form>
-            </section>
-            <section className="account-delete-zone" aria-labelledby="account-delete-title">
-              <div className="account-delete-heading">
-                <div>
-                  <span className="panel-label">ACCOUNT SETTINGS</span>
-                  <h3 id="account-delete-title">Delete account</h3>
-                  <p>This permanently removes your organiser workspace, events, registrations, and linked payment-evidence files. This action cannot be undone.</p>
-                </div>
-                {!deleteOpen ? <button type="button" className="account-delete-trigger" onClick={() => { setDeleteOpen(true); setNotice(""); }}>Delete my account</button> : null}
-              </div>
-              {deleteOpen ? (
-                <form className="account-delete-form" onSubmit={deleteAccount}>
-                  <p className="account-delete-warning">For your protection, enter your current password, confirm your account email, and type DELETE.</p>
-                  <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
-                  <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
-                  <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
-                  <div className="account-delete-actions">
-                    <button className="button button-danger" type="submit" disabled={deletingAccount}>{deletingAccount ? "Deleting account…" : "Permanently delete account"}</button>
-                    <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
-                  </div>
-                </form>
               ) : null}
             </section>
             {organizerWorkspace ? (
-              <div className="application-status">
-                <span className="panel-label">YOUR ORGANISER PROFILE</span>
+              <section className="application-status" aria-label="Organiser details">
+                <span className="panel-label">ORGANISER DETAILS</span>
                 <strong>{organizerWorkspace.display_name || "Your organiser workspace"}</strong>
-                <span className="status-chip approved"><span />{(organizerWorkspace.status || "active").replace(/_/g," ").toUpperCase()}</span>
-                <p>Your organiser account is connected. Manage your existing websites or create another one from My Sites.</p>
-                <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open My Sites / Create Website <ArrowRight size={15}/></button>
-              </div>
+                {organizerWorkspace.slug ? <p>company-001.pages.dev/{organizerWorkspace.slug}</p> : null}
+                <span className="status-chip approved"><span />{(organizerWorkspace.status || "active").replace(/_/g, " ").toUpperCase()}</span>
+              </section>
             ) : application ? (
-              <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
+              <section className="application-status" aria-label="Organiser setup status">
+                <span className="panel-label">ORGANISER SETUP</span>
+                <strong>{application.business_name}</strong>
+                <span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace(/_/g, " ").toUpperCase()}</span>
+                <p>{application.status === "approved" ? "Your organiser workspace is active." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>
+              </section>
             ) : (
               <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. Your workspace activates immediately, so you can pick a template and start editing.</small></span></div>
-                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Create organiser workspace"} <ArrowRight size={16} /></button>
+                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
               </form>
             )}
+            {settingsSection === "security" ? (
+              <section className="account-password-zone" aria-labelledby="account-password-title">
+                <div className="account-delete-heading">
+                  <div><span className="panel-label">SETTINGS</span><h3 id="account-password-title">Account security</h3><p>Manage your sign-in details and account access.</p></div>
+                  <button type="button" className="button button-secondary" onClick={() => setSettingsSection("menu")}>Close</button>
+                </div>
+                <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
+                  <h4>Change password</h4>
+                  <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
+                  <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
+                  <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
+                  <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password.</p>
+                  <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating…" : "Update password"} <KeyRound size={14}/></button>
+                </form>
+                <div className="account-delete-zone" aria-labelledby="account-delete-title">
+                  <div className="account-delete-heading">
+                    <div><h3 id="account-delete-title">Delete account</h3><p>Permanently removes your organiser workspace and its linked data. This cannot be undone.</p></div>
+                    {!deleteOpen ? <button type="button" className="account-delete-trigger" onClick={() => { setDeleteOpen(true); setNotice(""); }}>Delete account</button> : null}
+                  </div>
+                  {deleteOpen ? (
+                    <form className="account-delete-form" onSubmit={deleteAccount}>
+                      <p className="account-delete-warning">Confirm your account email, current password, and type DELETE.</p>
+                      <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
+                      <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
+                      <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
+                      <div className="account-delete-actions">
+                        <button className="button button-danger" type="submit" disabled={deletingAccount}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
+                        <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
