@@ -343,3 +343,26 @@ a{color:inherit}
 .app.platform-ui .sites-fields-footer{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 0}
 .app.platform-ui .sites-fields-footer p{flex:1 1 100%;margin:0;color:#59627e!important;font-size:12px;line-height:1.6}
 @media(max-width:600px){.app.platform-ui .sites-field-item{grid-template-columns:32px minmax(0,1fr);padding:14px}.app.platform-ui .sites-field-required,.app.platform-ui .sites-field-optional{grid-column:2;justify-self:start}.app.platform-ui .sites-fields-footer .button{flex:1}}
+
+
+/* Responses: make site-scoped participant management clear at a glance. */
+.app.platform-ui .workspace-response-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.app.platform-ui .workspace-response-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0 16px}
+.app.platform-ui .workspace-response-summary article{display:flex;flex-direction:column;gap:5px;min-width:0;padding:15px 16px;background:#f7f8fd;border:1px solid #e0e5f1;border-radius:16px}
+.app.platform-ui .workspace-response-summary article span{font-size:11px;font-weight:750;letter-spacing:.035em;color:#5b6685!important}
+.app.platform-ui .workspace-response-summary article strong{font-size:25px;line-height:1.1;letter-spacing:-.04em;color:#26345f!important;font-variant-numeric:tabular-nums}
+.app.platform-ui .workspace-response-summary article small{font-size:11px;color:#707b98!important}
+.app.platform-ui .workspace-reg-toolbar{align-items:center}
+.app.platform-ui .workspace-reg{gap:14px}
+.app.platform-ui .workspace-reg :is(strong,summary){color:#263252!important}
+.app.platform-ui .workspace-reg :is(span,small){color:#586480!important}
+.app.platform-ui .workspace-registration-details{margin-top:12px;padding:12px 14px;background:#f6f8fd;border:1px solid #e0e5f1;border-radius:13px}
+.app.platform-ui .workspace-registration-details summary{font-size:12px;font-weight:800;color:#4056a3!important;cursor:pointer}
+.app.platform-ui .workspace-registration-details dl{margin:12px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.app.platform-ui .workspace-registration-details dl>div{min-width:0;padding:10px;background:#fff;border:1px solid #e6eaf3;border-radius:10px}
+.app.platform-ui .workspace-registration-details dt{font-size:10px;font-weight:750;color:#737d98;text-transform:uppercase;letter-spacing:.045em}
+.app.platform-ui .workspace-registration-details dd{margin:5px 0 0;overflow-wrap:anywhere;font-size:12px;line-height:1.5;color:#303b5c}
+.app.platform-ui .workspace-reg-actions{display:flex;flex-wrap:wrap;gap:8px}
+.app.platform-ui .workspace-reg-actions .button{min-height:40px}
+@media(max-width:760px){.app.platform-ui .workspace-response-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.app.platform-ui .workspace-response-head-actions{justify-content:flex-start}}
+@media(max-width:520px){.app.platform-ui .workspace-response-summary article{padding:12px}.app.platform-ui .workspace-response-summary article strong{font-size:22px}.app.platform-ui .workspace-registration-details dl{grid-template-columns:1fr}.app.platform-ui .workspace-reg-actions .button{flex:1 1 100%}}
