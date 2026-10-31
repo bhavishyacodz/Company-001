@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { readBodyLimited } from "../_shared/request-body.ts";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -17,14 +18,30 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(origin) });
   if (req.method !== "POST") return reply(origin, 405, { error: "Method not allowed." });
   if (origin && !allowedOrigins.has(origin)) return reply(origin, 403, { error: "This website is not allowed to submit enquiries." });
-  if (Number(req.headers.get("content-length") ?? "0") > 12000) return reply(origin, 413, { error: "Enquiry is too large." });
+  let bodyBytes: Uint8Array | null;
+  try {
+    bodyBytes = await readBodyLimited(req, 12_000);
+  } catch {
+    return reply(origin, 400, { error: "Please submit a valid enquiry form." });
+  }
+  if (!bodyBytes) return reply(origin, 413, { error: "Enquiry is too large." });
+
   let raw: Record<string, unknown>;
-  try { const text = await req.text(); if (new TextEncoder().encode(text).length > 12000) return reply(origin, 413, { error: "Enquiry is too large." }); raw = JSON.parse(text); if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("invalid"); }
-  catch { return reply(origin, 400, { error: "Please submit a valid enquiry form." }); }
+  try {
+    const text = new TextDecoder("utf-8", { fatal: true }).decode(bodyBytes);
+    raw = JSON.parse(text);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("invalid");
+  } catch {
+    return reply(origin, 400, { error: "Please submit a valid enquiry form." });
+  }
   if (str(raw.website, 200)) return reply(origin, 200, { ok: true });
   const name = str(raw.name, 100), email = str(raw.email, 254).toLowerCase(), phone = str(raw.phone, 40), project_type = str(raw.project_type, 40), requirements = str(raw.requirements, 3000), preferred_time = str(raw.preferred_time, 160);
   if (name.length < 2 || !validEmail(email) || !projectTypes.has(project_type) || requirements.length < 15 || requirements.length > 3000) return reply(origin, 400, { error: "Please check your name, email, project type and project details." });
-  const forwarded = req.headers.get("cf-connecting-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  // Prefer the edge-provided client IP; do not trust a client-supplied first
+  // X-Forwarded-For entry when the gateway appends its observed peer address.
+  const forwarded = req.headers.get("cf-connecting-ip")?.trim()
+    || req.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim()
+    || "unknown";
   const ipHash = await sha256(forwarded + (Deno.env.get("RATE_LIMIT_PEPPER") ?? supabaseUrl));
   const windowStart = new Date(Math.floor(Date.now() / 600000) * 600000).toISOString();
   const { data: allowed, error: limitError } = await admin.rpc("consume_registration_rate_limit", { p_ip_hash: ipHash, p_window_start: windowStart, p_limit: 3 });

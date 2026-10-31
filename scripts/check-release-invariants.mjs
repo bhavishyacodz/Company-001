@@ -162,6 +162,117 @@ const checks = [
     },
   },
   {
+    name: "registration endpoint enforces streaming body limits and proxy-safe IP selection",
+    run: () => {
+      const endpoint = read("supabase/functions/register-esports/index.ts");
+      const consultation = read("supabase/functions/request-consultation/index.ts");
+      const evidence = read("supabase/functions/view-payment-evidence/index.ts");
+      const selfDeletion = read("supabase/functions/delete-account/index.ts");
+      const ownerManagement = read("supabase/functions/manage-user-accounts/index.ts");
+      const reader = read("supabase/functions/_shared/request-body.ts");
+      const tests = read("supabase/functions/_shared/request-body.test.ts");
+      return endpoint.includes("readBodyLimited(req, 4_000_000)")
+        && endpoint.includes('req.headers.get("cf-connecting-ip")')
+        && endpoint.includes('split(",").at(-1)')
+        && consultation.includes("readBodyLimited(req, 12_000)")
+        && evidence.includes("readBodyLimited(req, 2_048)")
+        && selfDeletion.includes("readBodyLimited(req, 4_096)")
+        && ownerManagement.includes("readBodyLimited(req, 4_096)")
+        && consultation.includes('req.headers.get("cf-connecting-ip")')
+        && consultation.includes('split(",").at(-1)')
+        && consultation.includes('new TextDecoder("utf-8", { fatal: true })')
+        && reader.includes("reader.read()")
+        && reader.includes("total > maxBytes")
+        && reader.includes("reader.cancel()")
+        && tests.includes("body larger than the configured limit")
+        && tests.includes("body at the configured limit");
+    },
+  },
+  {
+    name: "Cloudflare Pages publishes baseline browser security headers",
+    run: () => {
+      const headers = read("public/_headers");
+      return headers.includes("X-Content-Type-Options: nosniff")
+        && headers.includes("X-Frame-Options: DENY")
+        && headers.includes("Referrer-Policy: strict-origin-when-cross-origin")
+        && headers.includes("Permissions-Policy: camera=(), microphone=(), geolocation=()")
+        && headers.includes("Strict-Transport-Security: max-age=31536000")
+        && headers.includes("frame-ancestors 'none'")
+        && headers.includes("Cache-Control: no-cache, no-store, must-revalidate");
+    },
+  },
+  {
+    name: "account deletion failure paths are tested before Auth removal",
+    run: () => {
+      const helper = read("supabase/functions/_shared/account-deletion.ts");
+      const tests = read("supabase/functions/_shared/account-deletion.test.ts");
+      const workflow = read(".github/workflows/local-privacy-integration.yml");
+      return helper.includes("prepare_account_deletion")
+        && helper.includes("complete_account_deletion_storage")
+        && tests.includes("Storage failure preserves the deletion job")
+        && tests.includes("malformed Storage manifest fails closed")
+        && tests.includes("Storage completion failure prevents Auth deletion")
+        && tests.includes("Auth deletion failure is retryable")
+        && tests.includes("already-removed Auth identity as success")
+        && tests.includes("removed in batches of at most 100")
+        && workflow.includes("account-deletion.test.ts");
+    },
+  },
+  {
+    name: "suspension is enforced at the database RLS boundary",
+    run: () => {
+      const migration = read("supabase/migrations/20261030110000_enforce_suspension_at_rls_boundary.sql");
+      const tests = read("supabase/tests/registration_privacy.test.sql");
+      return migration.includes("private.is_active_account()")
+        && migration.includes("u.banned_until")
+        && migration.includes("raw_app_meta_data ->> 'account_suspended'")
+        && migration.includes("public.is_account_active_for_user(p_user_id uuid)")
+        && migration.includes("grant execute on function public.is_account_active_for_user(uuid) to service_role")
+        && migration.includes("(select private.is_active_account())")
+        && migration.includes("create policy registrations_read_own_organizer_only")
+        && migration.includes("create policy payment_evidence_read_own_organizer_only")
+        && migration.includes('create policy "organizer reads only their own private payment evidence"')
+        && tests.includes("banned organizer cannot read participant registrations with an existing token")
+        && tests.includes("banned organizer cannot read payment evidence with an existing token")
+        && tests.includes("banned organizer cannot read private screenshots with an existing token")
+        && tests.includes("server-managed suspension flag also disables an account");
+    },
+  },
+  {
+    name: "participant registration responses are never cached",
+    run: () => read("supabase/functions/register-esports/index.ts")
+      .includes('"Cache-Control": "no-store"'),
+  },
+  {
+    name: "suspension blocks signed evidence links and new public registrations",
+    run: () => {
+      const evidence = read("supabase/functions/view-payment-evidence/index.ts");
+      const registration = read("supabase/functions/register-esports/index.ts");
+      return evidence.includes('"is_account_active_for_user"')
+        && evidence.includes("p_user_id: user.id")
+        && registration.includes('"is_account_active_for_user"')
+        && registration.includes("p_user_id: organizerOwnerId");
+    },
+  },
+  {
+    name: "owner account directory responses are not cacheable",
+    run: () => read("supabase/functions/manage-user-accounts/index.ts")
+      .includes('"Cache-Control": "no-store"')
+      && read("supabase/functions/delete-account/index.ts").includes('"Cache-Control": "no-store"'),
+  },
+  {
+    name: "anonymous visitors have no direct organizer delegation privileges",
+    run: () => {
+      const migration = read("supabase/migrations/20261030100000_revoke_anon_organizer_event_access.sql");
+      const tests = read("supabase/tests/registration_privacy.test.sql");
+      return migration.includes("revoke all privileges on table public.organizer_event_access from anon")
+        && tests.includes("no direct SELECT grant on organizer delegation records")
+        && tests.includes("cannot create organizer delegation records")
+        && tests.includes("cannot modify organizer delegation records")
+        && tests.includes("cannot delete organizer delegation records");
+    },
+  },
+  {
     name: "payment evidence remains private and rate-limit storage is server-only",
     run: () => {
       const sql = read("supabase/migrations/20261027054121_registration_endpoint_and_private_evidence.sql");
@@ -404,6 +515,7 @@ const checks = [
     name: "King account management is owner-only and protects owner accounts and self",
     run: () => {
       const manager = read("supabase/functions/manage-user-accounts/index.ts");
+      const deletionHelper = read("supabase/functions/_shared/account-deletion.ts");
       const panel = read("src/OwnerPanel.jsx");
       const styles = read("src/styles.css");
       return manager.includes("admin.auth.getUser(token)")
@@ -413,8 +525,11 @@ const checks = [
         && manager.includes('ban_duration: "876000h"')
         && manager.includes('ban_duration: "none"')
         && manager.includes('body.confirmation !== "DELETE"')
-        && manager.includes('admin.auth.admin.deleteUser(targetId)')
-        && manager.includes('admin.storage.from("payment-evidence").remove')
+        && manager.includes("completeAccountDeletion(admin, targetId)")
+        && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
+        && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
+        && deletionHelper.includes("getUserById(userId)")
+        && deletionHelper.includes('prepare_account_deletion')
         && panel.includes('supabase.functions.invoke("manage-user-accounts"')
         && panel.includes('id="owner-user-accounts"')
         && panel.includes('accountConfirmWord !== "DELETE"')
@@ -482,6 +597,7 @@ const checks = [
     run: () => {
       const account = read("src/main.jsx");
       const deletion = read("supabase/functions/delete-account/index.ts");
+      const deletionHelper = read("supabase/functions/_shared/account-deletion.ts");
       return account.includes('supabase.auth.signInWithPassword({')
         && account.includes('functions.invoke("delete-account"')
         && account.includes('deleteConfirmation !== "DELETE"')
@@ -489,8 +605,11 @@ const checks = [
         && deletion.includes('admin.auth.getUser(token)')
         && deletion.includes('profile?.platform_role === "owner"')
         && deletion.includes('body.confirmation !== "DELETE"')
-        && deletion.includes('admin.storage.from("payment-evidence").remove')
-        && deletion.includes('admin.auth.admin.deleteUser(user.id)')
+        && deletion.includes("completeAccountDeletion(admin, user.id)")
+        && deletionHelper.includes('admin.storage.from("payment-evidence").remove')
+        && deletionHelper.includes('admin.auth.admin.deleteUser(userId)')
+        && deletionHelper.includes('complete_account_deletion_storage')
+        && deletionHelper.includes("getUserById(userId)")
         && !account.includes("SUPABASE_SERVICE_ROLE_KEY");
     },
   },
@@ -507,6 +626,24 @@ const checks = [
         && app.includes('onClick={onOpenKingLogin}')
         && !app.includes('if (profile?.platform_role === "owner") {\n          await supabase.auth.signOut();')
         && accountAdmin.includes('if (targetProfile?.platform_role === "owner")');
+    },
+  },
+
+  {
+    name: "public event pages do not expose platform login entry points to participants",
+    run: () => {
+      const app = read("src/main.jsx");
+      const headerStart = app.indexOf('<div className="top-actions">');
+      const headerEnd = app.indexOf('</div>\n      </header>', headerStart);
+      const publicHeader = headerStart >= 0 && headerEnd > headerStart
+        ? app.slice(headerStart, headerEnd)
+        : "";
+      return publicHeader.includes("{!isLiveEventRoute && <>")
+        && publicHeader.includes('className="owner-shortcut king-login"')
+        && publicHeader.includes('className="account-entry"')
+        && publicHeader.includes('className="menu-button"')
+        && app.includes('{!isLiveEventRoute && <button className="banner-link"')
+        && !app.includes('isLiveEventRoute ? "Organiser sign in"');
     },
   },
 
