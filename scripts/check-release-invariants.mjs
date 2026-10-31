@@ -303,7 +303,9 @@ const checks = [
     run: () => {
       const app = read("src/main.jsx");
       return app.includes('if (platformRole === "owner") {')
-        && app.includes('setView("owner");')
+        && app.includes('setView("king-login");')
+        && app.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()")
+        && app.includes('assurance?.currentLevel === "aal2"')
         && app.includes('if (!signedInUser || platformRole !== "organizer") {')
         && app.includes('setView("account");');
     },
