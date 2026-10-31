@@ -1295,9 +1295,9 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
               <div className="profile-overview-actions" style={{ marginTop: 24 }}>
                 {profileDataLoading
                   ? <button className="button button-primary" type="button" disabled aria-busy="true">Loading your sites…</button>
-                  : organizerWorkspace
-                    ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
-                    : <button className="button button-primary" disabled={busy} onClick={() => { void onOpenWorkspace(user, organizerWorkspace ? "organizer" : "customize"); }}>{organizerWorkspace ? "My Sites" : "Create your site"} <ArrowRight size={14} /></button>}
+                  : <button className="button button-primary" disabled={busy} onClick={() => { void onOpenWorkspace(user, organizerWorkspace ? "organizer" : "customize"); }}>
+                      {organizerWorkspace ? "My Sites" : "Create your site"} <ArrowRight size={14} />
+                    </button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
