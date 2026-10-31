@@ -1,0 +1,185 @@
+# Company-001 project continuity
+
+Last verified: 2026-10-31 (UTC; user confirmed Google OAuth redirect works after updating Supabase Auth URL Configuration; post-login dashboard visual confirmation still pending)
+Repository: https://github.com/bhavishyacodz/Company-001
+Production host: Cloudflare Pages (not Cloudflare Workers)
+Production URL: https://company-001.pages.dev/
+Supabase project ref: zkzgkovwktljfuuuhivk
+
+## Purpose of this file
+
+This is the canonical handover for future ChatGPT sessions and contributors. Read it before making changes. Update it at the end of each substantial work session with verified commits, PRs, workflow results, deployment URLs, decisions, and the exact next action. Never infer completion from a plan or an old chat.
+
+## Product and non-negotiable constraints
+
+Company-001 is a multi-organiser event website/template platform. Organisers can create and publish event pages, collect registrations, and manage their own participant records and payment evidence.
+
+- Continue the existing repository. Never restart or rebuild from scratch.
+- Free-tier-first; assume no infrastructure budget.
+- Primary development device is Android; designs must be mobile-first and desktop-compatible.
+- Keep King Login separate from Organiser Login.
+- Participant registration data and private payment evidence must be accessible only to the organiser that owns the relevant event. The owner/platform admin and other organisers must not gain ordinary access.
+- Never weaken RLS, Storage policies, Edge Function authorization, or expose service-role credentials in browser code.
+- Frontend guards are UX only; database RLS and server-side authorization are authoritative.
+- Do not change production data, run production migrations, merge PRs, or claim production deployment without verifying the exact operation and its result.
+- Do not promise zero bugs or five-nines uptime. Build strong prevention, detection, recovery, and regression coverage.
+- Keep auth/routing, database/security, and visual redesign changes separate unless a reviewed dependency requires otherwise.
+- When the user says "Continue", continue from this recorded checkpoint without repeatedly asking whether to proceed.
+
+## Current stack
+
+- React + Vite frontend.
+- Supabase Auth, PostgreSQL, Storage, Edge Functions.
+- Cloudflare Pages hosting.
+- GitHub Actions and pull-request previews.
+- Do not migrate to Next.js, Workers, Kubernetes, Redis, Kafka, Rust, or Go without a measured requirement and a separate approved plan.
+
+## Current architecture decisions
+
+Adopt incrementally:
+- Feature-driven modular monolith for the existing React/Vite app.
+- Thin app/router layer; feature modules own UI and business behavior.
+- One shared Supabase browser client.
+- Explicit fail-closed auth states: loading, signed out, organiser, owner, unknown, suspended.
+- Protected dashboards mount only after verified role and workspace checks.
+- Separate King/owner and organiser access paths.
+- Keep relational tables for ownership, registrations, permissions, and transactional data. Use JSONB only where flexible document/config data is appropriate.
+- For a future visual website builder, use validated/versioned JSON document structures, draft/published separation, and backward-compatible component schemas. Do not introduce this as a breaking migration before the existing editor is stable.
+- Introduce caching, queues, read replicas, cells, multi-region, and custom backend runtimes only when traffic and measured bottlenecks justify them.
+
+## Verified repository checkpoint
+
+Production/main base observed during the 2026-10-31 review:
+- main commit: b99bf5fe98ffbdb9b4ce7abec122ebd860450cb1
+- main still contains the legacy app shell in src/main.jsx.
+- Known routing defects remain on main: missing profile role defaults to organiser; organiser workspace render condition does not explicitly require verified organiser role; signed-out workspace state can fall through to legacy dashboard markup; auth listener does not reliably reconcile the active route.
+- These are documented in docs/ROUTING_AUDIT.md on PR #81 and must be fixed in a separate routing PR after PR #82 is integrated.
+
+### PR #81 — Architecture foundation
+- URL: https://github.com/bhavishyacodz/Company-001/pull/81
+- Branch: chore/architecture-baseline
+- Head: `0fe434d5e3d369de999aea50a6c09945f80db446` (latest verified after recording OAuth fix and refreshed work queue).
+- Latest Actions run `41216239547`: completed successfully before the continuity-only update. Recheck checks for the new head before merge. The PR remains documentation-only.
+- State: open, draft, not merged.
+- Adds architecture, development workflow, routing audit, and PR template documentation only. No runtime/database changes.
+- This file is being added to this branch as the durable handover.
+
+### PR #82 — Shared Supabase client
+- URL: https://github.com/bhavishyacodz/Company-001/pull/82
+- Branch: refactor/shared-supabase-client
+- Head: c978999878e041094458345b345709957bb85431 at last verification
+- State: open, draft, not merged.
+- Centralises the browser Supabase client in src/services/supabase/client.js and updates six frontend modules.
+- No database schema, RLS, Storage, Edge Function, account, event, registration, or participant data changes.
+- Local privacy integration workflow 41191412955: completed successfully. Job 124508795577 passed, including local Supabase stack startup, repository migration replay, and two-organiser privacy integration tests.
+- Build workflow 41191413035: completed successfully. Job 124508795968 passed dependency audit, release invariants, Vite build, consultation endpoint smoke test, and Pages artifact preparation.
+- Cloudflare Pages check for exact head commit: successful. Preview: https://0b32075c.company-001.pages.dev
+- A separate Cloudflare check named "Workers Builds: company-001" failed for the same commit and points to a Workers service build. The actual Cloudflare Pages preview succeeded. Do not describe this project as Workers. Before merge, establish whether the Workers check is required or is a stale/misconfigured integration; do not silently ignore it if branch protection requires it.
+- PR #82 remains draft and must not be merged until required checks and the Cloudflare check discrepancy are reconciled.
+
+### Older open stacked PR chain — do not merge blindly
+- PR #74 security/retry-safe-account-deletion: open, non-draft, based on main.
+- PR #75 organizer-only Google sign-in: open, non-draft, based on PR #74 branch; latest metadata reported mergeable=false.
+- PR #76 organizer profile tab: open, non-draft, based on PR #75 branch.
+- PR #77 signature 3D organizer dashboard: open, draft, based on PR #74 branch.
+- PR #78 combined Google login + yellow 3D dashboard: open, draft, based on PR #74 branch.
+- PR #79 full-site black/gold UX refresh: open, draft, based on PR #78 branch.
+- PR #80 organizer plans/storage usage: open, draft, based on PR #79 branch.
+- PR #81 and #82 are separate documentation/client-refactor PRs based on main.
+- Reconcile dependencies, file overlap, database migrations, CI, and exact previews before merging or retargeting any stacked PR.
+
+## Active post-login dashboard issue and fix
+
+The live `main` branch still points to the legacy application shell, so the newer yellow/gold 3D organiser dashboard is not yet in production. The intended dashboard styling is present in the open PR #78/#79 stack (including `dashboard-yellow.css` and `experience-redesign.css`). This explains why production can still show the older workspace even when a newer dashboard design exists in GitHub preview branches.
+
+### PR #83 — Post-login dashboard routing fix
+- URL: https://github.com/bhavishyacodz/Company-001/pull/83
+- Branch: `fix/post-login-dashboard-routing`
+- Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
+- Latest verified head at this checkpoint: `9899218b261d731c0dbfa22462c703bab774c185`
+- State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
+- Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
+- Root cause found during this session: the main `view === "account"` route passed a shortcut callback that marked the organiser workspace ready without verifying it; the other account route depended on parent `signedInUser` state that could still be stale immediately after password login. This combination could bounce users back to the account page or mount the wrong dashboard state.
+- Fix now routes both account entry points through one verified workspace handoff, passes the actual authenticated user from login/onboarding, waits for verification before clearing the login busy state, and rechecks both the profile role and organiser workspace.
+- The shared Supabase client refactor from PR #82 has now been incorporated into PR #83's stack: the app shell, organiser workspace, company home, organiser access panel, owner panel, audit log, and event review all use `src/services/supabase/client.js`. Release invariants enforce exactly one `createClient()` factory in `src/`.
+- Owner routing now checks Supabase MFA assurance and only opens the owner dashboard at AAL2. Template selection routes owners through King Login rather than directly opening the owner dashboard.
+- Further UI-state fix: `OrganizerWorkspace` now synchronizes its local selected tab when the parent auth router resolves a new `initialView`, avoiding a stale tab after overlapping login/session restoration callbacks.
+- Added regression invariants for route-to-tab synchronization, one shared Supabase client across app/workspace, gold dashboard stylesheet/component presence, mobile breakpoints, and CSS import order. A first version of the new CSS guard looked in the wrong stylesheet and failed; the assertion was corrected to inspect the actual experience override stylesheet.
+- Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
+- Adds `scripts/check-auth-routing.mjs` to the release test gate.
+- Baseline head `5878f5471ff7d3a95153d31d8f4ebfe819204216`: Actions run `41215659098` completed successfully, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration tests.
+- Baseline test head `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`: Actions run `41216029159` completed successfully: release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration all passed.
+- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: PR metadata still reports this exact head. OAuth regression run `41217571388` was reported successful in the PR; privacy run `41217573622` completed successfully on the exact head, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
+- User manually updated Supabase Authentication → URL Configuration and explicitly confirmed Google Login redirect now works. The remaining user-side regression is confirming that the post-login page is the new yellow/gold dashboard and that refresh/reopen restores the correct workspace.
+- Cloudflare Pages preview for exact latest head `9899218`: successful. Preview URL: https://e994caa6.company-001.pages.dev. Earlier baseline preview: https://fc138a01.company-001.pages.dev. These are previews only, not production.
+- The separate `Workers Builds: company-001` check failed for the baseline head and prior PR previews, pointing to a distinct Workers service. The latest exact-head Pages preview succeeded; branch-protection status returns 403 to the connected GitHub integration, so required-check status remains unverified. Do not assume the Workers check is non-blocking.
+- PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
+- PR #83 remains draft and based on PR #79's `feat/full-site-black-gold-ux-refresh` branch. It must not be merged independently of its UX base and earlier dependencies.
+- No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
+- No production code, production database, RLS/Storage policy, or participant data was changed.
+
+## Google OAuth preview-origin issue (new finding)
+
+- The current organiser Google sign-in code already sets `redirectTo` to `window.location.origin + "/?auth_flow=organizer_google"`; this is the correct app-side pattern for returning to the same preview.
+- Supabase Auth only honours `redirectTo` values present in Authentication → URL Configuration → Redirect URLs. The production Site URL remains `https://company-001.pages.dev`.
+- Added `docs/GOOGLE_OAUTH_PREVIEW_REDIRECTS.md`. Required Supabase Redirect URLs: `https://company-001.pages.dev/**`, `https://*.company-001.pages.dev/**`, and local-only `http://localhost:3000/**`. The wildcard is scoped to the project's Pages hostname family; do not use a broad wildcard.
+- User manually updated Supabase Authentication → URL Configuration and confirmed Google Login now works. Preserve Site URL `https://company-001.pages.dev`; production and preview redirect URLs are allowlisted. Do not change Google's authorised redirect URI.
+- Recent Auth logs show the latest Google sign-in authorize requests were initiated from `https://company-001.pages.dev`, not the commit-preview hostname. An earlier attempt from `https://feat-organizer-google-login.company-001.pages.dev` is also logged. Verify the final browser address bar after Google sign-in; do not assume a successful auth event proves the redirect target.
+- Added release assertions that Google OAuth uses the current origin and callback marker; these are being tested on PR #83 head `9899218`.
+
+## Latest dependency-chain review (2026-10-31)
+
+- PR #74 (`security/retry-safe-account-deletion`) remains open on `main`; head `d7dfe1c96efac8d8915ccf6e2ae2cc6e5cdbdcc7`. Workflows `41181119916` (Pages/build) and `41181119921` (local privacy integration) succeeded. Its changes include retry-safe account deletion, request-body limits, suspension enforcement, owner AAL2 database checks, and registration/payment-evidence privacy tests. Do not merge without reviewing the complete migration and release diff against the current main.
+- PR #78 (`feat/combined-google-login-yellow-dashboard`) remains draft and is based on PR #74; head `3909252e0204cf822af094e3916ec6dfa1e554b5`. It supplies the yellow 3D dashboard layer and Google login. The workflow-run lookup returned no PR-triggered runs for this exact head; verify current checks before any merge.
+- PR #79 (`feat/full-site-black-gold-ux-refresh`) remains draft and is based on PR #78; head `9fda7e1c65678d53fd334047240e22bca64ee0cd`. It supplies the broader public-site/organiser/King visual refresh. The workflow-run lookup returned no PR-triggered runs for this exact head; verify current checks before any merge.
+- PR #83 (`fix/post-login-dashboard-routing`) remains draft, based on PR #79; exact head `9899218b261d731c0dbfa22462c703bab774c185`. It incorporates the shared Supabase client refactor from PR #82, so #82 must not be independently merged on top of this stack.
+- PR #75 (organiser-only Google sign-in) remains open and reports `mergeable=false`; PR #76 (organiser profile tab) remains open based on #75; PR #77 (signature dashboard UI) remains draft and based on #74; PR #80 (plans/storage usage) remains draft and based on #79. These are not part of the direct #74 → #78 → #79 → #83 release path; reconcile overlaps before selecting any of them.
+- PR #81 continuity/architecture documentation branch head is now `0fe434d5e3d369de999aea50a6c09945f80db446`, open and draft. Its previous workflow run succeeded before this documentation-only head update; recheck exact-head checks.
+- PR #82 shared-client refactor remains open/draft, but its changes are already included in #83. Keep it out of the merge path unless explicitly reconciled.
+- No PR in this chain has been merged as part of this session, and production has not been deployed.
+
+## Immediate work queue (strict order)
+
+1. User has confirmed Google OAuth redirect works after adding production and Pages-preview Redirect URLs in Supabase. The remaining manual regression is to confirm the new yellow/gold dashboard appears after login, refresh preserves the session and selected workspace tab, reopen restores the dashboard, and King Login still requires AAL2. Do not enter real participant or payment data on the preview.
+4. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
+5. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
+6. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
+7. After the auth/UI stack is safely integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access. Do not change production policies without migration review and explicit tests.
+8. Extract feature modules incrementally, without combining unrelated visual redesign or schema changes.
+9. Improve the dashboard/editor after auth and privacy are stable; maintain mobile-first and desktop-compatible layouts.
+10. Add versioned website document AST and draft/publish separation only when the editor model is ready.
+11. Add performance/scaling features only when measurements justify them, and verify the exact Cloudflare Pages production deployment before announcing a release.
+
+## Release verification standard
+
+For each PR, record:
+- PR number and branch.
+- Exact head commit SHA.
+- GitHub Actions workflow IDs and final conclusions.
+- Cloudflare Pages preview URL and exact deployed commit.
+- Any failed or irrelevant integration checks and why they are/aren't blocking.
+- Security/privacy impact and tests.
+- Merge SHA only after a verified merge.
+- Production deployment ID/commit and smoke-test result only after verified production release.
+
+A successful local test is not proof of production RLS. A successful build is not proof of a successful Pages deployment. A preview deployment is not a production deployment.
+
+## New-chat resume instruction
+
+When opening a new ChatGPT chat, send:
+"Continue Company-001 from the latest docs/PROJECT_CONTINUITY.md in https://github.com/bhavishyacodz/Company-001. First read the current repository and PR/workflow status, then continue from the Immediate work queue. Do not restart, do not ask me to repeat known requirements, and update the continuity file after substantial progress."
+
+The assistant should verify live repository state before acting because this file is a checkpoint, not a substitute for current GitHub status.
+
+
+## My Sites dashboard redesign (2026-10-31)
+
+- User supplied a simple mobile-first Sites dashboard reference and asked to adapt it to Company-001's black/gold theme.
+- PR #84, `feat/simple-sites-organizer-dashboard`, is open as a draft and is based on PR #83 (`fix/post-login-dashboard-routing`), not directly on main. Current head: `67ccf0385a78160ba4082665a9e51cf385571f78`; base head: `9899218b261d731c0dbfa22462c703bab774c185`.
+- Replaced the previous organiser command-centre landing screen with a compact **My Sites** list: create button, short welcome banner, search, status filter, event/site thumbnail with safe HTTPS URL validation, title, path, status and registration count.
+- Added a per-site overview with Edit Website, Registrations, Payments, Insights, public link copy and open-site actions. Registration, payment and insight views are scoped to the selected event using the existing organiser-scoped data.
+- Added responsive black/white/gold styles. Existing editor, auth/session routing and database policies were not changed by this dashboard PR; no participant data was touched.
+- Cloudflare Pages preview for exact head `67ccf0385a78160ba4082665a9e51cf385571f78` completed successfully. Commit preview: `https://b00f6db2.company-001.pages.dev`; branch preview: `https://feat-simple-sites-organizer.company-001.pages.dev`. A separate `Workers Builds: company-001` check was still `in_progress` at last check; the app's intended hosting target is Cloudflare Pages, not Workers, but check whether that separate check is required before merge. GitHub Actions workflow lookup returned no PR-triggered runs for this commit.
+- PR #84 is not merged. Production remains unchanged. Do not announce the redesign as live until the dependent chain #74 → #78 → #79 → #83 → #84 is safely reconciled and the exact production Pages deployment succeeds.
+- Next: verify PR #84's Cloudflare Pages preview/build; inspect the rendered mobile/desktop UI; run auth, refresh, site navigation and per-site data-filter regression checks; then review dependency checks before merging.
+
