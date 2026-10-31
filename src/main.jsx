@@ -237,8 +237,10 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          {!isLiveEventRoute && <>
+            <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
+            <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          </>}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
