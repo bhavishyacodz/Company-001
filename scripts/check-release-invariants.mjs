@@ -641,7 +641,9 @@ const checks = [
       return publicHeader.includes("{!isLiveEventRoute && <>")
         && publicHeader.includes('className="owner-shortcut king-login"')
         && publicHeader.includes('className="account-entry"')
-        && publicHeader.includes('className="menu-button"');
+        && publicHeader.includes('className="menu-button"')
+        && app.includes('{!isLiveEventRoute && <button className="banner-link"')
+        && !app.includes('isLiveEventRoute ? "Organiser sign in"');
     },
   },
 
