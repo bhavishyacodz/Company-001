@@ -9,10 +9,27 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/clie
 
 export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const menuRef = useRef(null);
+  const homeRef = useRef(null);
   const [consultation, setConsultation] = useState({ name: "", email: "", phone: "", project_type: "business-website", requirements: "", preferred_time: "", website: "" });
   const [consultationState, setConsultationState] = useState({ busy: false, error: "", success: "" });
+
+  useEffect(() => {
+    const root = homeRef.current;
+    if (!root || typeof window.IntersectionObserver !== "function") return;
+    const items = root.querySelectorAll("[data-reveal]");
+    if (!items.length) return;
+    root.classList.add("tactile-motion-ready");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: "0px 0px -7% 0px", threshold: 0.08 });
+    items.forEach((item) => observer.observe(item));
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -48,15 +65,10 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
     }
   };
   const updateConsultation = (event) => setConsultation(current => ({ ...current, [event.target.name]: event.target.value }));
-  const moveStage = (event) => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || event.pointerType === "touch") return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    setTilt({ x: ((event.clientY - rect.top) / rect.height - .5) * -5, y: ((event.clientX - rect.left) / rect.width - .5) * 7 });
-  };
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <main className="experience-home tactile-home">
+    <main className="experience-home tactile-home" ref={homeRef}>
       <section className="tactile-frame" id="home">
         <div className="tactile-canvas">
           <div className="tactile-grain" aria-hidden="true" />
@@ -107,10 +119,10 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
             <div className="tactile-proof"><span><ShieldCheck size={15}/> Privacy-first by design</span><span><Zap size={15}/> Made to feel effortless</span></div>
           </div>
 
-          <div className="tactile-mascot-stage" onPointerMove={moveStage} onPointerLeave={() => setTilt({ x: 0, y: 0 })}>
+          <div className="tactile-mascot-stage">
             <div className="tactile-orbit orbit-one"/><div className="tactile-orbit orbit-two"/>
             <div className="tactile-mascot-shadow"/>
-            <div className="tactile-mascot" style={{ transform: "rotateX(" + tilt.x + "deg) rotateY(" + tilt.y + "deg)" }} aria-label="A friendly 3D-style mascot waving hello">
+            <div className="tactile-mascot" aria-label="A friendly 3D-style mascot waving hello">
               <div className="mascot-arm mascot-arm-left"/>
               <div className="mascot-arm mascot-arm-right"><i/></div>
               <div className="mascot-body"><span className="mascot-eye eye-left"/><span className="mascot-eye eye-right"/><span className="mascot-cheek cheek-left"/><span className="mascot-cheek cheek-right"/><span className="mascot-smile"/></div>
@@ -122,7 +134,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
           <div className="tactile-canvas-foot"><span>DESIGN THAT THINKS <i>✳</i> TECH THAT WORKS</span><a href="#services">SCROLL TO EXPLORE ↓</a></div>
         </div>
 
-        <div className="tactile-bento-grid" id="services">
+        <div className="tactile-bento-grid" id="services" data-reveal>
           <button className="tactile-bento-card bento-web" onClick={onStart}>
             <span className="tactile-card-index">01 / CUSTOM WEB</span><span className="tactile-card-arrow"><ArrowUpRight size={19}/></span>
             <h2>Make your<br/>brand feel<br/>like <em>you.</em></h2>
@@ -140,13 +152,13 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
         </div>
       </section>
 
-      <section className="tactile-manifesto" id="manifesto">
+      <section className="tactile-manifesto" id="manifesto" data-reveal>
         <div><span className="tactile-section-index">03 / THE MANIFESTO</span><h2>Less friction.<br/><em>More feeling.</em></h2></div>
         <p>Technology should make the next step obvious. We bring thoughtful design and practical tools together, so people can focus on what they came to do—not figure out the interface.</p>
         <div className="tactile-manifesto-stamp"><Sparkles size={22}/><b>MADE WITH<br/>INTENTION</b><span>001</span></div>
       </section>
 
-      <section className="tactile-services" id="stories">
+      <section className="tactile-services" id="stories" data-reveal>
         <div className="tactile-section-heading"><div><span className="tactile-section-index">04 / WHAT WE MAKE</span><h2>Useful things.<br/><em>Lovely details.</em></h2></div><p>Purpose-built experiences for people with something worth sharing.</p></div>
         <div className="tactile-service-grid">
           <article className="tactile-service-card service-site"><span className="tactile-service-icon"><Globe2 size={20}/></span><span className="tactile-service-label">01 — WEB DESIGN</span><h3>Websites with<br/>a clear purpose.</h3><p>Business sites, landing pages and digital storefronts shaped around your brand.</p><span className="tactile-service-art"><Monitor size={46}/><i/></span></article>
@@ -155,7 +167,7 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
         </div>
       </section>
 
-      <section className="tactile-process" id="process">
+      <section className="tactile-process" id="process" data-reveal>
         <div className="tactile-process-intro"><span className="tactile-section-index">05 / A SIMPLE PROCESS</span><h2>Clear steps.<br/><em>No guesswork.</em></h2><p>Good work starts with understanding the problem—not rushing into a build.</p></div>
         <div className="tactile-process-list">
           <article><b>01</b><div><h3>Tell us the idea.</h3><p>Share your audience, goals and what success should feel like.</p></div><Sparkles size={20}/></article>
@@ -165,9 +177,9 @@ export default function CompanyHome({ onStart, onOrganiser, onTemplates }) {
         </div>
       </section>
 
-      <section className="tactile-faq" id="faq"><span className="tactile-section-index">06 / GOOD TO KNOW</span><h2>Questions, <em>answered.</em></h2><div><details><summary>Can organisers browse templates without signing in?<ArrowRight size={16}/></summary><p>Yes. The public template catalog is designed to be explored before creating an account.</p></details><details><summary>Can I manage my event from my phone?<ArrowRight size={16}/></summary><p>The experience is designed for mobile and desktop, with responsive organiser tools.</p></details><details><summary>Who can see participant details?<ArrowRight size={16}/></summary><p>Participant information and payment evidence are intended to remain private to the event's organiser.</p></details></div></section>
+      <section className="tactile-faq" id="faq" data-reveal><span className="tactile-section-index">06 / GOOD TO KNOW</span><h2>Questions, <em>answered.</em></h2><div><details><summary>Can organisers browse templates without signing in?<ArrowRight size={16}/></summary><p>Yes. The public template catalog is designed to be explored before creating an account.</p></details><details><summary>Can I manage my event from my phone?<ArrowRight size={16}/></summary><p>The experience is designed for mobile and desktop, with responsive organiser tools.</p></details><details><summary>Who can see participant details?<ArrowRight size={16}/></summary><p>Participant information and payment evidence are intended to remain private to the event's organiser.</p></details></div></section>
 
-      <section className="tactile-contact" id="contact">
+      <section className="tactile-contact" id="contact" data-reveal>
         <div className="tactile-contact-copy"><span className="tactile-section-index">07 / LET'S TALK</span><h2>Have a good<br/><em>idea?</em></h2><p>Tell us what you're trying to make. We'll help turn the rough idea into a clear plan before you commit to anything.</p><div className="tactile-contact-promise"><ShieldCheck size={18}/><span><b>No payment to enquire.</b><small>Review the scope and quote before work begins.</small></span></div></div>
         <form className="tactile-form" onSubmit={submitConsultation} aria-busy={consultationState.busy}>
           <div className="tactile-form-heading"><span>PROJECT ENQUIRY</span><b>Let's make it real <Send size={16}/></b></div>
