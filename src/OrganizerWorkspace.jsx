@@ -13,7 +13,6 @@ const getSafeHttpsImageUrl = (value) => {
     return parsed.protocol === "https:" && parsed.hostname && !parsed.username && !parsed.password ? parsed.href : "";
   } catch { return ""; }
 };
-const getTemplate = (key) => EVENT_TEMPLATES.find((item) => item.key === key) || EVENT_TEMPLATES[0];
 const isRecoverableFormDraft = (draft) => Boolean(
   draft && typeof draft === "object" && !Array.isArray(draft) &&
   EVENT_TEMPLATES.some(template => template.key === draft.template_key) &&
