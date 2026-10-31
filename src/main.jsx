@@ -180,6 +180,12 @@ function App() {
         }
 
         setOrganizerWorkspaceReady(true);
+        if (window.sessionStorage.getItem("company001:password-update-reauth") === user.id) {
+          window.sessionStorage.removeItem("company001:password-update-reauth");
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
         const savedView = window.sessionStorage.getItem("company001:last-view");
         const isOrganizerLoginReturn = organizerGoogleCallback;
         setView(isOrganizerLoginReturn ? "account" : savedView === "profile" ? "account" : protectedViews.includes(savedView) ? savedView : "account");
@@ -1099,11 +1105,15 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         throw new Error("Your sign-in session changed. Please sign in again and retry.");
       }
       if (hasPasswordIdentity) {
+        window.sessionStorage.setItem("company001:password-update-reauth", user.id);
         const { error: reauthError } = await supabase.auth.signInWithPassword({
           email: user.email,
           password: accountCurrentPassword,
         });
-        if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
+        if (reauthError) {
+          window.sessionStorage.removeItem("company001:password-update-reauth");
+          throw new Error("Current password is incorrect. Your password was not changed.");
+        }
       }
       const { data: updatedUser, error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
       if (updateError) {
