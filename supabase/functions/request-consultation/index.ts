@@ -5,8 +5,17 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 const allowedOrigins = new Set(["https://company-001.pages.dev", "https://www.company-001.pages.dev"]);
+function isAllowedOrigin(origin: string) {
+  if (!origin) return true;
+  try {
+    const hostname = new URL(origin).hostname;
+    return allowedOrigins.has(origin) || (hostname.endsWith(".company-001.pages.dev") && hostname !== "company-001.pages.dev");
+  } catch {
+    return false;
+  }
+}
 function responseHeaders(origin: string) {
-  return { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Vary": "Origin", "Access-Control-Allow-Origin": allowedOrigins.has(origin) ? origin : "https://company-001.pages.dev", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+  return { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Vary": "Origin", "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? (origin || "https://company-001.pages.dev") : "https://company-001.pages.dev", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
 }
 function reply(origin: string, status: number, body: Record<string, unknown>) { return new Response(JSON.stringify(body), { status, headers: responseHeaders(origin) }); }
 const str = (value: unknown, max: number) => typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -17,7 +26,7 @@ Deno.serve(async (req: Request) => {
   const origin = req.headers.get("origin") ?? "";
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: responseHeaders(origin) });
   if (req.method !== "POST") return reply(origin, 405, { error: "Method not allowed." });
-  if (origin && !allowedOrigins.has(origin)) return reply(origin, 403, { error: "This website is not allowed to submit enquiries." });
+  if (!isAllowedOrigin(origin)) return reply(origin, 403, { error: "This website is not allowed to submit enquiries." });
   let bodyBytes: Uint8Array | null;
   try {
     bodyBytes = await readBodyLimited(req, 12_000);
