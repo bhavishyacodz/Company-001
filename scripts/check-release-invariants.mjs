@@ -5,7 +5,7 @@ const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
 const listSourceFiles = (directory) => readdirSync(join(process.cwd(), directory), { withFileTypes: true })
   .flatMap((entry) => {
     const path = `${directory}/${entry.name}`;
-    return entry.isDirectory() ? listSourceFiles(path) : /\\.(js|jsx|ts|tsx)$/.test(entry.name) ? [path] : [];
+    return entry.isDirectory() ? listSourceFiles(path) : /\.(js|jsx|ts|tsx)$/.test(entry.name) ? [path] : [];
   });
 const checks = [
   {
