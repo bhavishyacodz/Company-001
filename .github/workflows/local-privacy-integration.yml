@@ -49,6 +49,15 @@ jobs:
       - name: Test bounded request-body reader
         run: deno test supabase/functions/_shared/request-body.test.ts
 
+      - name: Type-check security-sensitive Edge Functions
+        run: >-
+          deno check
+          supabase/functions/register-esports/index.ts
+          supabase/functions/request-consultation/index.ts
+          supabase/functions/view-payment-evidence/index.ts
+          supabase/functions/delete-account/index.ts
+          supabase/functions/manage-user-accounts/index.ts
+
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
