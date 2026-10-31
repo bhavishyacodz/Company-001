@@ -802,3 +802,66 @@
     justify-content: center;
   }
 }
+
+
+/* Organizer Google sign-in. */
+.account-google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 16px;
+  padding: 0 16px;
+  border: 1px solid #42465b;
+  border-radius: 9px;
+  background: #171a27;
+  color: #f5f5fb;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.account-google-button:hover:not(:disabled) {
+  border-color: #858ba8;
+  background: #202438;
+}
+.account-google-button:focus-visible {
+  outline: 2px solid #b9a4ff;
+  outline-offset: 3px;
+}
+.account-google-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+.account-google-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: #4285f4;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+}
+.account-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 17px 0 2px;
+  color: #858ba4;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.account-auth-divider::before,
+.account-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(145,151,180,.2);
+}
