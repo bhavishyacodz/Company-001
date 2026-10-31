@@ -792,6 +792,23 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [changingAccountPassword, setChangingAccountPassword] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState("menu");
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeMenuOnOutsidePress = (event) => {
+      if (!profileMenuRef.current?.contains(event.target)) setSettingsOpen(false);
+    };
+    const closeMenuOnEscape = (event) => {
+      if (event.key === "Escape") setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", closeMenuOnOutsidePress);
+    window.addEventListener("keydown", closeMenuOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenuOnOutsidePress);
+      window.removeEventListener("keydown", closeMenuOnEscape);
+    };
+  }, [settingsOpen]);
 
   useEffect(() => {
     let active = true;
@@ -1177,12 +1194,13 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           </>
         ) : (
           <div className="account-signed-in">
-            <section className="profile-overview" aria-label="Your profile" style={{ position: "relative" }}>
+            <section ref={profileMenuRef} className="profile-overview" aria-label="Your profile" style={{ position: "relative" }}>
               <button
                 type="button"
                 className="menu-button"
                 aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}
                 aria-expanded={settingsOpen}
+                aria-haspopup="menu"
                 onClick={() => setSettingsOpen(value => !value)}
                 style={{ position: "absolute", top: 14, right: 14, zIndex: 3 }}
               >
