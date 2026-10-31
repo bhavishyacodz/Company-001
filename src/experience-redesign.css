@@ -231,3 +231,83 @@
 .workspace-history-toolbar button:disabled{opacity:.35!important;cursor:not-allowed!important}
 .workspace-website-canvas-mode .workspace-canvas-layers>button:focus-visible,.workspace-website-canvas-mode .workspace-canvas-inspector-fields input:focus-visible,.workspace-website-canvas-mode .workspace-canvas-inspector-fields select:focus-visible,.workspace-website-canvas-mode .workspace-canvas-inspector-fields textarea:focus-visible{outline:2px solid #f5d35e!important;outline-offset:3px!important}
 @media(max-width:650px){.workspace-history-toolbar{gap:8px!important;padding:8px!important}.workspace-history-shortcuts{order:3;width:100%;margin:0!important}.workspace-history-toolbar>div{margin-left:auto}.workspace-history-toolbar button{min-height:38px!important}}
+
+/* Simple Sites dashboard — black, white and Company-001 gold */
+.sites-topbar{align-items:center!important;min-height:64px!important;padding:12px 22px!important;background:#090909!important;border-bottom:1px solid rgba(245,205,65,.22)!important}
+.sites-topbar-simple>div:first-child{display:flex;align-items:center;gap:12px}
+.sites-brand-mark{display:inline-flex;align-items:center;gap:5px;color:#fff;font-weight:900;font-size:15px;letter-spacing:.12em}
+.sites-brand-mark span{color:#e9bd32}
+.sites-topbar .workspace-heading-actions{gap:8px}
+.sites-dashboard,.sites-detail-view{width:min(100%,920px);margin:0 auto;padding:28px 22px 64px;color:#f5f5f5}
+.sites-dashboard-heading,.sites-detail-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:22px}
+.sites-eyebrow{display:block;margin-bottom:8px;color:#e9bd32;font-size:10px;font-weight:800;letter-spacing:.18em}
+.sites-dashboard-heading h2,.sites-detail-heading h2{margin:0;color:#fff;font-size:clamp(27px,5vw,36px);font-weight:750;letter-spacing:-.045em}
+.sites-dashboard-heading p,.sites-detail-heading p{margin:6px 0 0;color:#9d9d9d;font-size:13px}
+.sites-create-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:0 16px;border:1px solid #f3ce4b;border-radius:10px;background:linear-gradient(135deg,#f6dc75,#d8a91d);color:#151515;font-size:12px;font-weight:800;box-shadow:0 5px 20px #d7ad2633;cursor:pointer;transition:transform .18s,box-shadow .18s}
+.sites-create-button:hover{transform:translateY(-2px);box-shadow:0 9px 26px #d7ad2644}
+.sites-create-button>span{font-size:20px;line-height:0}
+.sites-welcome-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 19px;margin-bottom:18px;border:1px solid #40391f;border-radius:14px;background:linear-gradient(115deg,#201c10,#151515 72%);box-shadow:inset 0 1px #ffffff08}
+.sites-welcome-banner strong{font-size:14px;color:#f4d46a}
+.sites-welcome-banner p{margin:5px 0 0;color:#b5b0a2;font-size:12px;line-height:1.6}
+.sites-banner-mark{color:#d9b743;font-size:12px;font-weight:900;letter-spacing:.15em;white-space:nowrap}
+.sites-list-panel{overflow:hidden;border:1px solid #2a2a2a;border-radius:16px;background:#111;box-shadow:0 15px 45px #0004}
+.sites-list-toolbar{display:flex;gap:10px;padding:14px;border-bottom:1px solid #292929}
+.sites-search{display:flex;align-items:center;gap:9px;flex:1;min-width:0;height:42px;padding:0 12px;border:1px solid #303030;border-radius:9px;background:#1b1b1b;color:#b6b6b6}
+.sites-search>span{font-size:22px;line-height:1}
+.sites-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#fff;font-size:13px}
+.sites-search input::placeholder{color:#777}
+.sites-list-toolbar select{max-width:155px;min-width:115px;padding:0 10px;border:1px solid #303030;border-radius:9px;background:#1b1b1b;color:#ddd;font-size:12px}
+.sites-list{display:flex;flex-direction:column}
+.sites-list-item{display:flex;align-items:center;gap:14px;width:100%;min-width:0;padding:14px 16px;border:0;border-bottom:1px solid #242424;background:transparent;color:inherit;text-align:left;cursor:pointer;transition:background .16s}
+.sites-list-item:last-child{border-bottom:0}
+.sites-list-item:hover{background:#1b1b1b}
+.sites-site-thumb{display:flex;align-items:center;justify-content:center;flex:0 0 68px;width:68px;height:68px;overflow:hidden;border:1px solid #37332a;border-radius:11px;background:linear-gradient(145deg,#302711,#171717)}
+.sites-site-thumb img{width:100%;height:100%;object-fit:cover}
+.sites-site-thumb-fallback{display:grid;place-items:center;width:100%;height:100%;color:#eac64e}
+.sites-site-copy{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0}
+.sites-site-copy>strong{overflow:hidden;color:#f5f5f5;font-size:14px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}
+.sites-site-copy>small{overflow:hidden;color:#8f8f8f;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.sites-site-meta{display:flex;align-items:center;gap:10px;color:#888;font-size:10px}
+.sites-status{display:inline-flex;align-items:center;width:max-content;padding:4px 8px;border:1px solid #414141;border-radius:999px;background:#242424;color:#d0d0d0;font-size:10px;font-weight:700;white-space:nowrap}
+.sites-status-published{border-color:#315b3b;background:#14251a;color:#8fe0a0}
+.sites-status-pending_review{border-color:#66521d;background:#29210e;color:#f1d16b}
+.sites-status-draft{border-color:#454545;background:#242424;color:#c5c5c5}
+.sites-status-closed{border-color:#5b3636;background:#271717;color:#e7a1a1}
+.sites-site-arrow{color:#d6b33d;font-size:27px;line-height:1}
+.sites-empty-state{display:flex;align-items:center;flex-direction:column;gap:9px;padding:46px 18px;text-align:center;color:#d8b947}
+.sites-empty-state strong{color:#f2f2f2;font-size:14px}
+.sites-empty-state p{max-width:360px;margin:0 0 8px;color:#929292;font-size:12px;line-height:1.6}
+.sites-dashboard-footnote{margin:14px 2px 0;color:#747474;font-size:10px;line-height:1.6}
+.sites-detail-view{padding-top:22px}
+.sites-back-link{margin-bottom:22px;padding:0;border:0;background:none;color:#d9b743;font-size:12px;font-weight:700;cursor:pointer}
+.sites-detail-heading{align-items:flex-start;padding-bottom:20px;border-bottom:1px solid #2b2b2b}
+.sites-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.sites-detail-action{position:relative;display:flex;align-items:flex-start;flex-direction:column;gap:7px;min-height:138px;padding:17px;border:1px solid #303030;border-radius:13px;background:linear-gradient(145deg,#1c1c1c,#111);color:#fff;text-align:left;cursor:pointer;transition:border-color .18s,transform .18s}
+.sites-detail-action:hover{transform:translateY(-2px);border-color:#a88a2f}
+.sites-action-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#332a12;color:#f0cf55;font-size:18px}
+.sites-detail-action strong{font-size:14px}
+.sites-detail-action small{color:#929292;font-size:11px}
+.sites-action-arrow{position:absolute;right:15px;bottom:14px;color:#e4c34e;font-size:18px}
+.sites-detail-link-row{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:15px;border:1px solid #303030;border-radius:12px;background:#151515}
+.sites-detail-link-row>div{display:flex;flex:1;flex-direction:column;gap:5px;min-width:160px}
+.sites-detail-link-row strong{color:#eee;font-size:12px}
+.sites-detail-link-row small{overflow-wrap:anywhere;color:#999;font-size:10px}
+.sites-context-nav{margin-bottom:12px}
+@media(max-width:600px){
+ .sites-topbar{padding:10px 15px!important}
+ .sites-dashboard,.sites-detail-view{padding:22px 14px 48px}
+ .sites-dashboard-heading{align-items:flex-start;flex-direction:column}
+ .sites-create-button{width:100%;min-height:45px}
+ .sites-welcome-banner{padding:14px}
+ .sites-banner-mark{display:none}
+ .sites-list-toolbar{flex-direction:column}
+ .sites-list-toolbar select{max-width:none;width:100%;height:40px}
+ .sites-list-item{gap:11px;padding:13px 11px}
+ .sites-site-thumb{flex-basis:58px;width:58px;height:58px}
+ .sites-site-copy>strong{font-size:13px}
+ .sites-site-meta{flex-wrap:wrap;gap:6px}
+ .sites-detail-grid{grid-template-columns:1fr}
+ .sites-detail-action{min-height:120px}
+ .sites-detail-link-row{align-items:stretch;flex-direction:column}
+ .sites-detail-link-row .button{justify-content:center}
+}
