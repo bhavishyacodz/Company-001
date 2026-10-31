@@ -22,6 +22,8 @@ export default function OwnerPanel({ onBack }) {
   const [financeEntries, setFinanceEntries] = useState([]);
   const [financeForm, setFinanceForm] = useState({ entry_type: "income", category: "subscription", amount: "", organizer_id: "", note: "" });
   const [savingFinance, setSavingFinance] = useState(false);
+  const [platformStorageCapMB, setPlatformStorageCapMB] = useState("500");
+  const [savingStorageCap, setSavingStorageCap] = useState(false);
   const [counts, setCounts] = useState({ events: 0, pendingEvents: 0 });
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState("");
@@ -56,13 +58,14 @@ export default function OwnerPanel({ onBack }) {
       if (profileError) throw profileError;
       setRole((profile && profile.platform_role) || "organizer");
       if (!profile || profile.platform_role !== "owner") return;
-      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult, financeResult] = await Promise.all([
+      const [appResult, organizerResult, eventResult, consultationResult, pendingEventResult, financeResult, storageSettingsResult] = await Promise.all([
         supabase.from("organizer_applications").select("id,applicant_user_id,business_name,category,contact_email,notes,status,decision_note,created_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("organizers").select("id,owner_user_id,display_name,slug,status,created_at,plan_key,storage_quota_bytes,max_screenshot_bytes,max_screenshots,max_forms,max_responses_per_form").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }),
         supabase.from("consultation_requests").select("id,name,email,phone,project_type,requirements,preferred_time,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100),
         supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "pending_review"),
-        supabase.from("platform_finance_entries").select("id,entry_type,category,amount_paise,note,organizer_id,recorded_by,created_at").order("created_at", { ascending: false }).limit(200)
+        supabase.from("platform_finance_entries").select("id,entry_type,category,amount_paise,note,organizer_id,recorded_by,created_at").order("created_at", { ascending: false }).limit(200),
+        supabase.from("platform_storage_settings").select("screenshot_quota_bytes").eq("id", 1).maybeSingle()
       ]);
       if (appResult.error) throw appResult.error;
       if (organizerResult.error) throw organizerResult.error;
@@ -70,11 +73,13 @@ export default function OwnerPanel({ onBack }) {
       if (consultationResult.error) throw consultationResult.error;
       if (pendingEventResult.error) throw pendingEventResult.error;
       if (financeResult.error) throw financeResult.error;
+      if (storageSettingsResult.error) throw storageSettingsResult.error;
       setConsultationRequests(consultationResult.data || []);
       setApplications(appResult.data || []);
       setOrganizers(organizerResult.data || []);
       setCounts({ events: eventResult.count || 0, pendingEvents: pendingEventResult.count || 0 });
       setFinanceEntries(financeResult.data || []);
+      setPlatformStorageCapMB(String(Math.round((Number(storageSettingsResult.data?.screenshot_quota_bytes) || 500000000) / 1000000)));
       const { data: accountData, error: accountLoadError } = await supabase.functions.invoke("manage-user-accounts", { body: { action: "list" } });
       if (accountLoadError) {
         setAccountError(accountLoadError.message || "Could not load user accounts.");
@@ -141,6 +146,29 @@ export default function OwnerPanel({ onBack }) {
     } catch (e) {
       setError(e.message || "Could not save the finance entry.");
     } finally { setSavingFinance(false); }
+  };
+
+  const savePlatformStorageCap = async (event) => {
+    event.preventDefault();
+    const megabytes = Number(platformStorageCapMB);
+    if (!Number.isFinite(megabytes) || megabytes < 1 || megabytes > 100000) {
+      setError("Enter a shared storage cap between 1 MB and 100,000 MB.");
+      return;
+    }
+    if (!window.confirm("Save a shared screenshot cap of " + megabytes.toLocaleString("en-IN") + " MB? Only increase this after the Supabase storage allowance has actually been upgraded. This setting does not purchase storage.")) return;
+    setSavingStorageCap(true); setError(""); setNotice("");
+    try {
+      const { error: updateError } = await supabase.from("platform_storage_settings").update({
+        screenshot_quota_bytes: Math.round(megabytes * 1000000),
+        updated_at: new Date().toISOString(),
+        updated_by: user.id
+      }).eq("id", 1);
+      if (updateError) throw updateError;
+      setNotice("Shared screenshot capacity updated. Existing organiser quotas remain unchanged.");
+      await load();
+    } catch (e) {
+      setError(e.message || "Could not update shared screenshot capacity.");
+    } finally { setSavingStorageCap(false); }
   };
 
   const signOut = async () => {
@@ -327,6 +355,11 @@ export default function OwnerPanel({ onBack }) {
             <div><strong>₹{(financeEntries.filter(entry => entry.entry_type === "expense").reduce((sum, entry) => sum + Number(entry.amount_paise || 0), 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Recorded expenses</span></div>
             <div><strong>₹{((financeEntries.reduce((sum, entry) => sum + (entry.entry_type === "income" ? 1 : -1) * Number(entry.amount_paise || 0), 0)) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</strong><span>Remaining balance</span></div>
           </div>
+          <form className="owner-storage-cap-control" onSubmit={savePlatformStorageCap}>
+            <div><span className="panel-label">PLATFORM CAPACITY CONTROL</span><h3>Shared screenshot storage</h3><p>Current pilot cap: {Number(platformStorageCapMB).toLocaleString("en-IN")} MB. Increase this only after the Supabase storage plan has been upgraded and verified. The database and upload service both enforce this value.</p></div>
+            <label>New shared cap (MB)<input type="number" min="1" max="100000" step="1" value={platformStorageCapMB} onChange={event => setPlatformStorageCapMB(event.target.value)}/></label>
+            <button className="button button-primary" type="submit" disabled={savingStorageCap}>{savingStorageCap ? "Saving…" : "Save shared capacity"}</button>
+          </form>
           <div className="owner-finance-allocation">
             <div><span className="panel-label">SUGGESTED SPLIT OF RECORDED INCOME</span><p>Use this as a budget guide after confirming receipts. Review actual costs before spending.</p></div>
             {[
