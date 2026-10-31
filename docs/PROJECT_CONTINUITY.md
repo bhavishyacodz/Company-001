@@ -170,3 +170,16 @@ When opening a new ChatGPT chat, send:
 "Continue Company-001 from the latest docs/PROJECT_CONTINUITY.md in https://github.com/bhavishyacodz/Company-001. First read the current repository and PR/workflow status, then continue from the Immediate work queue. Do not restart, do not ask me to repeat known requirements, and update the continuity file after substantial progress."
 
 The assistant should verify live repository state before acting because this file is a checkpoint, not a substitute for current GitHub status.
+
+
+## My Sites dashboard redesign (2026-10-31)
+
+- User supplied a simple mobile-first Sites dashboard reference and asked to adapt it to Company-001's black/gold theme.
+- PR #84, `feat/simple-sites-organizer-dashboard`, is open as a draft and is based on PR #83 (`fix/post-login-dashboard-routing`), not directly on main. Current head: `67ccf0385a78160ba4082665a9e51cf385571f78`; base head: `9899218b261d731c0dbfa22462c703bab774c185`.
+- Replaced the previous organiser command-centre landing screen with a compact **My Sites** list: create button, short welcome banner, search, status filter, event/site thumbnail with safe HTTPS URL validation, title, path, status and registration count.
+- Added a per-site overview with Edit Website, Registrations, Payments, Insights, public link copy and open-site actions. Registration, payment and insight views are scoped to the selected event using the existing organiser-scoped data.
+- Added responsive black/white/gold styles. Existing editor, auth/session routing and database policies were not changed by this dashboard PR; no participant data was touched.
+- Cloudflare Pages preview check for exact head `67ccf0385a78160ba4082665a9e51cf385571f78` was still `in_progress` at last check. No preview URL or successful build is confirmed yet. GitHub Actions workflow lookup returned no PR-triggered runs for this commit; check the Cloudflare Pages check-run and any repository-required checks before marking ready.
+- PR #84 is not merged. Production remains unchanged. Do not announce the redesign as live until the dependent chain #74 → #78 → #79 → #83 → #84 is safely reconciled and the exact production Pages deployment succeeds.
+- Next: verify PR #84's Cloudflare Pages preview/build; inspect the rendered mobile/desktop UI; run auth, refresh, site navigation and per-site data-filter regression checks; then review dependency checks before merging.
+
