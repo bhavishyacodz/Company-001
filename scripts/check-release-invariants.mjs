@@ -162,6 +162,34 @@ const checks = [
     },
   },
   {
+    name: "registration endpoint enforces streaming body limits and proxy-safe IP selection",
+    run: () => {
+      const endpoint = read("supabase/functions/register-esports/index.ts");
+      const reader = read("supabase/functions/_shared/request-body.ts");
+      const tests = read("supabase/functions/_shared/request-body.test.ts");
+      return endpoint.includes("readBodyLimited(req, 4_000_000)")
+        && endpoint.includes('req.headers.get("cf-connecting-ip")')
+        && endpoint.includes('split(",").at(-1)')
+        && reader.includes("reader.read()")
+        && reader.includes("total > maxBytes")
+        && reader.includes("reader.cancel()")
+        && tests.includes("body larger than the configured limit")
+        && tests.includes("body at the configured limit");
+    },
+  },
+  {
+    name: "anonymous visitors have no direct organizer delegation privileges",
+    run: () => {
+      const migration = read("supabase/migrations/20261030100000_revoke_anon_organizer_event_access.sql");
+      const tests = read("supabase/tests/registration_privacy.test.sql");
+      return migration.includes("revoke all privileges on table public.organizer_event_access from anon")
+        && tests.includes("no direct SELECT grant on organizer delegation records")
+        && tests.includes("cannot create organizer delegation records")
+        && tests.includes("cannot modify organizer delegation records")
+        && tests.includes("cannot delete organizer delegation records");
+    },
+  },
+  {
     name: "payment evidence remains private and rate-limit storage is server-only",
     run: () => {
       const sql = read("supabase/migrations/20261027054121_registration_endpoint_and_private_evidence.sql");
