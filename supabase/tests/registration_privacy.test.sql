@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(43);
+select plan(51);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -159,6 +159,42 @@ select is((
     and not (metadata ? 'confirmation_reference')
 ), 1, 'Owner audit log records payment review without participant identifiers');
 
+
+-- Suspensions must be enforced by RLS even when an access token has not expired.
+reset role;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select is(private.is_active_account(), true, 'An unsuspended organizer account is active');
+
+update auth.users
+set banned_until = now() + interval '1 day'
+where id = '10000000-0000-4000-8000-000000000001';
+
+set local role authenticated;
+select is(private.is_active_account(), false, 'A banned account is inactive immediately');
+select is((select count(*)::integer from public.registrations), 0, 'A banned organizer cannot read participant registrations with an existing token');
+select is((select count(*)::integer from public.payment_evidence), 0, 'A banned organizer cannot read payment evidence with an existing token');
+select is((select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'), 0, 'A banned organizer cannot read private screenshots with an existing token');
+select throws_ok(
+  $select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'suspended account attempt')$,
+  '42501', null,
+  'A banned organizer cannot use the privileged payment-review RPC'
+);
+
+reset role;
+update auth.users
+set banned_until = null,
+    raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"account_suspended":true}'::jsonb
+where id = '10000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(private.is_active_account(), false, 'The server-managed suspension flag also disables an account');
+
+reset role;
+update auth.users
+set banned_until = null,
+    raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) - 'account_suspended'
+where id = '10000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(private.is_active_account(), true, 'Restoring the account re-enables access');
 
 -- The privileged account-removal RPC must never be callable by browser roles.
 reset role;
