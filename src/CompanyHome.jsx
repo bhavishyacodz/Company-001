@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import {
   ArrowRight, ArrowUpRight, Check, Code2, Globe2, LayoutTemplate,
-  CalendarDays, ShieldCheck, Sparkles, Workflow, Smartphone, Monitor
+  CalendarDays, ShieldCheck, Sparkles, Workflow, Smartphone, Monitor,
+  MousePointer2, Layers3, WandSparkles, Zap, MoveUpRight
 } from "lucide-react";
 
 export default function CompanyHome({ onStart, onOrganiser }) {
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [consultation, setConsultation] = useState({ name: "", email: "", phone: "", project_type: "business-website", requirements: "", preferred_time: "", website: "" });
   const [consultationState, setConsultationState] = useState({ busy: false, error: "", success: "" });
   const submitConsultation = async (event) => {
@@ -25,149 +27,91 @@ export default function CompanyHome({ onStart, onOrganiser }) {
     }
   };
   const updateConsultation = (event) => setConsultation(current => ({ ...current, [event.target.name]: event.target.value }));
+  const moveStage = (event) => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTilt({ x: ((event.clientY - rect.top) / rect.height - .5) * -8, y: ((event.clientX - rect.left) / rect.width - .5) * 10 });
+  };
   return (
-    <main className="company-home">
-      <section className="company-hero" id="home">
-        <div className="company-hero-grid" aria-hidden="true" />
-        <div className="company-hero-copy">
-          <div className="company-eyebrow"><span /> INDEPENDENT WEB & DIGITAL STUDIO</div>
-          <h1>Turn your idea into a <em>website that works.</em></h1>
-          <p className="company-hero-lead">Company-001 designs and builds custom websites, focused landing pages and practical digital tools for businesses, creators and event organisers.</p>
-          <div className="company-hero-actions">
-            <button className="company-button primary" onClick={onStart}>See how projects work <ArrowRight size={17} /></button>
-            <a className="company-button secondary" href="#services">Explore services <ArrowUpRight size={16} /></a>
+    <main className="experience-home">
+      <section className="experience-hero" id="home">
+        <div className="experience-ambient experience-ambient-one" aria-hidden="true"/>
+        <div className="experience-ambient experience-ambient-two" aria-hidden="true"/>
+        <div className="experience-hero-inner">
+          <div className="experience-hero-copy">
+            <div className="experience-eyebrow"><span className="experience-eyebrow-pulse"/> DIGITAL PRODUCTS, BUILT WITH INTENTION <span className="experience-eyebrow-line"/></div>
+            <h1>Make your next<br/><span>big idea</span> feel<br/>impossible to ignore.</h1>
+            <p className="experience-lead">Websites, event experiences and useful digital tools—designed to make complex things feel effortless.</p>
+            <div className="experience-hero-actions">
+              <button className="experience-button experience-button-primary" onClick={onOrganiser}>Explore event studio <ArrowUpRight size={18}/></button>
+              <a className="experience-button experience-button-ghost" href="#work">Discover what we build <ArrowRight size={16}/></a>
+            </div>
+            <div className="experience-proof-row"><span><ShieldCheck size={15}/> Built around your workflow</span><span><Zap size={15}/> Fast, responsive experiences</span></div>
           </div>
-          <div className="company-proof"><span><Check size={15} /> Clear scope before work starts</span><span><Check size={15} /> Custom-built to your needs</span></div>
-        <div className="company-quick-guide" aria-label="How to get started">
-          <span className="company-quick-step"><b>1</b> Share your idea</span><span className="company-quick-divider" aria-hidden="true">→</span>
-          <span className="company-quick-step"><b>2</b> Review your quote</span><span className="company-quick-divider" aria-hidden="true">→</span>
-          <span className="company-quick-step"><b>3</b> Approve the build</span>
-        </div>
-        </div>
-        <div className="company-hero-visual" aria-label="Website design and development preview">
-          <div className="browser-frame">
-            <div className="browser-bar"><span /><span /><span /><small>your-idea.site</small></div>
-            <div className="browser-content">
-              <div className="browser-mini-brand">YOUR BRAND<span>®</span></div>
-              <div className="browser-mini-kicker">A DIGITAL EXPERIENCE, MADE FOR YOU</div>
-              <div className="browser-mini-title">Build something<br /><b>remarkable.</b></div>
-              <div className="browser-mini-copy" />
-              <div className="browser-mini-copy short" />
-              <div className="browser-mini-cta">LET'S GET STARTED <ArrowRight size={11} /></div>
-              <div className="browser-mini-cards"><span><Globe2 size={17}/><b>Web</b></span><span><Workflow size={17}/><b>Tools</b></span><span><CalendarDays size={17}/><b>Events</b></span></div>
+          <div className="experience-stage-wrap" onPointerMove={moveStage} onPointerLeave={()=>setTilt({x:0,y:0})}>
+            <div className="experience-stage-orbit orbit-a"/><div className="experience-stage-orbit orbit-b"/>
+            <div className="experience-stage" style={{ transform: "rotateX(" + tilt.x + "deg) rotateY(" + tilt.y + "deg)" }}>
+              <div className="experience-stage-back"/>
+              <div className="experience-browser">
+                <div className="experience-browser-top"><span/><span/><span/><b>studio.company001</b><i><MoveUpRight size={12}/></i></div>
+                <div className="experience-browser-body">
+                  <div className="experience-browser-nav"><strong>FORM<span> / 001</span></strong><div><i/> <i/> <i/></div></div>
+                  <div className="experience-browser-kicker">YOUR EVENT. YOUR WORLD.</div>
+                  <div className="experience-browser-title">Create a<br/><em>moment.</em></div>
+                  <div className="experience-browser-copy"><span/><span/><span/></div>
+                  <div className="experience-browser-cta">BUILD YOUR EXPERIENCE <ArrowUpRight size={12}/></div>
+                  <div className="experience-browser-art"><div className="experience-art-disc"/><div className="experience-art-ring"/><div className="experience-art-star">✳</div></div>
+                  <div className="experience-browser-foot"><span>DESIGNED TO MOVE</span><span>001 — 2026</span></div>
+                </div>
+              </div>
+              <div className="experience-float-card experience-float-top"><span className="experience-float-icon"><Layers3 size={16}/></span><span><b>One simple workspace</b><small>Every event, in one place</small></span><i><Check size={14}/></i></div>
+              <div className="experience-float-card experience-float-bottom"><span className="experience-float-icon"><MousePointer2 size={16}/></span><span><b>Made to feel effortless</b><small>Desktop · Tablet · Mobile</small></span></div>
+              <div className="experience-stage-caption">A BETTER WAY TO BUILD <span>↗</span></div>
             </div>
           </div>
-          <div className="floating-note note-top"><Code2 size={16}/><span><b>Built around your goals</b><small>Not a one-size-fits-all site</small></span></div>
-          <div className="floating-note note-bottom"><ShieldCheck size={17}/><span><b>Clear handover</b><small>Hosting and ownership discussed upfront</small></span></div>
-          <div className="company-visual-glow" />
         </div>
+        <div className="experience-hero-bottom"><span>SCROLL TO EXPLORE <span className="experience-scroll-line"/></span><span>INDEPENDENT DIGITAL STUDIO <b>INDIA · WORLDWIDE</b></span></div>
       </section>
 
-      <section className="company-trust-strip">
-        <span>DESIGN</span><i /><span>DEVELOPMENT</span><i /><span>DEPLOYMENT</span><i /><span>SUPPORT</span>
-      </section>
+      <section className="experience-marquee" aria-label="Services"><div><span>DESIGN THAT THINKS</span><i>✳</i><span>TECH THAT WORKS</span><i>✳</i><span>EXPERIENCES THAT MOVE</span><i>✳</i><span>DESIGN THAT THINKS</span><i>✳</i></div></section>
 
-      <section className="company-section" id="services">
-        <div className="company-section-heading">
-          <div><div className="company-kicker">WHAT WE DO</div><h2>Digital work with a <em>clear purpose.</em></h2></div>
-          <p>Not sure which option fits? Start with a free consultation. We will clarify what you need before any quote or build commitment.</p>
-        </div>
-        <div className="company-service-grid">
-          <article className="company-service-card featured">
-            <div className="company-service-icon"><Monitor size={22}/></div><span className="company-card-label">01 / CUSTOM DEVELOPMENT</span>
-            <h3>Websites made for your business.</h3><p>Business websites, service pages and landing pages shaped around your brand, content and goals.</p>
-            <ul><li><Check size={14}/> Responsive desktop and mobile layout</li><li><Check size={14}/> Custom features scoped in advance</li><li><Check size={14}/> Hosting and domain setup guidance</li></ul>
-            <button onClick={onStart}>View project process <ArrowRight size={15}/></button>
+      <section className="experience-work" id="work">
+        <div className="experience-section-intro"><div><span className="experience-index">01 / WHAT WE MAKE</span><h2>Digital, with a<br/><em>point of view.</em></h2></div><p>Not another template that looks like everyone else's. Thoughtful design, practical technology and a clear purpose behind every interaction.</p></div>
+        <div className="experience-work-grid">
+          <article className="experience-work-card experience-work-card-large" onClick={onStart} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onStart();}}}>
+            <div className="experience-card-top"><span>01 — CUSTOM WEB</span><span className="experience-card-arrow"><ArrowUpRight size={19}/></span></div>
+            <div className="experience-web-art"><div className="experience-web-art-window"><div/><div/><div/><b>YOUR BRAND<br/><em>YOUR NEXT CHAPTER.</em></b><span>Explore the possibilities ↗</span></div><div className="experience-web-art-orb"/></div>
+            <div className="experience-card-bottom"><div><h3>Websites with<br/>a clear purpose.</h3><p>Distinctive business websites, landing pages and digital storefronts.</p></div><span className="experience-card-link">EXPLORE <ArrowRight size={14}/></span></div>
           </article>
-          <article className="company-service-card">
-            <div className="company-service-icon violet"><LayoutTemplate size={22}/></div><span className="company-card-label">02 / EVENT PLATFORM</span>
-            <h3>Event pages without the hassle.</h3><p>A self-service platform for organisers to create event pages, collect registrations and review payment evidence.</p>
-            <ul><li><Check size={14}/> Multiple event categories</li><li><Check size={14}/> Organiser-managed details</li><li><Check size={14}/> Review before publication</li></ul>
-            <button onClick={onOrganiser}>Get started free <ArrowRight size={15}/></button>
+          <article className="experience-work-card experience-work-card-event" onClick={onOrganiser} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onOrganiser();}}}>
+            <div className="experience-card-top"><span>02 — EVENT STUDIO</span><span className="experience-card-arrow"><ArrowUpRight size={19}/></span></div>
+            <div className="experience-event-art"><div className="experience-event-orbit"/><div className="experience-event-tile"><CalendarDays size={26}/><b>MAKE IT<br/>AN EVENT.</b><small>CREATE · SHARE · MANAGE</small></div><div className="experience-event-chip chip-one">01 / PUBLISH</div><div className="experience-event-chip chip-two">02 / CONNECT</div></div>
+            <div className="experience-card-bottom"><div><h3>Your event.<br/>Your own space.</h3><p>Build event pages, collect registrations and manage attendees.</p></div><span className="experience-card-link">OPEN STUDIO <ArrowRight size={14}/></span></div>
           </article>
-          <article className="company-service-card">
-            <div className="company-service-icon amber"><Smartphone size={22}/></div><span className="company-card-label">03 / DIGITAL EXPERIENCES</span>
-            <h3>Useful tools, not just pages.</h3><p>Purpose-built forms, dashboards and workflows to make a specific business process easier to manage.</p>
-            <ul><li><Check size={14}/> Forms and admin views</li><li><Check size={14}/> Database-backed features when needed</li><li><Check size={14}/> Scope and milestones agreed first</li></ul>
-            <button onClick={onStart}>View project process <ArrowRight size={15}/></button>
+          <article className="experience-work-card experience-work-card-tools" onClick={onStart} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onStart();}}}>
+            <div className="experience-card-top"><span>03 — DIGITAL TOOLS</span><span className="experience-card-arrow"><ArrowUpRight size={19}/></span></div>
+            <div className="experience-tools-art"><div className="experience-tool-layer layer-one"><Workflow size={22}/><span>WORKFLOW</span></div><div className="experience-tool-layer layer-two"><Globe2 size={22}/><span>WEB</span></div><div className="experience-tool-layer layer-three"><Sparkles size={22}/><span>IDEAS</span></div></div>
+            <div className="experience-card-bottom"><div><h3>Tools that remove<br/>the busywork.</h3><p>Purpose-built dashboards, forms and connected workflows.</p></div><span className="experience-card-link">LET'S BUILD <ArrowRight size={14}/></span></div>
           </article>
         </div>
       </section>
 
-      <section className="company-process-section" id="process">
-        <div className="company-section-heading">
-          <div><div className="company-kicker">HOW A PROJECT WORKS</div><h2>A clear process from <em>idea to launch.</em></h2></div>
-          <p>No surprise scope changes. You review the proposed work and approve the quote before the build begins.</p>
-        </div>
-        <div className="company-process-grid">
-          <article><span>01</span><Sparkles size={19}/><h3>Free consultation</h3><p>Discuss the idea, audience, key pages and must-have features.</p></article>
-          <article><span>02</span><LayoutTemplate size={19}/><h3>Scope & quote</h3><p>Receive the agreed deliverables, price, timeline and payment milestones.</p></article>
-          <article><span>03</span><Code2 size={19}/><h3>Build & review</h3><p>Review progress against the agreed scope and provide feedback.</p></article>
-          <article><span>04</span><Globe2 size={19}/><h3>Launch & handover</h3><p>Deploy the site and clarify access, ownership and any agreed support.</p></article>
-        </div>
-      </section>
+      <section className="experience-process" id="process"><div className="experience-process-head"><span className="experience-index">02 / THE APPROACH</span><h2>Clear steps.<br/><em>No guesswork.</em></h2><p>Good work starts with understanding the problem—not rushing into a build.</p></div><div className="experience-process-list"><article><span>01</span><div><h3>Start with the why.</h3><p>Share your idea, audience and what success should look like.</p></div><Sparkles size={19}/></article><article><span>02</span><div><h3>Shape the experience.</h3><p>Agree the pages, features, scope, timeline and quote first.</p></div><LayoutTemplate size={19}/></article><article><span>03</span><div><h3>Build, test, refine.</h3><p>Review the work as it takes shape and make decisions with clarity.</p></div><Code2 size={19}/></article><article><span>04</span><div><h3>Launch with confidence.</h3><p>Deploy, hand over access and clarify ongoing ownership.</p></div><Globe2 size={19}/></article></div></section>
 
+      <section className="experience-consult" id="consultation"><div className="experience-consult-copy"><span className="experience-index">03 / LET'S TALK</span><h2>Have a good<br/><em>idea?</em></h2><p>Tell us what you're trying to make. We'll help turn the rough idea into a clear plan before you commit to anything.</p><div className="experience-consult-promise"><ShieldCheck size={18}/><span><b>No payment to enquire.</b><small>You'll review the scope and quote before work begins.</small></span></div></div>
+        <form className="experience-form" onSubmit={submitConsultation} aria-busy={consultationState.busy}><div className="experience-form-heading"><span>PROJECT ENQUIRY</span><b>Let's make it real <ArrowUpRight size={16}/></b></div><div className="experience-form-grid">
+          <label>Your name<input name="name" value={consultation.name} onChange={updateConsultation} minLength={2} maxLength={100} autoComplete="name" required placeholder="Name"/></label>
+          <label>Email address<input name="email" type="email" value={consultation.email} onChange={updateConsultation} maxLength={254} autoComplete="email" required placeholder="you@example.com"/></label>
+          <label>Phone (optional)<input name="phone" type="tel" value={consultation.phone} onChange={updateConsultation} maxLength={40} autoComplete="tel" placeholder="Contact number"/></label>
+          <label>What are you building?<select name="project_type" value={consultation.project_type} onChange={updateConsultation} required><option value="business-website">Business website</option><option value="landing-page">Landing page</option><option value="web-app">Web app / custom workflow</option><option value="dashboard">Dashboard or admin panel</option><option value="event-platform">Event platform</option><option value="other">Something else</option></select></label>
+          <label className="experience-form-wide">Tell us about the idea<textarea name="requirements" value={consultation.requirements} onChange={updateConsultation} minLength={15} maxLength={3000} required rows={4} placeholder="What should it do? Who will use it? What matters most?"/></label>
+          <label className="experience-form-wide">Preferred time (optional)<input name="preferred_time" value={consultation.preferred_time} onChange={updateConsultation} maxLength={160} placeholder="For example: weekday evenings, India time"/></label>
+          <label className="experience-honeypot" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" value={consultation.website} onChange={updateConsultation}/></label>
+        </div><button className="experience-button experience-button-primary" type="submit" disabled={consultationState.busy}>{consultationState.busy ? "Sending…" : "Send project enquiry"} <ArrowRight size={17}/></button>
+        {consultationState.error ? <p className="experience-form-message error" role="alert">{consultationState.error}</p> : null}{consultationState.success ? <p className="experience-form-message success" role="status">{consultationState.success}</p> : null}
+        <p className="experience-form-privacy">Your details are used only to respond to this enquiry. Do not include passwords or payment details.</p></form></section>
 
-      <section className="company-pricing-note" aria-labelledby="company-pricing-title">
-        <div className="company-pricing-icon"><ShieldCheck size={21}/></div>
-        <div className="company-pricing-copy">
-          <div className="company-kicker">NO GUESSWORK</div>
-          <h2 id="company-pricing-title">Know the scope before you commit.</h2>
-          <p>There is no one-size-fits-all price. After understanding your pages, features and deadline, we share a written quote and timeline for you to review. Work starts only after you approve them.</p>
-        </div>
-        <ul>
-          <li><Check size={15}/> Deliverables agreed in writing</li>
-          <li><Check size={15}/> Domain and hosting costs explained separately</li>
-          <li><Check size={15}/> Extra features require a revised quote</li>
-        </ul>
-      </section>
-
-      <section className="company-consultation-section" id="consultation">
-        <div className="company-section-heading">
-          <div><div className="company-kicker">START A PROJECT</div><h2>Tell us what you want to <em>build.</em></h2></div>
-          <p>It takes a few minutes. Tell us what you are trying to achieve; you can leave your phone number blank. This is an enquiry, not a purchase or payment.</p>
-        </div>
-        <form className="company-consultation-form" onSubmit={submitConsultation} aria-busy={consultationState.busy}>
-          <div className="company-consultation-fields">
-            <label>YOUR NAME<input name="name" value={consultation.name} onChange={updateConsultation} minLength={2} maxLength={100} autoComplete="name" required placeholder="Name" /></label>
-            <label>EMAIL ADDRESS<input name="email" type="email" value={consultation.email} onChange={updateConsultation} maxLength={254} autoComplete="email" required placeholder="you@example.com" /></label>
-            <label>PHONE (OPTIONAL)<input name="phone" type="tel" value={consultation.phone} onChange={updateConsultation} maxLength={40} autoComplete="tel" placeholder="Preferred contact number" /></label>
-            <label>WHAT DO YOU NEED?<select name="project_type" value={consultation.project_type} onChange={updateConsultation} required><option value="business-website">Business website</option><option value="landing-page">Landing page</option><option value="web-app">Web app / custom workflow</option><option value="dashboard">Dashboard or admin panel</option><option value="event-platform">Event platform</option><option value="other">Something else</option></select></label>
-            <label className="company-consultation-wide">PROJECT IDEA & MUST-HAVE FEATURES<textarea name="requirements" value={consultation.requirements} onChange={updateConsultation} minLength={15} maxLength={3000} required rows={5} aria-describedby="company-requirements-help" placeholder="What should the website or tool do? Who will use it? Mention any essential features." /><span className="company-field-help" id="company-requirements-help">A few sentences are enough to start. Please do not include passwords or payment details.</span><span className="company-character-count" aria-live="polite">{consultation.requirements.length}/3000 characters</span></label>
-            <label className="company-consultation-wide">PREFERRED TIME TO DISCUSS (OPTIONAL)<input name="preferred_time" value={consultation.preferred_time} onChange={updateConsultation} maxLength={160} placeholder="For example: weekday evenings, India time" /></label>
-            <label className="company-honeypot" aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off" value={consultation.website} onChange={updateConsultation} /></label>
-          </div>
-          <button className="company-button primary" type="submit" disabled={consultationState.busy}>{consultationState.busy ? "Sending enquiry…" : "Send project enquiry"} <ArrowRight size={16}/></button>
-          {consultationState.error ? <p className="company-form-message error" role="alert">{consultationState.error}</p> : null}
-          {consultationState.success ? <p className="company-form-message success" role="status">{consultationState.success}</p> : null}
-          <p className="company-form-privacy">Your details are used to respond to this enquiry. Do not include passwords, payment details or other sensitive information. No payment is taken through this form.</p>
-          <div className="company-next-steps" aria-label="What happens after you submit">
-            <strong>What happens next?</strong>
-            <ol><li>We review your project details.</li><li>We contact you to clarify requirements.</li><li>You decide whether to proceed after reviewing the quote.</li></ol>
-          </div>
-        </form>
-      </section>
-
-      <section className="company-faq-section" aria-labelledby="company-faq-title">
-        <div className="company-section-heading">
-          <div><div className="company-kicker">GOOD TO KNOW</div><h2 id="company-faq-title">A few things, <em>made clear.</em></h2></div>
-          <p>Simple answers before you decide whether to get in touch.</p>
-        </div>
-        <div className="company-faq-grid">
-          <details><summary>Do I have to pay to send an enquiry?</summary><p>No. The consultation enquiry is free and does not commit you to buying a service.</p></details>
-          <details><summary>When do I learn the price and timeline?</summary><p>After discussing the required pages and features, you receive a quote and timeline to review before work begins.</p></details>
-          <details><summary>Can I request changes during development?</summary><p>Yes. Feedback is handled against the agreed scope. New features or substantial scope changes may need a revised quote and timeline.</p></details>
-          <details><summary>Who owns the website and pays for hosting?</summary><p>Ownership, access, domain and hosting arrangements are clarified in the written scope so you know what is included and what costs extra.</p></details>
-        </div>
-      </section>
-
-      <section className="company-event-callout" id="event-platform">
-        <div className="company-event-mark"><CalendarDays size={25}/></div>
-        <div className="company-event-copy"><div className="company-kicker">FOR EVENT ORGANISERS</div><h2>Garba night, workshop, sports event or tournament.</h2><p>Choose a category-specific template inside the organiser workspace. The public event page is separate from the Company-001 business website.</p></div>
-        <button className="company-button primary" onClick={onOrganiser}>Get started free <ArrowRight size={16}/></button>
-      </section>
-
-      <footer className="company-footer"><div className="company-footer-brand"><span className="company-footer-mark"><Globe2 size={17}/></span><span>COMPANY-001<small>WEB & DIGITAL STUDIO</small></span></div><p>Thoughtful websites. Practical digital tools.</p><button onClick={onStart}>View project process <ArrowRight size={14}/></button></footer>
+      <footer className="experience-footer"><div className="experience-footer-brand"><span>001</span><b>COMPANY-001<small>INDEPENDENT DIGITAL STUDIO</small></b></div><p>Make useful things. Make them feel good.</p><div><a href="#home">BACK TO TOP ↑</a><span>© 2026 COMPANY-001</span></div></footer>
     </main>
   );
 }

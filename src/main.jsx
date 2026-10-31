@@ -8,6 +8,8 @@ import {
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
+import "./premium-refresh.css";
+import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
