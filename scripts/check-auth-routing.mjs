@@ -12,6 +12,10 @@ const checks = [
   ["signed-out users cannot fall through to the legacy dashboard", !source.includes('authReady && !signedInUser && ["organizer", "registrations", "customize"].includes(view)')],
   ["template selection cannot bypass organiser role verification", source.includes('!signedInUser || platformRole !== "organizer"') && source.includes("setOrganizerWorkspaceReady(ready)") && source.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>") && source.includes('onOpenWorkspace={openOrganizerWorkspace}')],
   ["login passes the authenticated user into workspace handoff", source.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>") && source.includes("onOpenWorkspace(data.user)") && source.includes("onOpenWorkspace(user)") && source.includes('.eq("id", candidateUser.id)') && source.includes('.eq("owner_user_id", candidateUser.id)')],
+  ["both account entry routes use the verified workspace handoff", source.split("onOpenWorkspace={openOrganizerWorkspace}").length - 1 >= 2 && !source.includes('onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }}')],
+  ["login waits for workspace verification before clearing its busy state", source.includes("await onOpenWorkspace(data.user)") && source.includes("await onOpenWorkspace(user)")],
+  ["owner dashboard routing requires verified AAL2", source.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()") && source.includes('assurance?.currentLevel === "aal2"') && source.includes('setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login")')],
+  ["template selection cannot bypass owner MFA", (() => { const start = source.indexOf("const handleUseTemplate = async"); const end = source.indexOf("const copyPlatformLink", start); const handler = source.slice(start, end); return handler.includes('if (platformRole === "owner")') && handler.includes('setView("king-login")') && !handler.includes('setView("owner")'); })()],
 ];
 
 let failed = false;
