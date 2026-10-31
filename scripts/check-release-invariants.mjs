@@ -613,6 +613,27 @@ const checks = [
     },
   },
   {
+    name: "owner account management enforces MFA on the server, not only in the UI",
+    run: () => {
+      const edge = read("supabase/functions/manage-user-accounts/index.ts");
+      return edge.includes("admin.auth.mfa.getAuthenticatorAssuranceLevel(token)")
+        && edge.includes('assurance?.currentLevel !== "aal2"')
+        && edge.includes("Complete King Login multi-factor verification")
+        && edge.indexOf("getAuthenticatorAssuranceLevel(token)") < edge.indexOf('admin.from("profiles").select("platform_role")');
+    },
+  },
+  {
+    name: "every deployed payment-evidence endpoint is tracked and type-checked",
+    run: () => {
+      const removeEvidence = read("supabase/functions/delete-payment-evidence/index.ts");
+      const workflow = read(".github/workflows/local-privacy-integration.yml");
+      return removeEvidence.includes('admin.from("payment_evidence")')
+        && removeEvidence.includes('admin.storage.from("payment-evidence").remove')
+        && removeEvidence.includes('organizer?.owner_user_id !== user.id')
+        && workflow.includes("supabase/functions/delete-payment-evidence/index.ts");
+    },
+  },
+  {
     name: "self-service account deletion reauthenticates and requires explicit confirmation",
     run: () => {
       const account = read("src/main.jsx");
