@@ -114,7 +114,11 @@ function App() {
         const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
         if (organizerGoogleCallback) {
           window.history.replaceState({}, document.title, window.location.pathname);
-          const returningFromDeleteReauth = window.sessionStorage.getItem("company001:delete-reauth") === "1";
+          const pendingDeleteReauthUser = window.sessionStorage.getItem("company001:delete-reauth");
+          const returningFromDeleteReauth = pendingDeleteReauthUser === user.id;
+          if (pendingDeleteReauthUser && !returningFromDeleteReauth) {
+            window.sessionStorage.removeItem("company001:delete-reauth");
+          }
           if (role === "owner") {
             try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
             await supabase.auth.signOut();
@@ -833,15 +837,16 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) return;
     try {
-      if (window.sessionStorage.getItem("company001:delete-reauth") === "1") {
+      if (window.sessionStorage.getItem("company001:delete-reauth") === user.id) {
         window.sessionStorage.removeItem("company001:delete-reauth");
         setDeleteOpen(true);
         setDeleteReauthenticated(true);
         setNotice("Google sign-in refreshed. Confirm your email and type DELETE to continue.");
       }
     } catch { /* Optional session flag. */ }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user) { setApplication(null); setOrganizerWorkspace(null); return; }
@@ -1077,7 +1082,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
     setDeleteReauthenticated(false);
     setNotice("");
     try {
-      window.sessionStorage.setItem("company001:delete-reauth", "1");
+      window.sessionStorage.setItem("company001:delete-reauth", user.id);
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
