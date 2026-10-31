@@ -169,13 +169,13 @@ select ok(
 reset role;
 select set_config('request.jwt.claim.role', '', true);
 select throws_ok(
-  $select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$,
+  $$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$$,
   '42501', 'service role required',
   'Deletion preparation rejects a missing JWT role claim'
 );
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select throws_ok(
-  $select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$,
+  $$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$$,
   '42501', 'service role required',
   'Deletion preparation rejects a non-service JWT role'
 );
@@ -227,7 +227,7 @@ select is(
   'Deletion removes delegated event-access grants owned by the deleted user'
 );
 select throws_ok(
-  $stmt$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000003'::uuid)$stmt$,
+  $stmt$$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000003'::uuid)$$stmt$,
   '42501', 'platform owner accounts are protected',
   'Deletion preparation refuses to remove the platform owner'
 );
