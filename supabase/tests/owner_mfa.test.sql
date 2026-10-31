@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(3);
+select plan(5);
 
 insert into auth.users (
   id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -27,10 +27,14 @@ select set_config(
 
 select is(
   private.is_platform_owner(),
-  false,
-  'owner with aal1 cannot pass owner authorization'
+  true,
+  'owner with aal1 remains a platform owner for privacy exclusions'
 );
-
+select is(
+  private.is_platform_owner_aal2(),
+  false,
+  'owner with aal1 cannot pass elevated owner authorization'
+);
 select throws_ok(
   $$select public.review_event_publication('30000000-0000-4000-8000-000000000099'::uuid, 'approved', '')$$,
   '42501',
@@ -45,9 +49,15 @@ select set_config(
 );
 
 select is(
-  private.is_platform_owner(),
+  private.is_platform_owner_aal2(),
   true,
-  'owner with aal2 can pass owner authorization'
+  'owner with aal2 can pass elevated owner authorization'
+);
+select throws_ok(
+  $$select public.review_event_publication('30000000-0000-4000-8000-000000000099'::uuid, 'approved', '')$$,
+  'P0002',
+  'Event not found',
+  'owner with aal2 passes authorization and reaches the event lookup'
 );
 
 select * from finish();
