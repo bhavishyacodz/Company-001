@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js";
 import {
   ArrowRight, ArrowUpRight, Check, Code2, Globe2, LayoutTemplate,
   CalendarDays, ShieldCheck, Sparkles, Workflow, Smartphone, Monitor,
@@ -13,9 +14,9 @@ export default function CompanyHome({ onStart, onOrganiser }) {
     event.preventDefault();
     setConsultationState({ busy: true, error: "", success: "" });
     try {
-      const response = await fetch("https://zkzgkovwktljfuuuhivk.supabase.co/functions/v1/request-consultation", {
+      const response = await fetch(SUPABASE_URL + "/functions/v1/request-consultation", {
         method: "POST",
-        headers: { "Content-Type": "application/json", apikey: "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB" },
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_PUBLISHABLE_KEY },
         body: JSON.stringify(consultation),
       });
       const result = await response.json().catch(() => ({}));

@@ -1,11 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { ArrowLeft, ArrowRight, CalendarDays, CirclePlus, ExternalLink, RefreshCw, Save, Users, WalletCards, Download, Gamepad2, Music2, Trophy, GraduationCap, Palette, UsersRound, BookOpen, Copy, Undo2, Redo2, LogOut, KeyRound } from "lucide-react";
 import "./workspace.css";
 import "./dashboard-yellow.css";
 // Load the product redesign after legacy workspace styles so authenticated screens retain it.
 import "./experience-redesign.css";
-const supabase = createClient("https://zkzgkovwktljfuuuhivk.supabase.co","sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
+import { supabase } from "./services/supabase/client.js";
 
 const EVENT_TEMPLATES = [
   { key:"esports-001", category:"esports", name:"eSports tournament", label:"eSports", icon:Gamepad2, description:"Gaming brackets, player IDs, squads and entry rules.", title:"Nexus Open Qualifiers", fieldLabel:"GAME / TITLE", fieldPlaceholder:"e.g. BGMI, Valorant, Free Fire", teamSize:4, gameTitle:"BGMI", sampleDescription:"Join the open qualifiers, check your match schedule, and follow organiser updates.", sampleRules:"Use your own account. Cheating and abusive conduct are not allowed. Follow the match schedule and organiser decisions." },
@@ -42,6 +41,9 @@ const getWhiteContrastRatio = (hex) => {
 
 export default function OrganizerWorkspace({ user, initialView = "organizer", initialTemplateKey = "esports-001", onBack }) {
   const [tab, setTab] = useState(initialView);
+  // Keep the visible workspace tab aligned when the parent auth router resolves a newer destination.
+  // Internal tab clicks remain local because initialView only changes on a parent route transition.
+  useEffect(() => { setTab(initialView); }, [initialView]);
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);

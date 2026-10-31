@@ -1,7 +1,12 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const read = (path) => readFileSync(join(process.cwd(), path), "utf8");
+const listSourceFiles = (directory) => readdirSync(join(process.cwd(), directory), { withFileTypes: true })
+  .flatMap((entry) => {
+    const path = `${directory}/${entry.name}`;
+    return entry.isDirectory() ? listSourceFiles(path) : /\.(js|jsx|ts|tsx)$/.test(entry.name) ? [path] : [];
+  });
 const checks = [
   {
     name: "historical payment-review migrations are present",
@@ -77,14 +82,21 @@ const checks = [
     name: "saved sessions restore account routing and template selection avoids login loops",
     run: () => {
       const account = read("src/main.jsx");
-      return account.includes('storage: window.localStorage')
+      const client = read("src/services/supabase/client.js");
+      return account.includes('import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js"')
+        && client.includes("persistSession: true")
+        && client.includes("autoRefreshToken: true")
+        && client.includes("detectSessionInUrl: true")
+        && client.includes('storage: typeof window !== "undefined" ? window.localStorage : undefined')
         && account.includes('window.localStorage.getItem("company001:selected-template")')
-        && account.includes('data.session?.user && !isLiveEventRoute')
-        && account.includes('supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id)')
+        && account.includes("const resolveSession = async (user)")
+        && account.includes("if (isLiveEventRoute) {")
+        && account.includes('.eq("owner_user_id", user.id)')
+        && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
-        && account.includes('onOpenWorkspace={() => setView("organizer")}');
+        && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
     },
   },
   {
@@ -301,8 +313,10 @@ const checks = [
     run: () => {
       const app = read("src/main.jsx");
       return app.includes('if (platformRole === "owner") {')
-        && app.includes('setView("owner");')
-        && app.includes('if (!signedInUser) {')
+        && app.includes('setView("king-login");')
+        && app.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()")
+        && app.includes('assurance?.currentLevel === "aal2"')
+        && app.includes('if (!signedInUser || platformRole !== "organizer") {')
         && app.includes('setView("account");');
     },
   },
@@ -582,11 +596,12 @@ const checks = [
       const app = read("src/main.jsx");
       const owner = read("src/OwnerPanel.jsx");
       const workspace = read("src/OrganizerWorkspace.jsx");
-      return app.includes('if (initialRole === "owner")')
-        && app.includes('else if (initialRole === "organizer")')
+      return app.includes('if (role === "owner")')
+        && app.includes('if (role !== "organizer")')
         && app.includes('else if (platformRole === "owner") setView("king-login"); else setView("organizer");')
         && app.includes('if (profile?.platform_role === "owner")')
-        && app.includes('onOpenWorkspace={() => setView("organizer")}')
+        && app.includes('onOpenWorkspace={openOrganizerWorkspace}')
+        && app.includes('company001:google-owner-blocked')
         && owner.includes('if (!user || role !== "owner")')
         && owner.includes('supabase.auth.signOut()')
         && workspace.includes('onClick={signOut}');
@@ -719,6 +734,20 @@ const checks = [
     },
   },
 
+  {
+    name: "all frontend features use one shared Supabase client",
+    run: () => {
+      const files = listSourceFiles("src");
+      const clientFactoryFiles = files.filter((path) => read(path).includes("createClient("));
+      const clientImportFiles = files.filter((path) => read(path).includes('from "@supabase/supabase-js"'));
+      const client = read("src/services/supabase/client.js");
+      return client.includes("createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY")
+        && clientFactoryFiles.length === 1
+        && clientFactoryFiles[0] === "src/services/supabase/client.js"
+        && clientImportFiles.length === 1
+        && clientImportFiles[0] === "src/services/supabase/client.js";
+    },
+  },
   ];
 
 let failed = false;

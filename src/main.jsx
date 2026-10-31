@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
@@ -13,10 +12,7 @@ import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
-
-const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js";
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
@@ -35,8 +31,11 @@ function App() {
   const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
+  const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authResolving, setAuthResolving] = useState(false);
+  const authResolutionRef = useRef(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -75,56 +74,140 @@ function App() {
 
   useEffect(() => {
     let active = true;
-    const refresh = async (user) => {
-      if (!active) return null;
-      setSignedInUser(user || null);
-      if (!user) { setPlatformRole(null); return null; }
-      const { data: profile, error: profileError } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      // Never infer organizer privileges when the role lookup itself failed.
-      // A genuinely new OAuth user has no profile row yet and is onboarded
-      // through AccountPanel; a query error must fail closed instead.
-      const role = profileError ? "unknown" : (profile?.platform_role || "organizer");
-      if (active) setPlatformRole(role);
-      return role;
-    };
-    supabase.auth.getSession()
-      .then(async ({ data, error }) => {
-        if (error) throw error;
-        const initialUser = data.session?.user || null;
-        const initialRole = await refresh(initialUser);
-        if (active) {
-          const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
-          if (organizerGoogleCallback) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            if (initialRole === "owner") {
-              try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
-              await supabase.auth.signOut();
-              if (active) setView("account");
-            } else {
+    let resolvedUserId = null;
+    const protectedViews = ["organizer", "registrations", "customize"];
+    const resolveSession = async (user) => {
+      const version = ++authResolutionRef.current;
+      if (!active) return;
+      if (!user) {
+        resolvedUserId = null;
+        setAuthResolving(false);
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+        return;
+      }
+
+      const changedUser = resolvedUserId !== user.id;
+      resolvedUserId = user.id;
+      setSignedInUser(user);
+      if (changedUser) {
+        setAuthResolving(true);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+      }
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("platform_role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!active || version !== authResolutionRef.current) return;
+
+        // A missing profile or failed role lookup is unknown, never an organiser.
+        const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)
+          ? profile.platform_role
+          : "unknown";
+        setPlatformRole(role);
+
+        const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
+        if (organizerGoogleCallback) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if (role === "owner") {
+            try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
+            await supabase.auth.signOut();
+            if (active && version === authResolutionRef.current) {
+              resolvedUserId = null;
+              setSignedInUser(null);
+              setPlatformRole(null);
+              setOrganizerWorkspaceReady(false);
               setView("account");
+              setAuthResolving(false);
             }
-          } else {
-            const savedView = window.sessionStorage.getItem("company001:last-view");
-            if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-            if (data.session?.user && !isLiveEventRoute) {
-              if (initialRole === "owner") {
-                if (active) setView("king-login");
-              } else if (initialRole === "organizer") {
-                const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-                if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
-              } else if (active) {
-                setView("account");
-              }
-            }
+            return;
           }
         }
+
+        if (isLiveEventRoute) {
+          setAuthResolving(false);
+          return;
+        }
+        if (role === "owner") {
+          setOrganizerWorkspaceReady(false);
+          const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (!active || version !== authResolutionRef.current) return;
+          setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login");
+          setAuthResolving(false);
+          return;
+        }
+        if (role !== "organizer") {
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+
+        const { data: organizer, error: organizerError } = await supabase
+          .from("organizers")
+          .select("id")
+          .eq("owner_user_id", user.id)
+          .maybeSingle();
+        if (!active || version !== authResolutionRef.current) return;
+        if (organizerError) {
+          setPlatformRole("unknown");
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+        if (!organizer) {
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+
+        setOrganizerWorkspaceReady(true);
+        const savedView = window.sessionStorage.getItem("company001:last-view");
+        setView(protectedViews.includes(savedView) ? savedView : "organizer");
+        setAuthResolving(false);
+      } catch {
+        if (!active || version !== authResolutionRef.current) return;
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView(isLiveEventRoute ? "site" : "account");
+        setAuthResolving(false);
+      }
+    };
+
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return resolveSession(data.session?.user || null);
       })
-      .catch(() => { if (active) setSignedInUser(null); })
+      .catch(() => {
+        if (!active) return;
+        authResolutionRef.current += 1;
+        resolvedUserId = null;
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+        setAuthResolving(false);
+      })
       .finally(() => { if (active) setAuthReady(true); });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      window.setTimeout(() => { if (active) refresh(session?.user || null); }, 0);
+      // Defer Supabase reads until after the auth callback has released its lock.
+      window.setTimeout(() => {
+        if (active) resolveSession(session?.user || null);
+      }, 0);
     });
-    return () => { active = false; listener.subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -194,21 +277,64 @@ function App() {
     }
   };
 
+  const openOrganizerWorkspace = async (candidateUser = signedInUser) => {
+    if (!candidateUser?.id) {
+      setOrganizerWorkspaceReady(false);
+      setView("account");
+      return;
+    }
+    const version = ++authResolutionRef.current;
+    setAuthResolving(true);
+    setSignedInUser(candidateUser);
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles").select("platform_role").eq("id", candidateUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (profileError || profile?.platform_role !== "organizer") {
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      const { data: organizer, error: organizerError } = await supabase
+        .from("organizers").select("id").eq("owner_user_id", candidateUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (organizerError || !organizer) {
+        setPlatformRole("organizer");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      setPlatformRole("organizer");
+      setOrganizerWorkspaceReady(true);
+      setView("organizer");
+    } catch {
+      if (version !== authResolutionRef.current) return;
+      setPlatformRole("unknown");
+      setOrganizerWorkspaceReady(false);
+      setView("account");
+    } finally {
+      if (version === authResolutionRef.current) setAuthResolving(false);
+    }
+  };
+
   const handleUseTemplate = async (templateKey) => {
     setRequestedTemplate(templateKey);
     try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
     if (platformRole === "owner") {
-      // Keep platform owners in their restricted admin area; they do not need an organiser workspace.
-      setView("owner");
+      // Owner access always passes through the dedicated MFA verification screen.
+      setView("king-login");
       return;
     }
-    if (!signedInUser) {
+    if (!signedInUser || platformRole !== "organizer") {
       setView("account");
       return;
     }
     const { data: organizer, error } = await supabase.from("organizers")
       .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
-    setView(!error && organizer ? "customize" : "account");
+    const ready = !error && Boolean(organizer);
+    setOrganizerWorkspaceReady(ready);
+    setView(ready ? "customize" : "account");
   };
 
   const copyPlatformLink = async () => {
@@ -221,10 +347,11 @@ function App() {
     }
   };
 
-  if (!authReady && ["organizer", "registrations", "customize"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Restoring your workspace…</h1><p>Checking your saved sign-in before opening your dashboard.</p></section></main>;
-  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if ((!authReady || authResolving) && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
+  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
+  if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
-  if (authReady && !signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={() => setView("organizer")} onOpenKingLogin={() => setView("king-login")} />;
 
   return (
     <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined, "--event-hero-title-size": `${Math.max(42,Math.min(104,Number(eventData?.branding?.heroTitleSize)||72))}px`, "--event-hero-title-align": ["left","center","right"].includes(eventData?.branding?.heroTitleAlign) ? eventData.branding.heroTitleAlign : "left", "--event-hero-title-color": /^#[0-9a-fA-F]{6}$/.test(eventData?.branding?.heroTitleColor||"") ? eventData.branding.heroTitleColor : "#ffffff", "--event-hero-title-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.heroTitleX)||0))}px`, "--event-hero-title-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.heroTitleY)||0))}px`, "--event-hero-copy-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.descriptionX)||0))}px`, "--event-hero-copy-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.descriptionY)||0))}px` } : undefined}>
@@ -264,7 +391,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("organizer")} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -777,7 +904,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         if (organizerError) throw organizerError;
         if (organizer) {
           setNotice("Signed in. Opening your organiser dashboard…");
-          onOpenWorkspace();
+          await onOpenWorkspace(data.user);
         } else {
           setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
         }
@@ -802,7 +929,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (error) throw error;
       setApplication(data);
       setNotice("Workspace activated. Opening your template editor…");
-      if (data.status === "approved") onOpenWorkspace();
+      if (data.status === "approved") await onOpenWorkspace(user);
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
