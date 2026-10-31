@@ -314,7 +314,7 @@ const checks = [
     name: "default creator routing preserves restricted owner access",
     run: () => {
       const app = read("src/main.jsx");
-      return app.includes('if (platformRole === "owner") {')
+      return app.includes('if (role === "owner") {')
         && app.includes('setView("king-login");')
         && app.includes("supabase.auth.mfa.getAuthenticatorAssuranceLevel()")
         && app.includes('assurance?.currentLevel === "aal2"')
