@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard, MapPin, Mail, PhoneCall,
-  Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X, LogOut, Settings,
+  Menu, RefreshCw, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X, LogOut, Settings,
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
