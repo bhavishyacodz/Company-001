@@ -9,10 +9,13 @@ import {
 } from "lucide-react";
 import "./styles.css";
 import "./premium-refresh.css";
-import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
+// Load authenticated dashboard styling after every screen/component stylesheet.
+// This prevents legacy component CSS from winning after the login route mounts.
+import "./dashboard-yellow.css";
+import "./experience-redesign.css";
 
 const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
@@ -100,6 +103,10 @@ function App() {
               try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
               await supabase.auth.signOut();
               if (active) setView("account");
+            } else if (initialRole === "organizer" && initialUser) {
+              const { data: organizer, error: organizerError } = await supabase
+                .from("organizers").select("id").eq("owner_user_id", initialUser.id).maybeSingle();
+              if (active) setView(!organizerError && organizer ? "organizer" : "account");
             } else {
               setView("account");
             }
