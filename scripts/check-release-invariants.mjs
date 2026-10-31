@@ -82,7 +82,7 @@ const checks = [
         && account.includes("const resolveSession = async (user)")
         && account.includes("if (isLiveEventRoute) {")
         && account.includes('.eq("owner_user_id", user.id)')
-        && account.includes("const openOrganizerWorkspace = async () =>")
+        && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
         && account.includes('const handleUseTemplate = async (templateKey)')
         && account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
         && account.includes('onBack={() => setView("templates")}')
