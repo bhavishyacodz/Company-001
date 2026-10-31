@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, WalletCards, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
