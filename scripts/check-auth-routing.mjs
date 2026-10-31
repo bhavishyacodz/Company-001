@@ -4,7 +4,11 @@ const source = readFileSync("src/main.jsx", "utf8");
 const workspaceSource = readFileSync("src/OrganizerWorkspace.jsx", "utf8");
 const dashboardStyles = readFileSync("src/dashboard-yellow.css", "utf8");
 const experienceStyles = readFileSync("src/experience-redesign.css", "utf8");
+const deletionFunction = readFileSync("supabase/functions/delete-account/index.ts", "utf8");
 const checks = [
+  ["account deletion requires a freshly authenticated Supabase session", deletionFunction.includes("admin.auth.getUser(token)") && deletionFunction.includes("auth_time") && deletionFunction.includes("10 * 60")],
+  ["Google account deletion requires provider reauthentication and resumes the confirmation screen", source.includes('company001:delete-reauth') && source.includes('account_action=delete') && source.includes("reauthenticateGoogleForDeletion") && source.includes("returningFromDeleteReauth")],
+  ["email account deletion still verifies the current password", source.includes("if (hasPasswordIdentity)") && source.includes("Password verification failed. Check your password and try again.")],
   ["missing profile roles fail closed", source.includes('const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)') && source.includes(': "unknown";')],
   ["auth changes re-resolve the dashboard destination", source.includes("supabase.auth.onAuthStateChange") && source.includes("resolveSession(session?.user || null)")],
   ["stale async role lookups cannot overwrite newer sessions", source.includes("const authResolutionRef = useRef(0)") && source.includes("let resolvedUserId = null") && source.includes("version !== authResolutionRef.current")],
