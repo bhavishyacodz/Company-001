@@ -737,7 +737,7 @@ const checks = [
   {
     name: "all frontend features use one shared Supabase client",
     run: () => {
-      const files = listSourceFiles("src/");
+      const files = listSourceFiles("src");
       const clientFactoryFiles = files.filter((path) => read(path).includes("createClient("));
       const clientImportFiles = files.filter((path) => read(path).includes('from "@supabase/supabase-js"'));
       const client = read("src/services/supabase/client.js");
