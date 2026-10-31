@@ -32,6 +32,7 @@ function App() {
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
   const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
+  const [organizerWorkspaceSummary, setOrganizerWorkspaceSummary] = useState(null);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [authResolving, setAuthResolving] = useState(false);
@@ -75,17 +76,26 @@ function App() {
   useEffect(() => {
     let active = true;
     let resolvedUserId = null;
+    let roleResolvedUserId = null;
+    let lastScheduledUserId;
     const protectedViews = ["organizer", "registrations", "customize"];
+
     const resolveSession = async (user) => {
       const version = ++authResolutionRef.current;
       if (!active) return;
       if (!user) {
         resolvedUserId = null;
+        roleResolvedUserId = null;
         setAuthResolving(false);
         setSignedInUser(null);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
+        setOrganizerWorkspaceSummary(null);
         setView(current => protectedViews.includes(current) ? "site" : current);
+        return;
+      }
+      if (roleResolvedUserId === user.id) {
+        setSignedInUser(user);
         return;
       }
 
@@ -96,16 +106,18 @@ function App() {
         setAuthResolving(true);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
+        setOrganizerWorkspaceSummary(null);
       }
+
       try {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("platform_role")
-          .eq("id", user.id)
-          .maybeSingle();
+        const [profileResult, organizerResult] = await Promise.all([
+          supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle(),
+          supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle(),
+        ]);
         if (!active || version !== authResolutionRef.current) return;
 
-        // A missing profile or failed role lookup is unknown, never an organiser.
+        const { data: profile, error: profileError } = profileResult;
+        const { data: organizer, error: organizerError } = organizerResult;
         const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)
           ? profile.platform_role
           : "unknown";
@@ -125,15 +137,20 @@ function App() {
             await supabase.auth.signOut();
             if (active && version === authResolutionRef.current) {
               resolvedUserId = null;
+              roleResolvedUserId = null;
               setSignedInUser(null);
               setPlatformRole(null);
               setOrganizerWorkspaceReady(false);
+              setOrganizerWorkspaceSummary(null);
               setView("account");
               setAuthResolving(false);
             }
             return;
           }
           if ((returningFromDeleteReauth || returningFromPasswordReauth) && role === "organizer") {
+            setOrganizerWorkspaceSummary(organizer || null);
+            setOrganizerWorkspaceReady(Boolean(organizer && !organizerError));
+            roleResolvedUserId = user.id;
             setView("account");
             setAuthResolving(false);
             return;
@@ -141,87 +158,90 @@ function App() {
         }
 
         if (isLiveEventRoute) {
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
         if (role === "owner") {
           setOrganizerWorkspaceReady(false);
+          setOrganizerWorkspaceSummary(null);
           const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           if (!active || version !== authResolutionRef.current) return;
           setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login");
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
         if (role !== "organizer") {
           setOrganizerWorkspaceReady(false);
+          setOrganizerWorkspaceSummary(null);
           setView("account");
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
-
-        const { data: organizer, error: organizerError } = await supabase
-          .from("organizers")
-          .select("id")
-          .eq("owner_user_id", user.id)
-          .maybeSingle();
-        if (!active || version !== authResolutionRef.current) return;
         if (organizerError) {
           setPlatformRole("unknown");
           setOrganizerWorkspaceReady(false);
+          setOrganizerWorkspaceSummary(null);
           setView("account");
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
         if (!organizer) {
           setOrganizerWorkspaceReady(false);
+          setOrganizerWorkspaceSummary(null);
           setView("account");
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
 
+        setOrganizerWorkspaceSummary(organizer);
         setOrganizerWorkspaceReady(true);
         if (window.sessionStorage.getItem("company001:password-update-reauth") === user.id) {
           window.sessionStorage.removeItem("company001:password-update-reauth");
           setView("account");
+          roleResolvedUserId = user.id;
           setAuthResolving(false);
           return;
         }
         const savedView = window.sessionStorage.getItem("company001:last-view");
-        const isOrganizerLoginReturn = organizerGoogleCallback;
-        setView(isOrganizerLoginReturn ? "account" : savedView === "profile" ? "account" : protectedViews.includes(savedView) ? savedView : "account");
+        setView(organizerGoogleCallback ? "account" : savedView === "profile" ? "account" : protectedViews.includes(savedView) ? savedView : "account");
+        roleResolvedUserId = user.id;
         setAuthResolving(false);
       } catch {
         if (!active || version !== authResolutionRef.current) return;
         setPlatformRole("unknown");
         setOrganizerWorkspaceReady(false);
+        setOrganizerWorkspaceSummary(null);
         setView(isLiveEventRoute ? "site" : "account");
+        roleResolvedUserId = user.id;
         setAuthResolving(false);
       }
     };
 
-    supabase.auth.getSession()
-      .then(({ data, error }) => {
-        if (error) throw error;
-        return resolveSession(data.session?.user || null);
-      })
-      .catch(() => {
-        if (!active) return;
-        authResolutionRef.current += 1;
-        resolvedUserId = null;
-        setSignedInUser(null);
-        setPlatformRole(null);
-        setOrganizerWorkspaceReady(false);
-        setView(current => protectedViews.includes(current) ? "site" : current);
-        setAuthResolving(false);
-      })
-      .finally(() => { if (active) setAuthReady(true); });
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"].includes(event)) return;
+      const nextUserId = session?.user?.id || null;
+      if (event === "SIGNED_IN" && nextUserId === lastScheduledUserId) return;
+      if (event === "SIGNED_OUT") lastScheduledUserId = null;
+      else lastScheduledUserId = nextUserId;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      // Defer Supabase reads until after the auth callback has released its lock.
       window.setTimeout(() => {
-        if (active) resolveSession(session?.user || null);
+        if (!active) return;
+        if (nextUserId && roleResolvedUserId === nextUserId) {
+          setSignedInUser(session.user);
+          if (event === "INITIAL_SESSION") setAuthReady(true);
+          return;
+        }
+        void resolveSession(session?.user || null).finally(() => {
+          if (active && event === "INITIAL_SESSION") setAuthReady(true);
+        });
       }, 0);
     });
+
     return () => {
       active = false;
       listener.subscription.unsubscribe();
@@ -365,8 +385,8 @@ function App() {
     }
   };
 
-  if ((!authReady || authResolving) && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
-  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
+  if (!isLiveEventRoute && (!authReady || authResolving)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / SECURE ACCESS</div><h1>Restoring your profile…</h1><p>Checking your saved Google session and loading your workspace.</p></section></main>;
+  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
   if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
   if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
   // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
@@ -409,7 +429,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -764,7 +784,7 @@ function KingLoginPanel({ onBack, onSuccess }) {
   );
 }
 
-function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
+function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [mode, setMode] = useState("signup");
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -772,9 +792,10 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [setupOpen, setSetupOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(initialUser);
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
-  const [organizerWorkspace, setOrganizerWorkspace] = useState(null);
+  const [organizerWorkspace, setOrganizerWorkspace] = useState(initialOrganizer);
+  const [profileDataLoading, setProfileDataLoading] = useState(Boolean(initialUser && !initialOrganizer));
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(() => {
@@ -825,6 +846,11 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         setOwnerSessionBlocked(false);
         return;
       }
+      if (initialUser?.id === nextUser.id) {
+        setUser(initialUser);
+        setOwnerSessionBlocked(false);
+        return;
+      }
       const { data: profile, error } = await supabase.from("profiles")
         .select("platform_role").eq("id", nextUser.id).maybeSingle();
       if (!active) return;
@@ -842,24 +868,31 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (profile?.platform_role && profile.platform_role !== "organizer") {
         await supabase.auth.signOut();
         setUser(null);
-        setNotice("This account does not have organizer access. Please contact platform support.");
+        setNotice("This account does not have organizer access. Please contact support.");
         return;
       }
       setOwnerSessionBlocked(false);
       setUser(nextUser);
     };
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        if (active) setNotice("Could not verify your sign-in session. Please try again.");
-        return;
-      }
-      void syncAccountUser(data.session?.user ?? null);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+
+    if (initialUser) {
+      setUser(initialUser);
+      setOwnerSessionBlocked(false);
+    } else {
+      supabase.auth.getSession().then(({ data, error }) => {
+        if (error) {
+          if (active) setNotice("Could not verify your sign-in session. Please try again.");
+          return;
+        }
+        void syncAccountUser(data.session?.user ?? null);
+      });
+    }
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!["INITIAL_SESSION", "SIGNED_IN", "SIGNED_OUT"].includes(event)) return;
       window.setTimeout(() => { void syncAccountUser(session?.user ?? null); }, 0);
     });
     return () => { active = false; listener.subscription.unsubscribe(); };
-  }, []);
+  }, [initialUser?.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -878,20 +911,52 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!user) { setApplication(null); setOrganizerWorkspace(null); return; }
-    supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle()
-      .then(({ data, error }) => { if (!error) setOrganizerWorkspace(data || null); });
-    supabase.from("profiles").upsert({
-      id: user.id,
-      display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer",
-      platform_role: "organizer",
-    }, { onConflict: "id", ignoreDuplicates: true }).then(({ error }) => {
-      if (error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
+    let active = true;
+    if (!user) {
+      setApplication(null);
+      setOrganizerWorkspace(null);
+      setProfileDataLoading(false);
+      return () => { active = false; };
+    }
+
+    const isParentVerifiedUser = initialUser?.id === user.id;
+    if (initialOrganizer && isParentVerifiedUser) {
+      setOrganizerWorkspace(initialOrganizer);
+      setProfileDataLoading(false);
+    } else {
+      setProfileDataLoading(true);
+    }
+
+    const organizerRequest = initialOrganizer && isParentVerifiedUser
+      ? Promise.resolve({ data: initialOrganizer, error: null })
+      : supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle();
+    const applicationRequest = supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
+      .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const profileWriteRequest = isParentVerifiedUser
+      ? Promise.resolve({ error: null })
+      : supabase.from("profiles").upsert({
+          id: user.id,
+          display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer",
+          platform_role: "organizer",
+        }, { onConflict: "id", ignoreDuplicates: true });
+
+    Promise.all([organizerRequest, applicationRequest, profileWriteRequest]).then(([workspaceResult, applicationResult, profileResult]) => {
+      if (!active) return;
+      if (workspaceResult.error) {
+        setNotice("Could not load your saved workspace. Please refresh and try again.");
+      } else {
+        setOrganizerWorkspace(workspaceResult.data || null);
+      }
+      if (!applicationResult.error) setApplication(applicationResult.data || null);
+      if (profileResult.error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
+    }).catch(() => {
+      if (active) setNotice("Could not load your saved profile details. Please refresh and try again.");
+    }).finally(() => {
+      if (active) setProfileDataLoading(false);
     });
-    supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
-      .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
-      .then(({ data, error }) => { if (!error) setApplication(data); });
-  }, [user]);
+
+    return () => { active = false; };
+  }, [user?.id, initialOrganizer?.id, initialUser?.id]);
 
   const signInWithGoogle = async () => {
     setBusy(true);
@@ -901,7 +966,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         provider: "google",
         options: {
           redirectTo: window.location.origin + "/?auth_flow=organizer_google",
-          queryParams: { prompt: "select_account" },
+          // Reuse the browser’s active Google account when possible.
         },
       });
       if (error) throw error;
@@ -1248,11 +1313,13 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 </div>
               </div>
               <div className="profile-overview-actions" style={{ marginTop: 24 }}>
-                {organizerWorkspace
-                  ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
-                  : application && application.status !== "rejected"
-                    ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
-                    : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
+                {profileDataLoading
+                  ? <button className="button button-primary" type="button" disabled aria-busy="true">Loading your sites…</button>
+                  : organizerWorkspace
+                    ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
+                    : application && application.status !== "rejected"
+                      ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
+                      : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
