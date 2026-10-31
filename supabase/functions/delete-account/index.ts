@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.0";
+import { readBodyLimited } from "../_shared/request-body.ts";
 import { completeAccountDeletion } from "../_shared/account-deletion.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -52,9 +53,13 @@ Deno.serve(async (req: Request) => {
     if (userError || !userResult.user) return response(origin, 401, { error: "Your session is invalid or expired. Please sign in again." });
     const user = userResult.user;
 
+    const bodyBytes = await readBodyLimited(req, 4_096);
+    if (!bodyBytes) return response(origin, 413, { error: "Request is too large." });
     let body: { confirmation?: unknown; email?: unknown };
     try {
-      body = await req.json();
+      const parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bodyBytes));
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("invalid");
+      body = parsed;
     } catch {
       return response(origin, 400, { error: "Invalid request." });
     }
