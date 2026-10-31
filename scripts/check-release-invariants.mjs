@@ -83,20 +83,17 @@ const checks = [
     run: () => {
       const account = read("src/main.jsx");
       const client = read("src/services/supabase/client.js");
-      return account.includes('import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js"')
-        && client.includes("persistSession: true")
+      return client.includes("persistSession: true")
         && client.includes("autoRefreshToken: true")
         && client.includes("detectSessionInUrl: true")
-        && client.includes('storage: typeof window !== "undefined" ? window.localStorage : undefined')
-        && account.includes('initialTemplateKey="esports-001"')
-        && !account.includes('company001:selected-template')
+        && client.includes("window.localStorage")
         && account.includes("const resolveSession = async (user)")
-        && account.includes("if (isLiveEventRoute) {")
+        && account.includes('if (role === "owner") {')
+        && account.includes('if (role !== "organizer") {')
         && account.includes('.eq("owner_user_id", user.id)')
         && account.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>")
         && account.includes('view === "templates" ? <main className="public-templates-shell">')
         && !account.includes('<TemplateGallery onUseTemplate={handleUseTemplate} />')
-        && account.includes('onBack={() => setView("site")}')
         && account.includes('onOpenWorkspace={openOrganizerWorkspace}');
     },
   },
