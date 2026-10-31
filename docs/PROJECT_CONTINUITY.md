@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; PR #83 auth/UI regression and privacy checks passed; release stack still unmerged)
+Last verified: 2026-10-31 (UTC; PR #83 OAuth preview-origin investigation in progress; exact-head Pages preview succeeded)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -96,7 +96,7 @@ The live `main` branch still points to the legacy application shell, so the newe
 - URL: https://github.com/bhavishyacodz/Company-001/pull/83
 - Branch: `fix/post-login-dashboard-routing`
 - Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
-- Latest verified head at this checkpoint: `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`
+- Latest verified head at this checkpoint: `9899218b261d731c0dbfa22462c703bab774c185`
 - State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
 - Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
 - Root cause found during this session: the main `view === "account"` route passed a shortcut callback that marked the organiser workspace ready without verifying it; the other account route depended on parent `signedInUser` state that could still be stale immediately after password login. This combination could bounce users back to the account page or mount the wrong dashboard state.
@@ -108,26 +108,37 @@ The live `main` branch still points to the legacy application shell, so the newe
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Baseline head `5878f5471ff7d3a95153d31d8f4ebfe819204216`: Actions run `41215659098` completed successfully, including release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration tests.
-- Latest test-only head `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`: Actions run `41216029159` completed successfully: release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration all passed. Exact-head Pages preview succeeded.
-- Cloudflare Pages preview for exact baseline head `5878f54`: successful. Preview URL: https://bbbd8da5.company-001.pages.dev ; branch preview: https://fix-post-login-dashboard-rou.company-001.pages.dev. Latest test-only head `c2bd0a9` Pages build was still in progress at last check. This is a preview only, not production.
+- Baseline test head `c2bd0a942748dde36bb0e5f734359270e8ce4dc7`: Actions run `41216029159` completed successfully: release invariants, frontend build, bounded request/account-deletion tests, Edge Function type checks, local Supabase migration replay, and two-organiser privacy integration all passed.
+- Latest OAuth-doc/test head `9899218b261d731c0dbfa22462c703bab774c185`: Actions runs `41217571388` (OAuth regression tests) and `41217573622` (privacy integration) were still running at last verification. Release invariants, frontend build, bounded request/account-deletion tests, and Edge Function type checks had passed. Exact-head Cloudflare Pages preview succeeded at https://e994caa6.company-001.pages.dev.
+- Cloudflare Pages preview for exact latest head `9899218`: successful. Preview URL: https://e994caa6.company-001.pages.dev. Earlier baseline preview: https://fc138a01.company-001.pages.dev. These are previews only, not production.
 - The separate `Workers Builds: company-001` check failed for the baseline head and prior PR previews, pointing to a distinct Workers service. The latest exact-head Pages preview succeeded; branch-protection status returns 403 to the connected GitHub integration, so required-check status remains unverified. Do not assume the Workers check is non-blocking.
 - PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
 - PR #83 remains draft and based on PR #79's `feat/full-site-black-gold-ux-refresh` branch. It must not be merged independently of its UX base and earlier dependencies.
 - No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
+## Google OAuth preview-origin issue (new finding)
+
+- The current organiser Google sign-in code already sets `redirectTo` to `window.location.origin + "/?auth_flow=organizer_google"`; this is the correct app-side pattern for returning to the same preview.
+- Supabase Auth only honours `redirectTo` values present in Authentication → URL Configuration → Redirect URLs. The production Site URL remains `https://company-001.pages.dev`.
+- Added `docs/GOOGLE_OAUTH_PREVIEW_REDIRECTS.md`. Required Supabase Redirect URLs: `https://company-001.pages.dev/**`, `https://*.company-001.pages.dev/**`, and local-only `http://localhost:3000/**`. The wildcard is scoped to the project's Pages hostname family; do not use a broad wildcard.
+- Connected Supabase tools can read project metadata and auth logs but cannot edit hosted Auth URL Configuration. This setting has not been changed by the assistant; user/dashboard action is still required.
+- Recent Auth logs show the latest Google sign-in authorize requests were initiated from `https://company-001.pages.dev`, not the commit-preview hostname. An earlier attempt from `https://feat-organizer-google-login.company-001.pages.dev` is also logged. Verify the final browser address bar after Google sign-in; do not assume a successful auth event proves the redirect target.
+- Added release assertions that Google OAuth uses the current origin and callback marker; these are being tested on PR #83 head `9899218`.
+
 ## Immediate work queue (strict order)
 
 1. Finish and verify PR #83 Actions run `41216029159` for exact head `c2bd0a9`, including local Supabase migration replay and two-organiser privacy tests; confirm the exact-head Pages preview.
-2. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to dashboard, refresh, reopen the dashboard, and verify King Login still requires AAL2. The connected tools cannot perform the user's Google/password login, so user-side manual confirmation is still required. Do not enter real participant or payment data on the preview.
-3. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
-4. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
-5. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
-6. After the auth/UI stack is safely integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access. Do not change production policies without migration review and explicit tests.
-7. Extract feature modules incrementally, without combining unrelated visual redesign or schema changes.
-8. Improve the dashboard/editor after auth and privacy are stable; maintain mobile-first and desktop-compatible layouts.
-9. Add versioned website document AST and draft/publish separation only when the editor model is ready.
-10. Add performance/scaling features only when measurements justify them, and verify the exact Cloudflare Pages production deployment before announcing a release.
+2. In Supabase Dashboard → Authentication → URL Configuration, add the Redirect URL entries documented in `docs/GOOGLE_OAUTH_PREVIEW_REDIRECTS.md`. Keep Site URL as `https://company-001.pages.dev`. The connected tool cannot change this hosted setting.
+3. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to the same preview hostname, refresh, reopen the dashboard, and verify King Login still requires AAL2. The connected tools cannot perform the user's Google/password login, so user-side manual confirmation is still required. Do not enter real participant or payment data on the preview.
+4. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
+5. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
+6. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
+7. After the auth/UI stack is safely integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access. Do not change production policies without migration review and explicit tests.
+8. Extract feature modules incrementally, without combining unrelated visual redesign or schema changes.
+9. Improve the dashboard/editor after auth and privacy are stable; maintain mobile-first and desktop-compatible layouts.
+10. Add versioned website document AST and draft/publish separation only when the editor model is ready.
+11. Add performance/scaling features only when measurements justify them, and verify the exact Cloudflare Pages production deployment before announcing a release.
 
 ## Release verification standard
 
