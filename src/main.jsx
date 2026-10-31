@@ -95,9 +95,9 @@ function App() {
 
       const changedUser = resolvedUserId !== user.id;
       resolvedUserId = user.id;
-      setAuthResolving(true);
       setSignedInUser(user);
       if (changedUser) {
+        setAuthResolving(true);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
       }
