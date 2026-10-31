@@ -321,6 +321,13 @@ function App() {
       setView("account");
       return;
     }
+    // The app bootstrap has already verified this exact user and their organiser row.
+    // Reuse that verified result instead of repeating profile/workspace requests.
+    if (candidateUser.id === signedInUser?.id && platformRole === "organizer" && organizerWorkspaceSummary?.id) {
+      setOrganizerWorkspaceReady(true);
+      setView("organizer");
+      return;
+    }
     const version = ++authResolutionRef.current;
     setAuthResolving(true);
     setSignedInUser(candidateUser);
@@ -368,9 +375,15 @@ function App() {
       setView("account");
       return;
     }
+    if (organizerWorkspaceSummary?.id) {
+      setOrganizerWorkspaceReady(true);
+      setView("customize");
+      return;
+    }
     const { data: organizer, error } = await supabase.from("organizers")
       .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
     const ready = !error && Boolean(organizer);
+    if (ready) setOrganizerWorkspaceSummary(organizer);
     setOrganizerWorkspaceReady(ready);
     setView(ready ? "customize" : "account");
   };
