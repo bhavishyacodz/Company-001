@@ -1002,7 +1002,11 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setNotice("The new password and confirmation do not match.");
       return;
     }
-    if (accountNewPassword === accountCurrentPassword) {
+    const hasPasswordIdentity = Boolean(
+      user.identities?.some(identity => identity.provider === "email") ||
+      user.app_metadata?.providers?.includes("email")
+    );
+    if (hasPasswordIdentity && accountNewPassword === accountCurrentPassword) {
       setNotice("Choose a new password that differs from your current password.");
       return;
     }
@@ -1013,17 +1017,27 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (sessionData.session?.user?.id !== user.id) {
         throw new Error("Your sign-in session changed. Please sign in again and retry.");
       }
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: accountCurrentPassword,
-      });
-      if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
-      const { error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
-      if (updateError) throw updateError;
+      if (hasPasswordIdentity) {
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: accountCurrentPassword,
+        });
+        if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
+      }
+      const { data: updatedUser, error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
+      if (updateError) {
+        if (/reauth|recent login|reauthentication/i.test(updateError.message || "")) {
+          throw new Error("For security, sign in again with your connected provider, then return to Settings and retry.");
+        }
+        throw updateError;
+      }
+      if (updatedUser?.user) setUser(updatedUser.user);
       setAccountCurrentPassword("");
       setAccountNewPassword("");
       setAccountConfirmPassword("");
-      setNotice("Your account password has been changed successfully.");
+      setNotice(hasPasswordIdentity
+        ? "Your account password has been changed successfully."
+        : "Password created successfully. You can now also sign in with your email and this password.");
     } catch (error) {
       setNotice(error.message || "Could not change your password. Please try again.");
     } finally {
@@ -1143,11 +1157,15 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 </div>
                 <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
                   <h4>Change password</h4>
-                  <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
+                  {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
+                    <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
+                  ) : (
+                    <p className="account-password-help">You signed in with Google. Create an email password here; your Google sign-in will continue to work.</p>
+                  )}
                   <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
                   <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
                   <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password.</p>
-                  <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating…" : "Update password"} <KeyRound size={14}/></button>
+                  <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating…" : user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? "Update password" : "Create password"} <KeyRound size={14}/></button>
                 </form>
                 <div className="account-delete-zone" aria-labelledby="account-delete-title">
                   <div className="account-delete-heading">
