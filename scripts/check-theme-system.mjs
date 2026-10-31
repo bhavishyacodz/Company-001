@@ -3,6 +3,7 @@ import {
   EVENT_BASELINE_THEME,
   PLATFORM_BASELINE_THEME,
   THEME_REGISTRY,
+  applyThemeTokens,
   validateTheme
 } from "../src/design-system/themeRegistry.js";
 
@@ -37,3 +38,10 @@ assert.equal(THEME_REGISTRY["platform-baseline"].target, "platform");
 assert.equal(THEME_REGISTRY["event-baseline"].target, "event");
 
 console.log("Theme foundation checks passed.");
+
+const styleValues = new Map();
+const fakeElement = { style: { setProperty: (key, value) => styleValues.set(key, value) } };
+assert.equal(applyThemeTokens(fakeElement, PLATFORM_BASELINE_THEME, "platform").valid, true);
+assert.equal(styleValues.get("--ds-color-primary"), PLATFORM_BASELINE_THEME.tokens.colors.primary);
+assert.equal(applyThemeTokens(fakeElement, PLATFORM_BASELINE_THEME, "event").valid, false);
+assert.equal(applyThemeTokens(fakeElement, EVENT_BASELINE_THEME).valid, false, "Applying a theme requires an explicit scope.");
