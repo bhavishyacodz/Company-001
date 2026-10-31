@@ -547,6 +547,12 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         setNotice("This Gmail belongs to King Login. Normal User access is disabled for this account.");
         return;
       }
+      if (profile?.platform_role && profile.platform_role !== "organizer") {
+        await supabase.auth.signOut();
+        setUser(null);
+        setNotice("This account does not have organizer access. Please contact platform support.");
+        return;
+      }
       setOwnerSessionBlocked(false);
       setUser(nextUser);
     };
