@@ -1,11 +1,14 @@
 export async function completeAccountDeletion(admin: any, userId: string): Promise<void> {
   const prepared = await admin.rpc("prepare_account_deletion", { p_user_id: userId });
   if (prepared.error) throw new Error("Could not prepare account deletion.");
+  if (!Array.isArray(prepared.data) || prepared.data.some((path: unknown) =>
+    typeof path !== "string" || path.length === 0
+  )) {
+    // Never interpret an unexpected RPC payload as an empty Storage manifest.
+    throw new Error("Could not verify the private payment-evidence cleanup list.");
+  }
 
-  const paths = Array.isArray(prepared.data)
-    ? [...new Set(prepared.data.filter((path: unknown): path is string =>
-        typeof path === "string" && path.length > 0))]
-    : [];
+  const paths = [...new Set(prepared.data)];
 
   for (let index = 0; index < paths.length; index += 100) {
     const { error } = await admin.storage.from("payment-evidence").remove(paths.slice(index, index + 100));
