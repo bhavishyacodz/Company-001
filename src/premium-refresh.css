@@ -258,3 +258,27 @@ a{transition:color .18s ease}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* Organiser profile: compact identity-first layout and accessible corner menu. */
+.account-signed-in{display:grid;gap:14px}
+.account-signed-in .profile-overview{position:relative;gap:16px;padding:20px;border-radius:16px;margin:0}
+.account-signed-in .profile-overview-top{padding-right:54px;align-items:center}
+.account-signed-in .profile-avatar-large{width:56px;height:56px;border-radius:50%;object-fit:cover}
+.account-signed-in .profile-overview-identity strong{font-size:16px}
+.account-signed-in .profile-overview-identity small{font-size:12px}
+.account-signed-in .profile-overview-actions{margin-top:2px!important}
+.account-signed-in .profile-overview-actions .button{min-height:44px;border-radius:10px;font-size:12px}
+.account-signed-in .menu-button{width:42px;height:42px;display:grid;place-items:center;border:1px solid rgba(255,216,77,.28);border-radius:12px;background:#10130f;color:#ffe68b;cursor:pointer;touch-action:manipulation}
+.account-signed-in .menu-button:hover,.account-signed-in .menu-button:focus-visible{border-color:var(--gold);background:#252113;outline:none;box-shadow:0 0 0 3px rgba(255,216,77,.12)}
+.profile-settings-menu{min-width:210px!important;border-color:rgba(255,216,77,.22)!important;background:#151810!important;backdrop-filter:blur(18px);z-index:30!important}
+.profile-settings-item{min-height:44px;cursor:pointer;font:inherit;font-size:12px;transition:background .16s ease,color .16s ease}
+.profile-settings-item:hover,.profile-settings-item:focus-visible{background:rgba(255,216,77,.1)!important;color:#ffe68b!important;outline:none}
+.account-signed-in .application-status{margin:0}
+.account-signed-in .account-password-zone{margin-top:2px}
+@media(max-width:520px){
+ .account-signed-in .profile-overview{padding:15px}
+ .account-signed-in .profile-overview-top{padding-right:46px}
+ .account-signed-in .menu-button{width:40px;height:40px}
+ .profile-settings-menu{right:8px!important;min-width:min(220px,calc(100vw - 56px))!important}
+}
