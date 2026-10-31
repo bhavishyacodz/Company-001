@@ -77,11 +77,13 @@ function App() {
   useEffect(() => {
     let active = true;
     let requestVersion = 0;
+    let resolvedUserId = null;
     const protectedViews = ["organizer", "registrations", "customize"];
     const resolveSession = async (user) => {
       const version = ++requestVersion;
       if (!active) return;
       if (!user) {
+        resolvedUserId = null;
         setSignedInUser(null);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
@@ -89,9 +91,13 @@ function App() {
         return;
       }
 
+      const changedUser = resolvedUserId !== user.id;
+      resolvedUserId = user.id;
       setSignedInUser(user);
-      setPlatformRole(null);
-      setOrganizerWorkspaceReady(false);
+      if (changedUser) {
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+      }
       try {
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
@@ -106,12 +112,31 @@ function App() {
           : "unknown";
         setPlatformRole(role);
 
+        const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
+        if (organizerGoogleCallback) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          if (role === "owner") {
+            try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
+            await supabase.auth.signOut();
+            if (active && version === requestVersion) {
+              resolvedUserId = null;
+              setSignedInUser(null);
+              setPlatformRole(null);
+              setOrganizerWorkspaceReady(false);
+              setView("account");
+            }
+            return;
+          }
+        }
+
         if (isLiveEventRoute) return;
         if (role === "owner") {
+          setOrganizerWorkspaceReady(false);
           setView("owner");
           return;
         }
         if (role !== "organizer") {
+          setOrganizerWorkspaceReady(false);
           setView("account");
           return;
         }
@@ -124,10 +149,12 @@ function App() {
         if (!active || version !== requestVersion) return;
         if (organizerError) {
           setPlatformRole("unknown");
+          setOrganizerWorkspaceReady(false);
           setView("account");
           return;
         }
         if (!organizer) {
+          setOrganizerWorkspaceReady(false);
           setView("account");
           return;
         }
@@ -151,6 +178,7 @@ function App() {
       .catch(() => {
         if (!active) return;
         requestVersion += 1;
+        resolvedUserId = null;
         setSignedInUser(null);
         setPlatformRole(null);
         setOrganizerWorkspaceReady(false);
