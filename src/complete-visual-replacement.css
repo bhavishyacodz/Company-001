@@ -423,3 +423,39 @@ a{color:inherit}
 .app.platform-ui .creator-profile-link-icon{display:grid;place-items:center;width:40px;height:40px;flex:0 0 40px;border-radius:13px;background:#edf0ff;color:#6178d8}
 @media(max-width:700px){.app.platform-ui .sites-list-card{grid-template-columns:minmax(0,1fr);gap:10px}.app.platform-ui .sites-card-actions{display:grid;grid-template-columns:1fr 1fr}.app.platform-ui .sites-card-actions .button{width:100%}.app.platform-ui .creator-profile-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.app.platform-ui .creator-profile-hero{align-items:flex-start;padding:18px}.app.platform-ui .creator-profile-avatar{width:56px;height:56px;flex-basis:56px;border-radius:18px;font-size:23px}}
 @media(max-width:480px){.app.platform-ui .creator-profile-details{grid-template-columns:1fr}.app.platform-ui .creator-profile-hero{gap:12px}.app.platform-ui .creator-profile-avatar{width:48px;height:48px;flex-basis:48px;border-radius:15px;font-size:20px}}
+
+/* King-only theme workshop */
+.owner-theme-workshop{display:grid;gap:22px}
+.owner-theme-toolbar,.owner-theme-editor-heading,.owner-theme-editor-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.owner-theme-toolbar>div{display:grid;gap:4px}
+.owner-theme-toolbar strong{font-size:18px;color:var(--c001-ink)}
+.owner-theme-toolbar small,.owner-theme-item small{color:var(--c001-muted)}
+.owner-theme-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.owner-theme-list{min-width:0;padding:18px;border:1px solid var(--c001-line);border-radius:18px;background:#fbfcff}
+.owner-theme-list h3{margin:0 0 12px;color:var(--c001-ink);font-size:16px}
+.owner-theme-item{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;align-items:center;gap:9px;padding:12px 0;border-top:1px solid var(--c001-line)}
+.owner-theme-item>div:nth-child(2){display:grid;gap:3px;min-width:0}
+.owner-theme-item strong{overflow-wrap:anywhere;color:var(--c001-ink)}
+.owner-theme-item .button{min-height:36px;padding:7px 10px;font-size:12px}
+.owner-theme-swatch{width:30px;height:30px;border-radius:10px;border:2px solid #fff;box-shadow:0 0 0 1px var(--c001-line)}
+.owner-theme-editor{display:grid;gap:16px;padding:20px;border:1px solid #dfe5f5;border-radius:20px;background:#fff}
+.owner-theme-editor-heading h3{margin:4px 0 0;color:var(--c001-ink);font-size:20px}
+.owner-theme-preview-chip{padding:8px 12px;border-radius:999px;font-size:12px;font-weight:800}
+.owner-theme-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.owner-theme-form-grid label{display:grid;gap:7px;color:#59627e;font-size:12px;font-weight:750}
+.owner-theme-form-grid input:not([type=color]),.owner-theme-form-grid select,.owner-theme-form-grid textarea{width:100%;min-height:44px;padding:11px 12px;border:1px solid #dfe4f0;border-radius:12px;background:#fbfcff;color:var(--c001-ink)}
+.owner-theme-form-grid textarea{resize:vertical}
+.owner-theme-wide{grid-column:1/-1}
+.owner-theme-color{display:flex;align-items:center;gap:10px;min-height:44px;padding:5px 10px;border:1px solid #dfe4f0;border-radius:12px;background:#fbfcff}
+.owner-theme-color input{width:40px;height:32px;border:0;background:transparent}
+.owner-theme-color code{color:var(--c001-ink)}
+.owner-theme-live-preview{overflow:hidden;border:1px solid var(--c001-line);border-radius:18px;padding:12px}
+.owner-theme-preview-hero{min-height:170px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:24px;border-radius:13px;color:#fff;text-align:center}
+.owner-theme-preview-hero span,.owner-theme-preview-content>span{font-size:10px;font-weight:800;letter-spacing:.16em}
+.owner-theme-preview-hero strong{font-size:clamp(24px,4vw,36px);line-height:1.1}
+.owner-theme-preview-hero small{max-width:440px;color:rgba(255,255,255,.88)}
+.owner-theme-preview-content{display:grid;justify-items:center;gap:10px;padding:22px 12px}
+.owner-theme-preview-content>span{color:var(--c001-muted)}
+.owner-theme-preview-content strong{font-size:18px}
+.owner-theme-preview-content button{min-height:38px;padding:8px 16px;border:0;border-radius:10px;color:#fff;font-weight:750}
+@media(max-width:680px){.owner-theme-columns,.owner-theme-form-grid{grid-template-columns:1fr}.owner-theme-wide{grid-column:auto}.owner-theme-item{grid-template-columns:30px minmax(0,1fr) auto}.owner-theme-item .button:last-child{grid-column:2/-1;justify-self:start}.owner-theme-item .button:nth-last-child(2){grid-column:3;grid-row:1}}
