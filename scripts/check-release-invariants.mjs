@@ -593,6 +593,20 @@ const checks = [
     },
   },
   {
+    name: "Google OAuth is organizer-only and cannot route an owner into King dashboard",
+    run: () => {
+      const app = read("src/main.jsx");
+      const kingLogin = app.slice(app.indexOf("function KingLoginPanel"), app.indexOf("function AccountPanel"));
+      return app.includes('provider: "google"')
+        && app.includes('auth_flow=organizer_google')
+        && app.includes('initialRole === "owner"')
+        && app.includes('company001:google-owner-blocked')
+        && app.includes("Google sign-in is for organiser accounts only.")
+        && app.includes("Continue with Google")
+        && !kingLogin.includes("signInWithOAuth");
+    },
+  },
+  {
     name: "self-service account deletion reauthenticates and requires explicit confirmation",
     run: () => {
       const account = read("src/main.jsx");
