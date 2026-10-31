@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test:release": "node scripts/check-release-invariants.mjs && node scripts/check-auth-routing.mjs"
+    "test:release": "node scripts/check-release-invariants.mjs && node scripts/check-auth-routing.mjs && node scripts/check-theme-system.mjs",
+    "test:theme": "node scripts/check-theme-system.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.0",
