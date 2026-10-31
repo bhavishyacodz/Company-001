@@ -1,6 +1,6 @@
 # Company-001 project continuity
 
-Last verified: 2026-10-31 (UTC; PR #83 OAuth regression/privacy checks passed; hosted redirect allow-list still needs confirmation)
+Last verified: 2026-10-31 (UTC; user confirmed Google OAuth now returns successfully after updating Supabase Auth URL Configuration)
 Repository: https://github.com/bhavishyacodz/Company-001
 Production host: Cloudflare Pages (not Cloudflare Workers)
 Production URL: https://company-001.pages.dev/
@@ -122,15 +122,14 @@ The live `main` branch still points to the legacy application shell, so the newe
 - The current organiser Google sign-in code already sets `redirectTo` to `window.location.origin + "/?auth_flow=organizer_google"`; this is the correct app-side pattern for returning to the same preview.
 - Supabase Auth only honours `redirectTo` values present in Authentication → URL Configuration → Redirect URLs. The production Site URL remains `https://company-001.pages.dev`.
 - Added `docs/GOOGLE_OAUTH_PREVIEW_REDIRECTS.md`. Required Supabase Redirect URLs: `https://company-001.pages.dev/**`, `https://*.company-001.pages.dev/**`, and local-only `http://localhost:3000/**`. The wildcard is scoped to the project's Pages hostname family; do not use a broad wildcard.
-- Connected Supabase tools can read project metadata and auth logs but cannot edit hosted Auth URL Configuration. This setting has not been changed by the assistant; user/dashboard action is still required.
+- User manually updated Supabase Authentication → URL Configuration and confirmed Google Login now works. Preserve Site URL `https://company-001.pages.dev`; production and preview redirect URLs are allowlisted. Do not change Google's authorised redirect URI.
 - Recent Auth logs show the latest Google sign-in authorize requests were initiated from `https://company-001.pages.dev`, not the commit-preview hostname. An earlier attempt from `https://feat-organizer-google-login.company-001.pages.dev` is also logged. Verify the final browser address bar after Google sign-in; do not assume a successful auth event proves the redirect target.
 - Added release assertions that Google OAuth uses the current origin and callback marker; these are being tested on PR #83 head `9899218`.
 
 ## Immediate work queue (strict order)
 
 1. Finish and verify PR #83 Actions run `41216029159` for exact head `c2bd0a9`, including local Supabase migration replay and two-organiser privacy tests; confirm the exact-head Pages preview.
-2. In Supabase Dashboard → Authentication → URL Configuration, add the Redirect URL entries documented in `docs/GOOGLE_OAUTH_PREVIEW_REDIRECTS.md`. Keep Site URL as `https://company-001.pages.dev`. The connected tool cannot change this hosted setting.
-3. Run a manual login regression on the exact preview: organiser password login, Google organiser login, return to the same preview hostname, refresh, reopen the dashboard, and verify King Login still requires AAL2. The connected tools cannot perform the user's Google/password login, so user-side manual confirmation is still required. Do not enter real participant or payment data on the preview.
+2. OAuth redirect allow-list is now user-confirmed working. Run the remaining manual regression on the exact preview: confirm the post-login page is the new dashboard, refresh and confirm session/tab restoration, reopen the site, and verify King Login still requires AAL2. Do not enter real participant or payment data on the preview.
 4. Investigate the separate Workers Builds check and determine whether it is required by branch protection. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
 5. Reconcile the PR #74 → #78 → #79 → #83 stack and review every diff before merging. PR #83 now includes PR #82's shared-client refactor; do not merge duplicate client changes. Keep PR #82 open until the stack is integrated, then close it as superseded or explicitly reconcile it.
 6. Reconcile PR #81 documentation with the release branch and merge it only after reviewing its latest head and checks.
