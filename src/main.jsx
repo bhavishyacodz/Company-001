@@ -28,7 +28,7 @@ const getSafeHttpsImageUrl = (value) => {
 };
 
 function App() {
-  const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
+  const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return saved === "profile" ? "account" : ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
   const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
@@ -70,7 +70,7 @@ function App() {
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
-  useEffect(() => { try { if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view]);
+  useEffect(() => { try { if (view === "account" && signedInUser) window.sessionStorage.setItem("company001:last-view", "profile"); else if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view, signedInUser]);
 
   useEffect(() => {
     let active = true;
@@ -170,7 +170,8 @@ function App() {
 
         setOrganizerWorkspaceReady(true);
         const savedView = window.sessionStorage.getItem("company001:last-view");
-        setView(protectedViews.includes(savedView) ? savedView : "organizer");
+        const isOrganizerLoginReturn = organizerGoogleCallback;
+        setView(isOrganizerLoginReturn ? "account" : savedView === "profile" ? "account" : protectedViews.includes(savedView) ? savedView : "account");
         setAuthResolving(false);
       } catch {
         if (!active || version !== authResolutionRef.current) return;
@@ -385,7 +386,7 @@ function App() {
         <div className="top-actions">
           {!isLiveEventRoute && <>
             <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-            <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+            <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("account"); }} aria-label={signedInUser ? "Open your profile" : "User login"}>{signedInUser ? "MY PROFILE" : "USER LOGIN"} <ArrowRight size={14} /></button>
           </>}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
@@ -755,6 +756,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
+  const [organizerWorkspace, setOrganizerWorkspace] = useState(null);
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(() => {
@@ -822,7 +824,9 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   }, []);
 
   useEffect(() => {
-    if (!user) { setApplication(null); return; }
+    if (!user) { setApplication(null); setOrganizerWorkspace(null); return; }
+    supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle()
+      .then(({ data, error }) => { if (!error) setOrganizerWorkspace(data || null); });
     supabase.from("profiles").upsert({
       id: user.id,
       display_name: user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer",
@@ -903,10 +907,9 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           .from("organizers").select("id").eq("owner_user_id", data.user.id).maybeSingle();
         if (organizerError) throw organizerError;
         if (organizer) {
-          setNotice("Signed in. Opening your organiser dashboard…");
-          await onOpenWorkspace(data.user);
+          setNotice("Signed in successfully. Your profile is ready.");
         } else {
-          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
+          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your websites.");
         }
       }
     } catch (error) {
@@ -1069,7 +1072,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           <div className="account-signed-in">
             <section className="profile-overview" aria-label="Account overview">
               <div className="profile-overview-top">
-                <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>
+                {getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture) ? <img className="profile-avatar-large" src={getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)} alt="Profile" /> : <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>}
                 <div className="profile-overview-identity">
                   <span className="panel-label">YOUR ACCOUNT</span>
                   <strong>{user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer"}</strong>
@@ -1083,6 +1086,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 <div><small>SESSION</small><strong>Saved on this device</strong></div>
               </div>
               <div className="profile-overview-actions">
+                {organizerWorkspace ? <button className="button button-primary" onClick={onOpenWorkspace}>Open My Sites <ArrowRight size={14} /></button> : <button className="button button-primary" onClick={() => document.getElementById("organizer-setup")?.scrollIntoView({ behavior: "smooth", block: "center" })}>Create Website <ArrowRight size={14} /></button>}
                 <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
                 <button className="profile-signout" onClick={signOut}>Sign out</button>
               </div>
@@ -1126,10 +1130,18 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 </form>
               ) : null}
             </section>
-            {application ? (
+            {organizerWorkspace ? (
+              <div className="application-status">
+                <span className="panel-label">YOUR ORGANISER PROFILE</span>
+                <strong>{organizerWorkspace.display_name || "Your organiser workspace"}</strong>
+                <span className="status-chip approved"><span />{(organizerWorkspace.status || "active").replace(/_/g," ").toUpperCase()}</span>
+                <p>Your organiser account is connected. Manage your existing websites or create another one from My Sites.</p>
+                <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open My Sites / Create Website <ArrowRight size={15}/></button>
+              </div>
+            ) : application ? (
               <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
             ) : (
-              <form className="account-form" onSubmit={submitApplication}>
+              <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
                 <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. Your workspace activates immediately, so you can pick a template and start editing.</small></span></div>
