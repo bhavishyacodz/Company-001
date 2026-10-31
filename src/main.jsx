@@ -139,7 +139,9 @@ function App() {
         }
         if (role === "owner") {
           setOrganizerWorkspaceReady(false);
-          setView("owner");
+          const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (!active || version !== authResolutionRef.current) return;
+          setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login");
           setAuthResolving(false);
           return;
         }
@@ -324,8 +326,8 @@ function App() {
     setRequestedTemplate(templateKey);
     try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
     if (platformRole === "owner") {
-      // Keep platform owners in their restricted admin area; they do not need an organiser workspace.
-      setView("owner");
+      // Owner access always passes through the dedicated MFA verification screen.
+      setView("king-login");
       return;
     }
     if (!signedInUser || platformRole !== "organizer") {
@@ -393,7 +395,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => { setOrganizerWorkspaceReady(true); setView("organizer"); }} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -906,7 +908,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         if (organizerError) throw organizerError;
         if (organizer) {
           setNotice("Signed in. Opening your organiser dashboard…");
-          onOpenWorkspace(data.user);
+          await onOpenWorkspace(data.user);
         } else {
           setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
         }
@@ -931,7 +933,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (error) throw error;
       setApplication(data);
       setNotice("Workspace activated. Opening your template editor…");
-      if (data.status === "approved") onOpenWorkspace(user);
+      if (data.status === "approved") await onOpenWorkspace(user);
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
