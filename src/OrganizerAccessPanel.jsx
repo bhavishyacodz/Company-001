@@ -1,12 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { Check, RefreshCw, Shield, UserRoundCog } from "lucide-react";
 import "./organizer-access.css";
 
-const supabase = createClient(
-  "https://zkzgkovwktljfuuuhivk.supabase.co",
-  "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB"
-);
+import { supabase } from "./services/supabase/client.js";
 
 export default function OrganizerAccessPanel({ currentUser }) {
   const [organizers, setOrganizers] = useState([]);

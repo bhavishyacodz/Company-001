@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Check, ExternalLink, Users, LayoutDashboard, Inbox, UserCheck, CalendarCheck, Shield, RefreshCw, Building2, ShieldCheck, Activity, LogOut, KeyRound, Search, Ban, Trash2, RotateCcw, UserRoundCog } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
+// Keep the King Control Room redesign above nested legacy component styles.
+import "./experience-redesign.css";
 
-const supabase = createClient(
-  "https://zkzgkovwktljfuuuhivk.supabase.co",
-  "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB"
-);
+import { supabase } from "./services/supabase/client.js";
 
 export default function OwnerPanel({ onBack }) {
   const [user, setUser] = useState(null);

@@ -41,10 +41,30 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Test bounded request bodies and retry-safe account deletion
+        run: >-
+          deno test
+          supabase/functions/_shared/request-body.test.ts
+          supabase/functions/_shared/account-deletion.test.ts
+
+      - name: Type-check security-sensitive Edge Functions
+        run: >-
+          deno check --node-modules-dir=auto
+          supabase/functions/register-esports/index.ts
+          supabase/functions/request-consultation/index.ts
+          supabase/functions/view-payment-evidence/index.ts
+          supabase/functions/delete-account/index.ts
+          supabase/functions/manage-user-accounts/index.ts
+
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.122.0
 
       - name: Start isolated local Supabase stack
         run: supabase start -x studio,edge-runtime,logflare,vector,imgproxy

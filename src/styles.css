@@ -802,3 +802,80 @@
     justify-content: center;
   }
 }
+
+
+/* Organizer Google sign-in. */
+.account-google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 16px;
+  padding: 0 16px;
+  border: 1px solid #42465b;
+  border-radius: 9px;
+  background: #171a27;
+  color: #f5f5fb;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .18s ease;
+}
+.account-google-button:hover:not(:disabled) {
+  border-color: #858ba8;
+  background: #202438;
+}
+.account-google-button:focus-visible {
+  outline: 2px solid #b9a4ff;
+  outline-offset: 3px;
+}
+.account-google-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+.account-google-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: #4285f4;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+}
+.account-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 17px 0 2px;
+  color: #858ba4;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+.account-auth-divider::before,
+.account-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(145,151,180,.2);
+}
+
+
+/* King Login authenticator enrollment and challenge. */
+.king-mfa-card{max-width:520px}
+.king-mfa-form{margin-top:22px}
+.king-mfa-setup{display:grid;gap:12px;padding:18px;border:1px solid rgba(167,139,250,.28);border-radius:14px;background:rgba(24,27,42,.72)}
+.king-mfa-setup h2{margin:0;color:#f5f3ff;font-size:18px}
+.king-mfa-setup p{margin:0;color:#b9bbca;font-size:12px;line-height:1.65}
+.king-mfa-qr{width:208px;height:208px;max-width:100%;margin:8px auto;padding:10px;border-radius:10px;background:#fff;object-fit:contain}
+.king-mfa-secret-label{color:#a99acb;font-size:9px;font-weight:800;letter-spacing:.12em}
+.king-mfa-secret{display:block;overflow-wrap:anywhere;padding:12px;border:1px solid #42465b;border-radius:9px;background:#10131e;color:#f5f3ff;font-size:12px;line-height:1.6;user-select:all}
+.king-mfa-warning{color:#f1cf8a!important}
+.king-mfa-form input[inputmode="numeric"]{font-size:22px;letter-spacing:.32em;text-align:center;font-variant-numeric:tabular-nums}
+@media(max-width:560px){.king-mfa-setup{padding:14px}.king-mfa-qr{width:184px;height:184px}}

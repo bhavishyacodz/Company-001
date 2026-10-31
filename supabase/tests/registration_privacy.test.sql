@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(22);
+select plan(54);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -31,6 +31,11 @@ insert into public.organizers (id, owner_user_id, display_name, slug, status) va
 -- The production policy allows only the platform owner to publish events.
 -- Seed published test events under that owner's simulated JWT identity.
 select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000003', true);
+select set_config(
+  'request.jwt.claims',
+  '{"sub":"10000000-0000-4000-8000-000000000003","role":"authenticated","aal":"aal2"}',
+  true
+);
 
 insert into public.events (id, organizer_id, title, slug, status) values
   ('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'Privacy Event A', 'privacy-event-a', 'published'),
@@ -54,6 +59,10 @@ insert into public.organizer_event_access (user_id, event_id, access_level, gran
 insert into storage.objects (bucket_id, name, owner_id, metadata) values
   ('payment-evidence', '20000000-0000-4000-8000-000000000001/40000000-0000-4000-8000-000000000001/proof.png', '10000000-0000-4000-8000-000000000001', '{"mimetype":"image/png","size":128}'),
   ('payment-evidence', '20000000-0000-4000-8000-000000000002/40000000-0000-4000-8000-000000000002/proof.png', '10000000-0000-4000-8000-000000000002', '{"mimetype":"image/png","size":128}');
+
+-- Simulate an orphaned screenshot object: upload succeeded, but evidence metadata was never written.
+insert into storage.objects (bucket_id, name, owner_id, metadata) values
+  ('payment-evidence', '20000000-0000-4000-8000-000000000002/orphan-upload/proof.png', '10000000-0000-4000-8000-000000000002', '{"mimetype":"image/png","size":128}');
 
 -- Organizer A: can read only its own registration, evidence row, and Storage object.
 set local role authenticated;
@@ -100,6 +109,22 @@ select ok(
   not has_table_privilege('anon', 'public.payment_evidence', 'SELECT'),
   'Anonymous visitors have no direct SELECT grant on payment-evidence metadata'
 );
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'SELECT'),
+  'Anonymous visitors have no direct SELECT grant on organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'INSERT'),
+  'Anonymous visitors cannot create organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'UPDATE'),
+  'Anonymous visitors cannot modify organizer delegation records'
+);
+select ok(
+  not has_table_privilege('anon', 'public.organizer_event_access', 'DELETE'),
+  'Anonymous visitors cannot delete organizer delegation records'
+);
 set local role anon;
 select is(
   (select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'),
@@ -138,6 +163,151 @@ select is((
     and action = 'registration_payment_approved'
     and not (metadata ? 'confirmation_reference')
 ), 1, 'Owner audit log records payment review without participant identifiers');
+
+
+-- Suspensions must be enforced by RLS even when an access token has not expired.
+reset role;
+select set_config('request.jwt.claim.sub', '10000000-0000-4000-8000-000000000001', true);
+select is(private.is_active_account(), true, 'An unsuspended organizer account is active');
+select is(public.is_account_active_for_user('10000000-0000-4000-8000-000000000001'::uuid), true, 'Trusted server lookup confirms an active organizer account');
+
+update auth.users
+set banned_until = now() + interval '1 day'
+where id = '10000000-0000-4000-8000-000000000001';
+
+set local role service_role;
+select is(public.is_account_active_for_user('10000000-0000-4000-8000-000000000001'::uuid), false, 'Trusted server lookup detects an Auth ban');
+reset role;
+set local role authenticated;
+select is(private.is_active_account(), false, 'A banned account is inactive immediately');
+select is((select count(*)::integer from public.registrations), 0, 'A banned organizer cannot read participant registrations with an existing token');
+select is((select count(*)::integer from public.payment_evidence), 0, 'A banned organizer cannot read payment evidence with an existing token');
+select is((select count(*)::integer from storage.objects where bucket_id = 'payment-evidence'), 0, 'A banned organizer cannot read private screenshots with an existing token');
+select throws_ok(
+  $stmt$select public.review_registration_payment('40000000-0000-4000-8000-000000000001'::uuid, 'approved', 'suspended account attempt')$stmt$,
+  '42501', null,
+  'A banned organizer cannot use the privileged payment-review RPC'
+);
+
+reset role;
+update auth.users
+set banned_until = null,
+    raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"account_suspended":true}'::jsonb
+where id = '10000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(private.is_active_account(), false, 'The server-managed suspension flag also disables an account');
+
+reset role;
+update auth.users
+set banned_until = null,
+    raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) - 'account_suspended'
+where id = '10000000-0000-4000-8000-000000000001';
+set local role authenticated;
+select is(private.is_active_account(), true, 'Restoring the account re-enables access');
+
+-- The privileged account-removal RPC must never be callable by browser roles.
+reset role;
+select ok(
+  not has_function_privilege('anon', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Anonymous visitors cannot execute either privileged account-deletion RPC'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Authenticated users cannot execute either privileged account-deletion RPC'
+);
+select ok(
+  has_function_privilege('service_role', 'public.prepare_account_deletion(uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.complete_account_deletion_storage(uuid)', 'EXECUTE'),
+  'Service role can execute both account-deletion RPCs'
+);
+select ok(
+  not has_function_privilege('anon', 'public.is_account_active_for_user(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.is_account_active_for_user(uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.is_account_active_for_user(uuid)', 'EXECUTE'),
+  'Only trusted service-role functions can query account suspension status'
+);
+
+
+-- Exercise account deletion against the two-organizer fixtures. This runs
+-- inside the isolated CI database and is rolled back at the end of the suite.
+-- The SECURITY DEFINER RPCs must fail closed when the JWT role is absent or not privileged.
+reset role;
+select set_config('request.jwt.claim.role', '', true);
+select throws_ok(
+  $$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$$,
+  '42501', 'service role required',
+  'Deletion preparation rejects a missing JWT role claim'
+);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select throws_ok(
+  $$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$$,
+  '42501', 'service role required',
+  'Deletion preparation rejects a non-service JWT role'
+);
+select set_config('request.jwt.claim.role', 'service_role', true);
+set local role service_role;
+select is(
+  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  2,
+  'Deletion preparation records metadata-linked and orphaned screenshot paths'
+);
+select is(
+  cardinality(public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)),
+  2,
+  'A retry receives the same metadata-linked and orphaned screenshot paths'
+);
+select is(
+  (select count(*)::integer from public.registrations where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer registrations'
+);
+select is(
+  (select count(*)::integer from public.registrations where organizer_id = '20000000-0000-4000-8000-000000000001'),
+  1,
+  'Deletion preserves the other organizer registrations'
+);
+select is(
+  (select count(*)::integer from public.payment_evidence where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer evidence metadata'
+);
+select is(
+  (select count(*)::integer from public.payment_evidence where organizer_id = '20000000-0000-4000-8000-000000000001'),
+  1,
+  'Deletion preserves the other organizer evidence metadata'
+);
+select is(
+  (select count(*)::integer from public.events where organizer_id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer event'
+);
+select is(
+  (select count(*)::integer from public.organizers where id = '20000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes the target organizer workspace'
+);
+select is(
+  (select count(*)::integer from public.organizer_event_access where user_id = '10000000-0000-4000-8000-000000000002'),
+  0,
+  'Deletion removes delegated event-access grants owned by the deleted user'
+);
+select throws_ok(
+  $stmt$select public.prepare_account_deletion('10000000-0000-4000-8000-000000000003'::uuid)$stmt$,
+  '42501', 'platform owner accounts are protected',
+  'Deletion preparation refuses to remove the platform owner'
+);
+select is(
+  public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
+  true,
+  'Service-side Storage completion acknowledgement clears the deletion job'
+);
+select is(
+  public.complete_account_deletion_storage('10000000-0000-4000-8000-000000000002'::uuid),
+  false,
+  'Repeating Storage completion confirms the temporary deletion job was already purged'
+);
 
 select * from finish();
 rollback;

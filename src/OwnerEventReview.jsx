@@ -1,11 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { CalendarCheck, CheckCircle2, RefreshCw } from "lucide-react";
 
-const db = createClient(
-  "https://zkzgkovwktljfuuuhivk.supabase.co",
-  "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB"
-);
+import { supabase as db } from "./services/supabase/client.js";
 
 export default function OwnerEventReview() {
   const [rows, setRows] = useState([]);

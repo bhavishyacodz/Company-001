@@ -1,20 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ArrowDownRight, ArrowRight, Bell, CalendarDays, Check, ChevronDown,
   CircleHelp, Clock3, Copy, Gamepad2, Globe2, ImagePlus, LayoutDashboard, MapPin, Mail, PhoneCall,
-  Menu, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X,
+  Menu, RefreshCw, ShieldCheck, Sparkles, Swords, Trophy, Users, WalletCards, X, LogOut, Settings,
   Zap, Settings2, ExternalLink, Music2, GraduationCap, Palette, BookOpen, HeartHandshake, KeyRound
 } from "lucide-react";
 import "./styles.css";
+import "./premium-refresh.css";
+import "./experience-redesign.css";
 import OwnerPanel from "./OwnerPanel.jsx";
 import OrganizerWorkspace from "./OrganizerWorkspace.jsx";
 import CompanyHome from "./CompanyHome.jsx";
-
-const SUPABASE_URL = "https://zkzgkovwktljfuuuhivk.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable__hHhbTYbvfL3TPa-_JHxQQ_EI9A_kTB";
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage } });
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js";
 
 const sampleRegistrations = [
   { name: "ShadowByte", team: "NOVA", gameId: "SB-2048", status: "Pending review", tone: "pending" },
@@ -30,11 +28,14 @@ const getSafeHttpsImageUrl = (value) => {
 };
 
 function App() {
-  const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
+  const [view, setView] = useState(() => { try { const saved = window.sessionStorage.getItem("company001:last-view"); return saved === "profile" ? "account" : ["organizer","registrations","customize"].includes(saved) ? saved : "site"; } catch { return "site"; } });
   const [requestedTemplate, setRequestedTemplate] = useState(() => { try { return window.localStorage.getItem("company001:selected-template") || "esports-001"; } catch { return "esports-001"; } });
   const [platformRole, setPlatformRole] = useState(null);
+  const [organizerWorkspaceReady, setOrganizerWorkspaceReady] = useState(false);
   const [signedInUser, setSignedInUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
+  const [authResolving, setAuthResolving] = useState(false);
+  const authResolutionRef = useRef(0);
   const [registerOpen, setRegisterOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [eventName, setEventName] = useState("NEXUS OPEN");
@@ -69,45 +70,162 @@ function App() {
   const organizerSlug = isLiveEventRoute ? routeSlugs[0] : "";
   const eventSlug = isLiveEventRoute ? routeSlugs[1] : "";
 
-  useEffect(() => { try { if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view]);
+  useEffect(() => { try { if (view === "account" && signedInUser) window.sessionStorage.setItem("company001:last-view", "profile"); else if (["organizer","registrations","customize"].includes(view)) window.sessionStorage.setItem("company001:last-view", view); else window.sessionStorage.removeItem("company001:last-view"); } catch { /* Route restoration is optional. */ } }, [view, signedInUser]);
 
   useEffect(() => {
     let active = true;
-    const refresh = async (user) => {
-      if (!active) return null;
-      setSignedInUser(user || null);
-      if (!user) { setPlatformRole(null); return null; }
-      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", user.id).maybeSingle();
-      const role = profile?.platform_role || "organizer";
-      if (active) setPlatformRole(role);
-      return role;
-    };
-    supabase.auth.getSession()
-      .then(async ({ data, error }) => {
-        if (error) throw error;
-        const initialUser = data.session?.user || null;
-        const initialRole = await refresh(initialUser);
-        if (active) {
-          const savedView = window.sessionStorage.getItem("company001:last-view");
-          if (!initialUser && ["organizer", "registrations", "customize"].includes(savedView)) setView("site");
-          if (data.session?.user && !isLiveEventRoute) {
-            if (initialRole === "owner") {
-              if (active) setView("owner");
-            } else if (initialRole === "organizer") {
-              const { data: organizer, error: organizerError } = await supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id).maybeSingle();
-              if (active) setView(!organizerError && organizer ? (["organizer", "registrations", "customize"].includes(savedView) ? savedView : "organizer") : "account");
-            } else if (active) {
+    let resolvedUserId = null;
+    const protectedViews = ["organizer", "registrations", "customize"];
+    const resolveSession = async (user) => {
+      const version = ++authResolutionRef.current;
+      if (!active) return;
+      if (!user) {
+        resolvedUserId = null;
+        setAuthResolving(false);
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+        return;
+      }
+
+      const changedUser = resolvedUserId !== user.id;
+      resolvedUserId = user.id;
+      setSignedInUser(user);
+      if (changedUser) {
+        setAuthResolving(true);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+      }
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("platform_role")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!active || version !== authResolutionRef.current) return;
+
+        // A missing profile or failed role lookup is unknown, never an organiser.
+        const role = !profileError && profile && ["owner", "organizer"].includes(profile.platform_role)
+          ? profile.platform_role
+          : "unknown";
+        setPlatformRole(role);
+
+        const organizerGoogleCallback = new URLSearchParams(window.location.search).get("auth_flow") === "organizer_google";
+        if (organizerGoogleCallback) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+          const pendingDeleteReauthUser = window.sessionStorage.getItem("company001:delete-reauth");
+          const pendingPasswordReauthUser = window.sessionStorage.getItem("company001:password-reauth");
+          const returningFromDeleteReauth = pendingDeleteReauthUser === user.id;
+          const returningFromPasswordReauth = pendingPasswordReauthUser === user.id;
+          if (pendingDeleteReauthUser && !returningFromDeleteReauth) window.sessionStorage.removeItem("company001:delete-reauth");
+          if (pendingPasswordReauthUser && !returningFromPasswordReauth) window.sessionStorage.removeItem("company001:password-reauth");
+          if (role === "owner") {
+            try { window.sessionStorage.setItem("company001:google-owner-blocked", "1"); } catch { /* Notice is optional. */ }
+            await supabase.auth.signOut();
+            if (active && version === authResolutionRef.current) {
+              resolvedUserId = null;
+              setSignedInUser(null);
+              setPlatformRole(null);
+              setOrganizerWorkspaceReady(false);
               setView("account");
+              setAuthResolving(false);
             }
+            return;
+          }
+          if ((returningFromDeleteReauth || returningFromPasswordReauth) && role === "organizer") {
+            setView("account");
+            setAuthResolving(false);
+            return;
           }
         }
+
+        if (isLiveEventRoute) {
+          setAuthResolving(false);
+          return;
+        }
+        if (role === "owner") {
+          setOrganizerWorkspaceReady(false);
+          const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (!active || version !== authResolutionRef.current) return;
+          setView(!assuranceError && assurance?.currentLevel === "aal2" ? "owner" : "king-login");
+          setAuthResolving(false);
+          return;
+        }
+        if (role !== "organizer") {
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+
+        const { data: organizer, error: organizerError } = await supabase
+          .from("organizers")
+          .select("id")
+          .eq("owner_user_id", user.id)
+          .maybeSingle();
+        if (!active || version !== authResolutionRef.current) return;
+        if (organizerError) {
+          setPlatformRole("unknown");
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+        if (!organizer) {
+          setOrganizerWorkspaceReady(false);
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+
+        setOrganizerWorkspaceReady(true);
+        if (window.sessionStorage.getItem("company001:password-update-reauth") === user.id) {
+          window.sessionStorage.removeItem("company001:password-update-reauth");
+          setView("account");
+          setAuthResolving(false);
+          return;
+        }
+        const savedView = window.sessionStorage.getItem("company001:last-view");
+        const isOrganizerLoginReturn = organizerGoogleCallback;
+        setView(isOrganizerLoginReturn ? "account" : savedView === "profile" ? "account" : protectedViews.includes(savedView) ? savedView : "account");
+        setAuthResolving(false);
+      } catch {
+        if (!active || version !== authResolutionRef.current) return;
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView(isLiveEventRoute ? "site" : "account");
+        setAuthResolving(false);
+      }
+    };
+
+    supabase.auth.getSession()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        return resolveSession(data.session?.user || null);
       })
-      .catch(() => { if (active) setSignedInUser(null); })
+      .catch(() => {
+        if (!active) return;
+        authResolutionRef.current += 1;
+        resolvedUserId = null;
+        setSignedInUser(null);
+        setPlatformRole(null);
+        setOrganizerWorkspaceReady(false);
+        setView(current => protectedViews.includes(current) ? "site" : current);
+        setAuthResolving(false);
+      })
       .finally(() => { if (active) setAuthReady(true); });
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      window.setTimeout(() => { if (active) refresh(session?.user || null); }, 0);
+      // Defer Supabase reads until after the auth callback has released its lock.
+      window.setTimeout(() => {
+        if (active) resolveSession(session?.user || null);
+      }, 0);
     });
-    return () => { active = false; listener.subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -177,21 +295,64 @@ function App() {
     }
   };
 
+  const openOrganizerWorkspace = async (candidateUser = signedInUser) => {
+    if (!candidateUser?.id) {
+      setOrganizerWorkspaceReady(false);
+      setView("account");
+      return;
+    }
+    const version = ++authResolutionRef.current;
+    setAuthResolving(true);
+    setSignedInUser(candidateUser);
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles").select("platform_role").eq("id", candidateUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (profileError || profile?.platform_role !== "organizer") {
+        setPlatformRole("unknown");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      const { data: organizer, error: organizerError } = await supabase
+        .from("organizers").select("id").eq("owner_user_id", candidateUser.id).maybeSingle();
+      if (version !== authResolutionRef.current) return;
+      if (organizerError || !organizer) {
+        setPlatformRole("organizer");
+        setOrganizerWorkspaceReady(false);
+        setView("account");
+        return;
+      }
+      setPlatformRole("organizer");
+      setOrganizerWorkspaceReady(true);
+      setView("organizer");
+    } catch {
+      if (version !== authResolutionRef.current) return;
+      setPlatformRole("unknown");
+      setOrganizerWorkspaceReady(false);
+      setView("account");
+    } finally {
+      if (version === authResolutionRef.current) setAuthResolving(false);
+    }
+  };
+
   const handleUseTemplate = async (templateKey) => {
     setRequestedTemplate(templateKey);
     try { window.localStorage.setItem("company001:selected-template", templateKey); } catch { /* Template preference is optional. */ }
     if (platformRole === "owner") {
-      // Keep platform owners in their restricted admin area; they do not need an organiser workspace.
-      setView("owner");
+      // Owner access always passes through the dedicated MFA verification screen.
+      setView("king-login");
       return;
     }
-    if (!signedInUser) {
+    if (!signedInUser || platformRole !== "organizer") {
       setView("account");
       return;
     }
     const { data: organizer, error } = await supabase.from("organizers")
       .select("id").eq("owner_user_id", signedInUser.id).maybeSingle();
-    setView(!error && organizer ? "customize" : "account");
+    const ready = !error && Boolean(organizer);
+    setOrganizerWorkspaceReady(ready);
+    setView(ready ? "customize" : "account");
   };
 
   const copyPlatformLink = async () => {
@@ -204,17 +365,20 @@ function App() {
     }
   };
 
-  if (!authReady && ["organizer", "registrations", "customize"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ORGANISER</div><h1>Restoring your workspace…</h1><p>Checking your saved sign-in before opening your dashboard.</p></section></main>;
-  if (signedInUser && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if ((!authReady || authResolving) && ["organizer", "registrations", "customize", "owner"].includes(view)) return <main className="workspace-shell"><section className="workspace-card workspace-auth-restoring" role="status" aria-live="polite"><div className="section-kicker">COMPANY-001 / ACCESS</div><h1>Restoring your workspace…</h1><p>Verifying your saved sign-in and access before opening the dashboard.</p></section></main>;
+  if (["organizer", "registrations", "customize"].includes(view) && (!signedInUser || platformRole !== "organizer" || !organizerWorkspaceReady)) return <AccountPanel onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} />;
+  if (signedInUser && platformRole === "organizer" && organizerWorkspaceReady && ["organizer", "registrations", "customize"].includes(view)) return <OrganizerWorkspace user={signedInUser} initialView={view} initialTemplateKey={requestedTemplate} onBack={() => setView("site")} />;
+  if (view === "owner" && platformRole !== "owner") return <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} />;
+  // Never fall through to the legacy demo dashboard when a saved workspace route has no valid session.
 
   return (
     <div className={`app accent-${accent}`} style={isLiveEventRoute ? { "--accent": eventData?.branding?.primaryColor || "#9a6bff", "--accent-2": eventData?.branding?.primaryColor || "#5be7e3", fontFamily: ["Inter","DM Sans","Space Grotesk","Poppins","Montserrat","Playfair Display"].includes(eventData?.branding?.fontFamily) ? eventData.branding.fontFamily : undefined, "--event-hero-title-size": `${Math.max(42,Math.min(104,Number(eventData?.branding?.heroTitleSize)||72))}px`, "--event-hero-title-align": ["left","center","right"].includes(eventData?.branding?.heroTitleAlign) ? eventData.branding.heroTitleAlign : "left", "--event-hero-title-color": /^#[0-9a-fA-F]{6}$/.test(eventData?.branding?.heroTitleColor||"") ? eventData.branding.heroTitleColor : "#ffffff", "--event-hero-title-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.heroTitleX)||0))}px`, "--event-hero-title-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.heroTitleY)||0))}px`, "--event-hero-copy-x": `${Math.max(-160,Math.min(160,Number(eventData?.branding?.descriptionX)||0))}px`, "--event-hero-copy-y": `${Math.max(-100,Math.min(100,Number(eventData?.branding?.descriptionY)||0))}px` } : undefined}>
       <div className={isLiveEventRoute ? "prototype-banner" : "prototype-banner company-banner"}>
         <span className="prototype-dot" />
         <span><strong>{isLiveEventRoute ? "LIVE EVENT PAGE" : "COMPANY-001 DIGITAL STUDIO"}</strong> · {isLiveEventRoute ? "Registration submissions use the secured backend. Payment screenshots require organiser verification." : "Custom websites, digital experiences and event tools for growing ideas."}</span>
-        <button className="banner-link" onClick={() => isLiveEventRoute ? setView("account") : document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
-          {isLiveEventRoute ? "Organiser sign in" : "Explore services"} <ArrowRight size={14} />
-        </button>
+        {!isLiveEventRoute && <button className="banner-link" onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })}>
+          Explore services <ArrowRight size={14} />
+        </button>}
       </div>
 
       <header className={isLiveEventRoute ? "topbar" : "topbar company-topbar"}>
@@ -237,13 +401,15 @@ function App() {
           </>}
         </nav>
         <div className="top-actions">
-          <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
-          <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("organizer"); }} aria-label={signedInUser ? "Open your user dashboard" : "User login"}>{signedInUser ? "MY DASHBOARD" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          {!isLiveEventRoute && <>
+            <button type="button" className="owner-shortcut king-login" onClick={() => { setMobileMenu(false); setView(platformRole === "owner" ? "owner" : "king-login"); }} aria-label="King Login — restricted platform owner sign in"><ShieldCheck size={15} /> KING LOGIN</button>
+            <button type="button" className="account-entry" onClick={() => { setMobileMenu(false); if (!signedInUser) setView("account"); else if (platformRole === "owner") setView("king-login"); else setView("account"); }} aria-label={signedInUser ? "Open your profile" : "User login"}>{signedInUser ? "MY PROFILE" : "USER LOGIN"} <ArrowRight size={14} /></button>
+          </>}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)} aria-label="Toggle menu">{mobileMenu ? <X size={20} /> : <Menu size={20} />}</button>
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={() => setView("organizer")} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -431,6 +597,73 @@ function KingLoginPanel({ onBack, onSuccess }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [noticeType, setNoticeType] = useState("error");
+  const [step, setStep] = useState("credentials");
+  const [factorId, setFactorId] = useState("");
+  const [qrCode, setQrCode] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
+  const [verifyCode, setVerifyCode] = useState("");
+
+  const prepareOwnerMfa = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const { data: factors, error: factorsError } = await supabase.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      const verifiedFactor = (factors?.totp || []).find(factor => factor.status === "verified");
+      if (verifiedFactor) {
+        setFactorId(verifiedFactor.id);
+        setStep("challenge");
+        setNoticeType("success");
+        setNotice("Owner identity confirmed. Enter the current code from your authenticator app.");
+        return;
+      }
+      const { data: enrollment, error: enrollmentError } = await supabase.auth.mfa.enroll({
+        factorType: "totp",
+        friendlyName: "Company-001 King Login " + new Date().toISOString(),
+      });
+      if (enrollmentError) throw enrollmentError;
+      if (!enrollment?.id || !enrollment?.totp?.qr_code || !enrollment?.totp?.secret) {
+        throw new Error("Authenticator setup could not be prepared. Please try again.");
+      }
+      setFactorId(enrollment.id);
+      setQrCode(enrollment.totp.qr_code);
+      setTotpSecret(enrollment.totp.secret);
+      setStep("enroll");
+      setNoticeType("success");
+      setNotice("First-time security setup: add this account to your authenticator app, then verify a current six-digit code.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  useEffect(() => {
+    let active = true;
+    const resumeOwnerSession = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const currentUser = sessionData.session?.user;
+      if (!currentUser) return;
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles").select("platform_role").eq("id", currentUser.id).maybeSingle();
+      if (profileError) throw profileError;
+      if (profile?.platform_role !== "owner") return;
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance?.currentLevel === "aal2") {
+        onSuccess();
+        return;
+      }
+      await prepareOwnerMfa();
+    };
+    resumeOwnerSession().catch(error => {
+      if (active) {
+        setNoticeType("error");
+        setNotice(error.message || "Could not verify the owner security session.");
+        setBusy(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
 
   const authenticateOwner = async (event) => {
     event.preventDefault();
@@ -440,18 +673,13 @@ function KingLoginPanel({ onBack, onSuccess }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       if (error) throw error;
       const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("platform_role")
-        .eq("id", data.user.id)
-        .maybeSingle();
+        .from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
       if (profileError) throw profileError;
       if (profile?.platform_role !== "owner") {
         await supabase.auth.signOut();
         throw new Error("This account does not have platform-owner access. Use Organiser Login instead.");
       }
-      setNoticeType("success");
-      setNotice("Owner verified. Opening the private control panel…");
-      onSuccess();
+      await prepareOwnerMfa();
     } catch (error) {
       setNoticeType("error");
       setNotice(error.message || "Could not sign in to the owner panel.");
@@ -460,20 +688,77 @@ function KingLoginPanel({ onBack, onSuccess }) {
     }
   };
 
+  const verifyOwnerCode = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setNotice("");
+    try {
+      const code = verifyCode.replace(/\s/g, "");
+      if (!/^\d{6}$/.test(code)) throw new Error("Enter the six-digit code from your authenticator app.");
+      if (!factorId) throw new Error("The authenticator session expired. Sign in again to restart setup.");
+      const { error: verifyError } = await supabase.auth.mfa.challengeAndVerify({ factorId, code });
+      if (verifyError) throw verifyError;
+      const { data: assurance, error: assuranceError } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance?.currentLevel !== "aal2") {
+        throw new Error("The second factor was not confirmed. No owner access has been granted.");
+      }
+      setNoticeType("success");
+      setNotice("Two-factor verification complete. Opening the private control panel…");
+      onSuccess();
+    } catch (error) {
+      setNoticeType("error");
+      setNotice(error.message || "The authenticator code could not be verified.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const leaveKingLogin = async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      const { data: profile } = await supabase.from("profiles").select("platform_role").eq("id", data.user.id).maybeSingle();
+      if (profile?.platform_role === "owner") await supabase.auth.signOut();
+    }
+    onBack();
+  };
+
   return (
     <main className="account-shell">
-      <section className="account-card">
-        <button className="account-back" type="button" onClick={onBack}><ArrowRight size={14} /> Back to website</button>
+      <section className="account-card king-mfa-card">
+        <button className="account-back" type="button" onClick={leaveKingLogin}><ArrowRight size={14} /> Back to website</button>
         <div className="section-kicker">COMPANY-001 / RESTRICTED ACCESS</div>
         <h1>King Login.</h1>
-        <p className="account-lead">Private platform-owner sign in. Only an account already assigned the owner role in Supabase can enter the control panel.</p>
-        <form className="account-form" onSubmit={authenticateOwner}>
-          <label>OWNER EMAIL<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="username" placeholder="Your owner email" /></label>
-          <label>PASSWORD<input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" placeholder="Your account password" /></label>
-          <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Verifying owner…" : "Sign in to control panel"} <ShieldCheck size={15} /></button>
-        </form>
+        <p className="account-lead">Private platform-owner sign in. Owner access requires your password and a verified authenticator code.</p>
+        {step === "credentials" ? (
+          <form className="account-form" onSubmit={authenticateOwner}>
+            <label>OWNER EMAIL<input type="email" value={email} onChange={event => setEmail(event.target.value)} required autoComplete="username" placeholder="Your owner email" /></label>
+            <label>PASSWORD<input type="password" value={password} onChange={event => setPassword(event.target.value)} required autoComplete="current-password" placeholder="Your account password" /></label>
+            <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Verifying owner…" : "Continue to secure verification"} <ShieldCheck size={15} /></button>
+          </form>
+        ) : (
+          <form className="account-form king-mfa-form" onSubmit={verifyOwnerCode}>
+            {step === "enroll" ? (
+              <div className="king-mfa-setup">
+                <h2>Set up your authenticator</h2>
+                <p>Scan this QR code with an authenticator app. If scanning is unavailable, enter the setup key manually.</p>
+                <img className="king-mfa-qr" src={"data:image/svg+xml;charset=utf-8," + encodeURIComponent(qrCode)} alt="Authenticator setup QR code" />
+                <span className="king-mfa-secret-label">MANUAL SETUP KEY</span>
+                <code className="king-mfa-secret">{totpSecret}</code>
+                <p className="king-mfa-warning">Keep this setup key private. Company-001 does not store a copy of it in your profile.</p>
+              </div>
+            ) : (
+              <div className="king-mfa-setup">
+                <h2>Two-factor verification</h2>
+                <p>Enter the current six-digit code from your authenticator app to open the owner control panel.</p>
+              </div>
+            )}
+            <label>AUTHENTICATOR CODE<input type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={verifyCode} onChange={event => setVerifyCode(event.target.value.replace(/\D/g, "").slice(0, 6))} required placeholder="000000" /></label>
+            <button className="button button-primary full-width" disabled={busy || verifyCode.length !== 6} type="submit">{busy ? "Verifying…" : step === "enroll" ? "Verify & enable MFA" : "Verify & open King Control Room"} <ShieldCheck size={15} /></button>
+          </form>
+        )}
         {notice ? <p className={noticeType === "success" ? "account-notice" : "owner-alert"} role="status">{notice}</p> : null}
-        <p className="account-footnote">Owner access is verified against your Supabase profile. This page does not create owner accounts or store passwords.</p>
+        <p className="account-footnote">Your owner role is checked in Supabase. A password-only session cannot access protected owner data.</p>
       </section>
     </main>
   );
@@ -484,22 +769,52 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   const [displayName, setDisplayName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [organizerCategory, setOrganizerCategory] = useState("esports");
+  const [setupOpen, setSetupOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
   const [ownerSessionBlocked, setOwnerSessionBlocked] = useState(false);
+  const [organizerWorkspace, setOrganizerWorkspace] = useState(null);
   const [application, setApplication] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState(() => {
+    try {
+      if (window.sessionStorage.getItem("company001:google-owner-blocked") === "1") {
+        window.sessionStorage.removeItem("company001:google-owner-blocked");
+        return "Google sign-in is for organiser accounts only. Use King Login for the platform-owner account.";
+      }
+    } catch { /* Optional one-time notice. */ }
+    return "";
+  });
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
+  const [deleteReauthenticated, setDeleteReauthenticated] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [accountCurrentPassword, setAccountCurrentPassword] = useState("");
   const [accountNewPassword, setAccountNewPassword] = useState("");
   const [accountConfirmPassword, setAccountConfirmPassword] = useState("");
   const [changingAccountPassword, setChangingAccountPassword] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState("menu");
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const closeMenuOnOutsidePress = (event) => {
+      if (!profileMenuRef.current?.contains(event.target)) setSettingsOpen(false);
+    };
+    const closeMenuOnEscape = (event) => {
+      if (event.key === "Escape") setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", closeMenuOnOutsidePress);
+    window.addEventListener("keydown", closeMenuOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeMenuOnOutsidePress);
+      window.removeEventListener("keydown", closeMenuOnEscape);
+    };
+  }, [settingsOpen]);
 
   useEffect(() => {
     let active = true;
@@ -524,6 +839,12 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
         setNotice("This Gmail belongs to King Login. Normal User access is disabled for this account.");
         return;
       }
+      if (profile?.platform_role && profile.platform_role !== "organizer") {
+        await supabase.auth.signOut();
+        setUser(null);
+        setNotice("This account does not have organizer access. Please contact platform support.");
+        return;
+      }
       setOwnerSessionBlocked(false);
       setUser(nextUser);
     };
@@ -541,10 +862,28 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   }, []);
 
   useEffect(() => {
-    if (!user) { setApplication(null); return; }
+    if (!user?.id) return;
+    try {
+      if (window.sessionStorage.getItem("company001:delete-reauth") === user.id) {
+        window.sessionStorage.removeItem("company001:delete-reauth");
+        setDeleteOpen(true);
+        setDeleteReauthenticated(true);
+        setNotice("Google sign-in refreshed. Confirm your email and type DELETE to continue.");
+      } else if (window.sessionStorage.getItem("company001:password-reauth") === user.id) {
+        window.sessionStorage.removeItem("company001:password-reauth");
+        setSettingsSection("security");
+        setNotice("Google sign-in refreshed. Re-enter your new password and try again.");
+      }
+    } catch { /* Optional session flag. */ }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) { setApplication(null); setOrganizerWorkspace(null); return; }
+    supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle()
+      .then(({ data, error }) => { if (!error) setOrganizerWorkspace(data || null); });
     supabase.from("profiles").upsert({
       id: user.id,
-      display_name: user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer",
+      display_name: user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer",
       platform_role: "organizer",
     }, { onConflict: "id", ignoreDuplicates: true }).then(({ error }) => {
       if (error) setNotice("Your account is signed in, but profile setup needs attention. Please contact support.");
@@ -553,6 +892,24 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
       .then(({ data, error }) => { if (!error) setApplication(data); });
   }, [user]);
+
+  const signInWithGoogle = async () => {
+    setBusy(true);
+    setNotice("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      setNotice(error.message || "Could not start Google sign-in.");
+      setBusy(false);
+    }
+  };
 
   const authenticate = async (event) => {
     event.preventDefault();
@@ -604,15 +961,36 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           .from("organizers").select("id").eq("owner_user_id", data.user.id).maybeSingle();
         if (organizerError) throw organizerError;
         if (organizer) {
-          setNotice("Signed in. Opening your organiser dashboard…");
-          onOpenWorkspace();
+          setNotice("Signed in successfully. Your profile is ready.");
         } else {
-          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your dashboard.");
+          setNotice("Signed in successfully. Complete your organiser workspace setup below to access your websites.");
         }
       }
     } catch (error) {
       setNotice(error.message || "Could not complete account action.");
     } finally { setBusy(false); }
+  };
+
+  const refreshOrganizerWorkspace = async () => {
+    if (!user?.id) return;
+    setBusy(true);
+    setNotice("");
+    try {
+      const [{ data: workspace, error: workspaceError }, { data: latestApplication, error: applicationError }] = await Promise.all([
+        supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle(),
+        supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
+          .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (workspaceError) throw workspaceError;
+      if (applicationError) throw applicationError;
+      setOrganizerWorkspace(workspace || null);
+      setApplication(latestApplication || null);
+      setNotice(workspace ? "Workspace is ready. Open My Sites to continue." : "Your workspace is still being activated. Please check again shortly.");
+    } catch (error) {
+      setNotice(error.message || "Could not refresh your workspace status.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const submitApplication = async (event) => {
@@ -630,7 +1008,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (error) throw error;
       setApplication(data);
       setNotice("Workspace activated. Opening your template editor…");
-      if (data.status === "approved") onOpenWorkspace();
+      if (data.status === "approved") await onOpenWorkspace(user);
     } catch (error) {
       setNotice(error.message || "Could not submit the organiser application.");
     } finally { setBusy(false); }
@@ -645,13 +1023,23 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setNotice("Enter the email address for the signed-in account exactly.");
       return;
     }
+    const hasPasswordIdentity = Boolean(
+      user.identities?.some(identity => identity.provider === "email") ||
+      user.app_metadata?.providers?.includes("email")
+    );
+    if (!hasPasswordIdentity && !deleteReauthenticated) {
+      setNotice("Reconfirm with Google before deleting your account.");
+      return;
+    }
     setDeletingAccount(true);
     try {
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: deletePassword,
-      });
-      if (reauthError) throw new Error("Password verification failed. Check your password and try again.");
+      if (hasPasswordIdentity) {
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: deletePassword,
+        });
+        if (reauthError) throw new Error("Password verification failed. Check your password and try again.");
+      }
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       if (!sessionData.session) throw new Error("Your session expired. Sign in again and retry.");
@@ -674,6 +1062,9 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setDeleteOpen(false);
       setDeleteEmail("");
       setDeleteConfirmation("");
+      setDeleteReauthenticated(false);
+      setSettingsOpen(false);
+      setSettingsSection("menu");
       setNotice("Your account and linked organiser data have been deleted.");
     } catch (error) {
       setNotice(error.message || "Could not delete your account. Please contact support before retrying.");
@@ -698,7 +1089,11 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       setNotice("The new password and confirmation do not match.");
       return;
     }
-    if (accountNewPassword === accountCurrentPassword) {
+    const hasPasswordIdentity = Boolean(
+      user.identities?.some(identity => identity.provider === "email") ||
+      user.app_metadata?.providers?.includes("email")
+    );
+    if (hasPasswordIdentity && accountNewPassword === accountCurrentPassword) {
       setNotice("Choose a new password that differs from your current password.");
       return;
     }
@@ -709,17 +1104,31 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
       if (sessionData.session?.user?.id !== user.id) {
         throw new Error("Your sign-in session changed. Please sign in again and retry.");
       }
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: user.email,
-        password: accountCurrentPassword,
-      });
-      if (reauthError) throw new Error("Current password is incorrect. Your password was not changed.");
-      const { error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
-      if (updateError) throw updateError;
+      if (hasPasswordIdentity) {
+        window.sessionStorage.setItem("company001:password-update-reauth", user.id);
+        const { error: reauthError } = await supabase.auth.signInWithPassword({
+          email: user.email,
+          password: accountCurrentPassword,
+        });
+        if (reauthError) {
+          window.sessionStorage.removeItem("company001:password-update-reauth");
+          throw new Error("Current password is incorrect. Your password was not changed.");
+        }
+      }
+      const { data: updatedUser, error: updateError } = await supabase.auth.updateUser({ password: accountNewPassword });
+      if (updateError) {
+        if (/reauth|recent login|reauthentication/i.test(updateError.message || "")) {
+          throw new Error("For security, sign in again with your connected provider, then return to Settings and retry.");
+        }
+        throw updateError;
+      }
+      if (updatedUser?.user) setUser(updatedUser.user);
       setAccountCurrentPassword("");
       setAccountNewPassword("");
       setAccountConfirmPassword("");
-      setNotice("Your account password has been changed successfully.");
+      setNotice(hasPasswordIdentity
+        ? "Your account password has been changed successfully."
+        : "Password created successfully. You can now also sign in with your email and this password.");
     } catch (error) {
       setNotice(error.message || "Could not change your password. Please try again.");
     } finally {
@@ -727,9 +1136,58 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
     }
   };
 
+  const reauthenticateGoogleForPassword = async () => {
+    setNotice("");
+    try {
+      window.sessionStorage.setItem("company001:password-reauth", user.id);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google&account_action=password",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      try { window.sessionStorage.removeItem("company001:password-reauth"); } catch { /* Optional session flag. */ }
+      setNotice(error.message || "Could not restart Google sign-in. Please try again.");
+    }
+  };
+
+  const reauthenticateGoogleForDeletion = async () => {
+    setDeleteReauthenticated(false);
+    setNotice("");
+    try {
+      window.sessionStorage.setItem("company001:delete-reauth", user.id);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin + "/?auth_flow=organizer_google&account_action=delete",
+          queryParams: { prompt: "select_account" },
+        },
+      });
+      if (error) throw error;
+    } catch (error) {
+      try { window.sessionStorage.removeItem("company001:delete-reauth"); } catch { /* Optional session flag. */ }
+      setNotice(error.message || "Could not restart Google sign-in. Please try again.");
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null); setApplication(null); setNotice("Signed out.");
+    setUser(null);
+    setApplication(null);
+    setSettingsOpen(false);
+    setSettingsSection("menu");
+    setDeleteOpen(false);
+    setDeleteReauthenticated(false);
+    setDeleteEmail("");
+    setDeleteConfirmation("");
+    setDeletePassword("");
+    setAccountCurrentPassword("");
+    setAccountNewPassword("");
+    setAccountConfirmPassword("");
+    setNotice("Signed out.");
   };
 
   if (ownerSessionBlocked) {
@@ -750,13 +1208,15 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
   return (
     <main className="account-shell">
       <section className="account-card">
-        <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button>
-        <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div>
-        <h1>{user ? "Your profile & workspace." : mode === "signup" ? "Start your arena." : "Welcome back."}</h1>
-        <p className="account-lead">{user ? "Your account details, workspace status, and template shortcuts are all in one place." : "Create an account, set up your organiser workspace, and prepare registration pages for your kind of event."}</p>
+        {!user ? <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button> : null}
+        {!user ? <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div> : null}
+        {!user ? <h1>{mode === "signup" ? "Start your arena." : "Welcome back."}</h1> : null}
+        {!user ? <p className="account-lead">Create an account, set up your organiser workspace, and prepare registration pages for your kind of event.</p> : null}
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
+            <button className="account-google-button" type="button" onClick={signInWithGoogle} disabled={busy}><span className="account-google-mark" aria-hidden="true">G</span><span>{busy ? "Connecting…" : "Continue with Google"}</span></button>
+            <div className="account-auth-divider"><span>OR USE EMAIL</span></div>
             <form className="account-form" onSubmit={authenticate}>
               {mode === "signup" ? <label>YOUR DISPLAY NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How organisers see your name" /></label> : null}
               <label>EMAIL ADDRESS<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
@@ -766,79 +1226,120 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
           </>
         ) : (
           <div className="account-signed-in">
-            <section className="profile-overview" aria-label="Account overview">
-              <div className="profile-overview-top">
-                <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>
+            <section ref={profileMenuRef} className="profile-overview" aria-label="Your profile" style={{ position: "relative" }}>
+              <button
+                type="button"
+                className="menu-button"
+                aria-label={settingsOpen ? "Close profile menu" : "Open profile menu"}
+                aria-expanded={settingsOpen}
+                aria-haspopup="menu"
+                onClick={() => setSettingsOpen(value => !value)}
+                style={{ position: "absolute", top: 14, right: 14, zIndex: 3 }}
+              >
+                {settingsOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+              <div className="profile-overview-top" style={{ paddingRight: 48 }}>
+                {getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)
+                  ? <img className="profile-avatar-large" src={getSafeHttpsImageUrl(user.user_metadata?.avatar_url || user.user_metadata?.picture)} alt="Profile" />
+                  : <span className="profile-avatar-large">{(user.user_metadata?.display_name || user.email || "O").slice(0, 1).toUpperCase()}</span>}
                 <div className="profile-overview-identity">
-                  <span className="panel-label">YOUR ACCOUNT</span>
-                  <strong>{user.user_metadata?.display_name || user.email?.split("@")[0] || "Organizer"}</strong>
+                  <strong>{user.user_metadata?.display_name || user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Organizer"}</strong>
                   <small>{user.email}</small>
                 </div>
-                <span className="profile-live-pill"><span /> SIGNED IN</span>
               </div>
-              <div className="profile-overview-meta">
-                <div><small>ACCOUNT TYPE</small><strong>Organiser</strong></div>
-                <div><small>MEMBER SINCE</small><strong>{user.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "Recently"}</strong></div>
-                <div><small>SESSION</small><strong>Saved on this device</strong></div>
+              <div className="profile-overview-actions" style={{ marginTop: 24 }}>
+                {organizerWorkspace
+                  ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
+                  : application && application.status !== "rejected"
+                    ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
+                    : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
               </div>
-              <div className="profile-overview-actions">
-                <button className="button button-secondary" onClick={onBack}>Browse templates <ArrowRight size={14} /></button>
-                <button className="profile-signout" onClick={signOut}>Sign out</button>
-              </div>
-            </section>
-            <section className="account-password-zone" aria-labelledby="account-password-title">
-              <div className="account-delete-heading">
-                <div>
-                  <span className="panel-label">ACCOUNT SETTINGS / SECURITY</span>
-                  <h3 id="account-password-title">Change password</h3>
-                  <p>Update the password you use to sign in. Your events, workspace, and registrations will not be affected.</p>
+              {settingsOpen ? (
+                <div className="profile-settings-menu" role="menu" style={{
+                  position: "absolute", top: 58, right: 14, zIndex: 5, minWidth: 190,
+                  padding: 8, borderRadius: 14, background: "var(--panel, #171717)",
+                  border: "1px solid rgba(255,255,255,.14)", boxShadow: "0 16px 40px rgba(0,0,0,.35)"
+                }}>
+                  <button type="button" className="profile-settings-item" role="menuitem" onClick={() => { setSettingsOpen(false); setSettingsSection("security"); }}
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
+                    <Settings size={16} /> Settings
+                  </button>
+                  <button type="button" className="profile-settings-item" role="menuitem" onClick={signOut}
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "12px", border: 0, borderRadius: 9, background: "transparent", color: "inherit", textAlign: "left" }}>
+                    <LogOut size={16} /> Sign out
+                  </button>
                 </div>
-                <span className="account-password-icon"><KeyRound size={20}/></span>
-              </div>
-              <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
-                <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
-                <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
-                <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
-                <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password you do not use on other websites.</p>
-                <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating password…" : "Change password"} <KeyRound size={14}/></button>
-              </form>
-            </section>
-            <section className="account-delete-zone" aria-labelledby="account-delete-title">
-              <div className="account-delete-heading">
-                <div>
-                  <span className="panel-label">ACCOUNT SETTINGS</span>
-                  <h3 id="account-delete-title">Delete account</h3>
-                  <p>This permanently removes your organiser workspace, events, registrations, and linked payment-evidence files. This action cannot be undone.</p>
-                </div>
-                {!deleteOpen ? <button type="button" className="account-delete-trigger" onClick={() => { setDeleteOpen(true); setNotice(""); }}>Delete my account</button> : null}
-              </div>
-              {deleteOpen ? (
-                <form className="account-delete-form" onSubmit={deleteAccount}>
-                  <p className="account-delete-warning">For your protection, enter your current password, confirm your account email, and type DELETE.</p>
-                  <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
-                  <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
-                  <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
-                  <div className="account-delete-actions">
-                    <button className="button button-danger" type="submit" disabled={deletingAccount}>{deletingAccount ? "Deleting account…" : "Permanently delete account"}</button>
-                    <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); }}>Cancel</button>
-                  </div>
-                </form>
               ) : null}
             </section>
-            {application ? (
-              <div className="application-status"><span className="panel-label">ORGANISER WORKSPACE</span><strong>{application.business_name}</strong><span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace("_"," ").toUpperCase()}</span><p>{application.status === "approved" ? "Your organiser workspace is active. You can start creating event drafts now." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>{application.status === "approved" ? <button className="button button-primary full-width" onClick={onOpenWorkspace}>Open organiser workspace <ArrowRight size={15}/></button> : <button className="button button-secondary full-width" onClick={onBack}>Browse public templates <ArrowRight size={15}/></button>}</div>
-            ) : (
-              <form className="account-form" onSubmit={submitApplication}>
+            {application && !organizerWorkspace && !(setupOpen && application.status === "rejected") ? (
+              <section className="application-status" aria-label="Organiser setup status">
+                <span className="panel-label">ORGANISER SETUP</span>
+                <strong>{application.business_name}</strong>
+                <span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace(/_/g, " ").toUpperCase()}</span>
+                <p>{application.status === "approved" ? "Your organiser workspace is active." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>
+              </section>
+            ) : setupOpen && !organizerWorkspace && (!application || application.status === "rejected") ? (
+              <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
-                <div className="account-template-note"><Globe2 size={17} /><span><strong>Multi-category organiser access</strong><small>Choose your main category. Your workspace activates immediately, so you can pick a template and start editing.</small></span></div>
-                <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Submitting…" : "Create organiser workspace"} <ArrowRight size={16} /></button>
+                <div className="account-delete-actions">
+                  <button className="button button-primary" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
+                  <button className="button button-secondary" type="button" disabled={busy} onClick={() => setSetupOpen(false)}>Cancel</button>
+                </div>
               </form>
-            )}
+            ) : null}
+            {settingsSection === "security" ? (
+              <section className="account-password-zone" aria-labelledby="account-password-title">
+                <div className="account-delete-heading">
+                  <div><span className="panel-label">SETTINGS</span><h3 id="account-password-title">Account security</h3><p>Manage your sign-in details and account access.</p></div>
+                  <button type="button" className="button button-secondary" onClick={() => setSettingsSection("menu")}>Close</button>
+                </div>
+                <form className="account-password-form" onSubmit={changeAccountPassword} autoComplete="off">
+                  <h4>Change password</h4>
+                  {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
+                    <label>CURRENT PASSWORD<input type="password" value={accountCurrentPassword} onChange={event => setAccountCurrentPassword(event.target.value)} autoComplete="current-password" required /></label>
+                  ) : (
+                    <div className="account-password-help">
+                      <p>You signed in with Google. Create an email password here; your Google sign-in will continue to work.</p>
+                      <button className="button button-secondary" type="button" onClick={reauthenticateGoogleForPassword}>Reconfirm with Google</button>
+                    </div>
+                  )}
+                  <label>NEW PASSWORD<input type="password" value={accountNewPassword} onChange={event => setAccountNewPassword(event.target.value)} autoComplete="new-password" minLength={12} required aria-describedby="account-password-help" /></label>
+                  <label>CONFIRM NEW PASSWORD<input type="password" value={accountConfirmPassword} onChange={event => setAccountConfirmPassword(event.target.value)} autoComplete="new-password" minLength={12} required /></label>
+                  <p id="account-password-help" className="account-password-help">Use at least 12 characters and choose a unique password.</p>
+                  <button className="button button-primary" type="submit" disabled={changingAccountPassword}>{changingAccountPassword ? "Updating…" : user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? "Update password" : "Create password"} <KeyRound size={14}/></button>
+                </form>
+                <div className="account-delete-zone" aria-labelledby="account-delete-title">
+                  <div className="account-delete-heading">
+                    <div><h3 id="account-delete-title">Delete account</h3><p>Permanently removes your organiser workspace and its linked data. This cannot be undone.</p></div>
+                    {!deleteOpen ? <button type="button" className="account-delete-trigger" onClick={() => { setDeleteOpen(true); setNotice(""); }}>Delete account</button> : null}
+                  </div>
+                  {deleteOpen ? (
+                    <form className="account-delete-form" onSubmit={deleteAccount}>
+                      <p className="account-delete-warning">{user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? "Confirm your account email, current password, and type DELETE." : "Reconfirm with Google, confirm your account email, and type DELETE."}</p>
+                      <label>ACCOUNT EMAIL<input type="email" value={deleteEmail} onChange={event => setDeleteEmail(event.target.value)} autoComplete="email" required /></label>
+                      {user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email") ? (
+                        <label>CURRENT PASSWORD<input type="password" value={deletePassword} onChange={event => setDeletePassword(event.target.value)} autoComplete="current-password" required /></label>
+                      ) : (
+                        <div className="account-password-help">
+                          <p>Google accounts must reconfirm with Google before deletion. Your account will not be removed during sign-in.</p>
+                          <button className="button button-secondary" type="button" onClick={reauthenticateGoogleForDeletion}>Reconfirm with Google</button>
+                        </div>
+                      )}
+                      <label>TYPE DELETE TO CONFIRM<input value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} autoComplete="off" required /></label>
+                      <div className="account-delete-actions">
+                        <button className="button button-danger" type="submit" disabled={deletingAccount || !(user.identities?.some(identity => identity.provider === "email") || user.app_metadata?.providers?.includes("email")) && !deleteReauthenticated}>{deletingAccount ? "Deleting…" : "Permanently delete account"}</button>
+                        <button className="button button-secondary" type="button" disabled={deletingAccount} onClick={() => { setDeleteOpen(false); setDeleteEmail(""); setDeleteConfirmation(""); setDeletePassword(""); setDeleteReauthenticated(false); }}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : null}
+                </div>
+              </section>
+            ) : null}
           </div>
         )}
         {notice ? <p className="account-notice" role="status">{notice}</p> : null}
-        <p className="account-footnote">Never share your password or payment credentials. Live events still require owner publication review.</p>
+        {!user ? <p className="account-footnote">Never share your password or payment credentials. Live events still require owner publication review.</p> : null}
       </section>
     </main>
   );
