@@ -311,3 +311,6 @@
  .sites-detail-link-row{align-items:stretch;flex-direction:column}
  .sites-detail-link-row .button{justify-content:center}
 }
+
+.sites-profile-avatar{display:grid;place-items:center;width:34px;height:34px;margin-left:auto;border:1px solid #6c5721;border-radius:50%;background:linear-gradient(145deg,#f1d56b,#a77d12);color:#17130a;font-size:13px;font-weight:900}
+.sites-topbar-simple>div:first-child{flex:1}
