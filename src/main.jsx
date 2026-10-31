@@ -965,6 +965,28 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
     } finally { setBusy(false); }
   };
 
+  const refreshOrganizerWorkspace = async () => {
+    if (!user?.id) return;
+    setBusy(true);
+    setNotice("");
+    try {
+      const [{ data: workspace, error: workspaceError }, { data: latestApplication, error: applicationError }] = await Promise.all([
+        supabase.from("organizers").select("id,display_name,slug,status").eq("owner_user_id", user.id).maybeSingle(),
+        supabase.from("organizer_applications").select("id,business_name,status,decision_note,created_at")
+          .eq("applicant_user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (workspaceError) throw workspaceError;
+      if (applicationError) throw applicationError;
+      setOrganizerWorkspace(workspace || null);
+      setApplication(latestApplication || null);
+      setNotice(workspace ? "Workspace is ready. Open My Sites to continue." : "Your workspace is still being activated. Please check again shortly.");
+    } catch (error) {
+      setNotice(error.message || "Could not refresh your workspace status.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const submitApplication = async (event) => {
     event.preventDefault();
     if (!user) return;
@@ -1218,7 +1240,9 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
               <div className="profile-overview-actions" style={{ marginTop: 24 }}>
                 {organizerWorkspace
                   ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
-                  : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
+                  : application && application.status !== "rejected"
+                    ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
+                    : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
@@ -1244,7 +1268,7 @@ function AccountPanel({ onBack, onOpenWorkspace, onOpenKingLogin }) {
                 <span className={"status-chip " + (application.status === "approved" ? "approved" : "pending")}><span />{application.status === "approved" ? "ACTIVE" : application.status.replace(/_/g, " ").toUpperCase()}</span>
                 <p>{application.status === "approved" ? "Your organiser workspace is active." : application.status === "rejected" ? (application.decision_note || "Please contact support for the next steps.") : "Your workspace is being activated. Please refresh in a moment if it does not open."}</p>
               </section>
-            ) : setupOpen && !organizerWorkspace ? (
+            ) : setupOpen && !organizerWorkspace && (!application || application.status === "rejected") ? (
               <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
                 <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
                 <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
