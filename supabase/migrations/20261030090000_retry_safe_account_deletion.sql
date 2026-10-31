@@ -22,7 +22,7 @@ declare
   v_event_ids uuid[];
   v_registration_ids uuid[];
 begin
-  if auth.role() <> 'service_role' then
+  if auth.role() is distinct from 'service_role' then
     raise exception 'service role required' using errcode = '42501';
   end if;
   if p_user_id is null then
@@ -143,7 +143,7 @@ security definer
 set search_path = pg_catalog, private, auth
 as $$
 begin
-  if auth.role() <> 'service_role' then
+  if auth.role() is distinct from 'service_role' then
     raise exception 'service role required' using errcode = '42501';
   end if;
   -- Remove the temporary user-linked job record once every Storage path
