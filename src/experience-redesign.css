@@ -107,3 +107,22 @@
 @media(max-width:760px){.dashboard-signature{grid-template-columns:1fr!important;gap:0!important;padding:22px!important}.dashboard-stage{min-height:300px!important;margin-top:4px}.dashboard-stage-core{width:210px!important;height:205px!important}.dashboard-symbol-cross{font-size:76px!important}.dashboard-stat-ribbon{grid-template-columns:repeat(2,minmax(0,1fr))!important}.dashboard-stat-heading,.dashboard-stat{padding:15px!important}.workspace-heading{align-items:flex-start!important}.workspace-heading-actions{display:flex;flex-wrap:wrap;gap:7px}.workspace-heading-actions .button{flex:1;min-width:100px}.workspace-tabs{position:sticky;top:0;z-index:30;overflow-x:auto;scrollbar-width:none}.workspace-tabs::-webkit-scrollbar{display:none}}
 @media(max-width:520px){.dashboard-signature-copy h2{font-size:46px!important}.dashboard-stage{min-height:270px!important}.dashboard-stage-core{width:190px!important;height:180px!important}.dashboard-stage-bottom strong{font-size:23px!important}.dashboard-float-card{padding:8px!important;font-size:8px!important}.workspace-shell{padding:12px 10px 50px!important}.workspace-heading{padding:16px!important}.workspace-tabs button{padding:0 12px!important;font-size:9px!important}.dashboard-stat strong{font-size:27px!important}}
 @media(prefers-reduced-motion:reduce){.dashboard-stage-core,.dashboard-orbit,.dashboard-float-card{animation:none!important}}
+
+/* King Control Room: distinct command-console hierarchy, not a recoloured dashboard. */
+.owner-shell{background:radial-gradient(ellipse at 85% 0%,rgba(132,112,255,.12),transparent 35%),#080a10!important}
+.owner-wrap{max-width:1440px!important}
+.owner-heading{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.12)!important;border-radius:20px!important;background:radial-gradient(ellipse at 88% 0%,rgba(245,211,94,.13),transparent 42%),linear-gradient(120deg,#1b1d29,#11131c 70%,#1d1910)!important;box-shadow:0 22px 60px rgba(0,0,0,.32)!important}
+.owner-heading h1{font-size:clamp(34px,4vw,52px)!important;letter-spacing:-.06em!important}
+.owner-command-nav{padding:6px!important;border:1px solid rgba(255,255,255,.1)!important;border-radius:13px!important;background:#11141c!important}
+.owner-command-nav button{min-height:42px!important;border:1px solid transparent!important;border-radius:9px!important;background:transparent!important;color:#aeb0ba!important;transition:transform .2s,background .2s!important}
+.owner-command-nav button:hover{transform:translateY(-2px);background:rgba(255,255,255,.05)!important}
+.owner-command-nav button.active,.owner-command-nav button[aria-current=page]{border-color:rgba(245,211,94,.3)!important;background:rgba(245,211,94,.1)!important;color:#ffe69a!important}
+.owner-overview-intro,.owner-metric,.owner-app,.owner-security-card,.owner-card{border:1px solid rgba(255,255,255,.1)!important;border-radius:15px!important;background:linear-gradient(145deg,#191c26,#11131b)!important;box-shadow:0 14px 38px rgba(0,0,0,.2)!important}
+.owner-metric strong{color:#f5d35e!important;font-size:34px!important;letter-spacing:-.05em}
+.owner-section-head h2,.owner-module-heading h2{font-size:24px!important;letter-spacing:-.04em}
+.owner-app{transition:transform .22s,border-color .22s!important}.owner-app:hover{transform:translateY(-3px);border-color:rgba(245,211,94,.3)!important}
+.owner-table-wrap{border:1px solid rgba(255,255,255,.1)!important;border-radius:13px!important;background:#11141c!important}
+.owner-user-account{border:1px solid rgba(255,255,255,.09)!important;border-radius:12px!important;background:#11141c!important}
+.owner-user-search,.owner-user-admin-filters select,.owner-user-confirm input{min-height:43px!important;border:1px solid rgba(255,255,255,.14)!important;border-radius:9px!important;background:#0a0d13!important;color:#f6f3e8!important}
+.owner-security-card{padding:22px!important}
+@media(max-width:650px){.owner-shell{padding:12px!important}.owner-heading{padding:17px!important}.owner-command-nav{position:sticky;top:0;z-index:30;overflow-x:auto;scrollbar-width:none}.owner-command-nav::-webkit-scrollbar{display:none}.owner-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
