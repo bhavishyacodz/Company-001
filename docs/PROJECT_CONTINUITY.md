@@ -95,26 +95,30 @@ The live `main` branch still points to the legacy application shell, so the newe
 - URL: https://github.com/bhavishyacodz/Company-001/pull/83
 - Branch: `fix/post-login-dashboard-routing`
 - Base: `feat/full-site-black-gold-ux-refresh` (PR #79)
-- Latest verified head at this checkpoint: `9e5a114bdd40ae51c6766327a718bf1d70c9c241`
+- Latest verified head at this checkpoint: `f57ee7f7fb0852a5ce85638d605ab2f83f017891`
 - State: open, draft, not merged; stacked on PR #79 and therefore not independently deployable to production.
 - Fixes auth-state routing after login/session refresh; missing/failed profile-role lookups fail closed; organiser workspace is checked before rendering; last workspace tab is restored; stale async auth lookups cannot overwrite a newer session; King Control Room remains owner-only.
 - Root cause found during this session: the main `view === "account"` route passed a shortcut callback that marked the organiser workspace ready without verifying it; the other account route depended on parent `signedInUser` state that could still be stale immediately after password login. This combination could bounce users back to the account page or mount the wrong dashboard state.
 - Fix now routes both account entry points through one verified workspace handoff, passes the actual authenticated user from login/onboarding, waits for verification before clearing the login busy state, and rechecks both the profile role and organiser workspace.
+- The shared Supabase client refactor from PR #82 has now been incorporated into PR #83's stack: the app shell, organiser workspace, company home, organiser access panel, owner panel, audit log, and event review all use `src/services/supabase/client.js`. Release invariants enforce exactly one `createClient()` factory in `src/`.
 - Owner routing now checks Supabase MFA assurance and only opens the owner dashboard at AAL2. Template selection routes owners through King Login rather than directly opening the owner dashboard.
 - Keeps the yellow/gold dashboard UI supplied by PR #78/#79; it does not redesign the dashboard in this PR.
 - Adds `scripts/check-auth-routing.mjs` to the release test gate.
 - Latest GitHub Actions run for this head: `41193197868`. Release invariants, frontend build, bounded-body/account-deletion tests, and Edge Function type checks passed. Isolated local Supabase startup/migration/privacy integration was still running at last check.
-- Cloudflare Pages preview for earlier baseline head `3928da0`: successful at https://5c7985ab.company-001.pages.dev. Latest head `9e5a114` Pages preview was still building at last check; do not reuse the older preview as proof of the new handoff fix.
+- Cloudflare Pages preview for earlier baseline head `3928da0`: successful at https://5c7985ab.company-001.pages.dev. Latest head `f57ee7f` Pages preview was still building at last check; do not reuse the older preview as proof of the new handoff/client fix.
 - The separate `Workers Builds: company-001` check completed with failure on earlier PR previews and points to the distinct Cloudflare Workers service; Cloudflare Pages checks succeeded independently. Cloudflare docs describe Pages and Workers as separate Git integrations/checks. Branch-protection status could not be read with the connected GitHub permissions, so do not assume the Workers check is non-blocking.
+- PR #82 remains open/draft on its original main-based branch. Its shared-client changes now overlap with PR #83; do not merge #82 separately after the PR #83 stack has integrated those same changes. Keep #82 open until the stacked UI/auth release path is resolved, then close as superseded or reconcile explicitly.
 - No production code, production database, RLS/Storage policy, or participant data has been changed by PR #83.
 - No production code, production database, RLS/Storage policy, or participant data was changed.
 
 ## Immediate work queue (strict order)
 
-1. Re-check PR #82 head and all checks at the time of work. Inspect the failed Workers Builds check and confirm whether it is required; verify the successful Cloudflare Pages preview belongs to the exact current head.
-2. Review PR #82 diff and ensure the shared client is truly the only browser client factory. Do not merge until the required checks are green and preview is confirmed.
-3. Reconcile PR #81 with PR #82 and the older PR #74–#80 stack. Avoid merging conflicting branches.
-4. After PR #82 is integrated, create a dedicated authentication/routing fix PR:
+1. Finish and verify current PR #83 Actions run `41215213832` and Cloudflare Pages preview for exact head `f57ee7f`; run a manual login regression on the preview before release.
+2. Confirm one shared Supabase client invariant passes and local Supabase migration replay plus two-organiser privacy tests complete successfully.
+3. Reconcile the PR #74 → #78 → #79 → #83 stack. PR #83 now includes PR #82's shared-client refactor; avoid duplicate merges. Determine whether PR #82 should be closed as superseded only after the stack is safely integrated.
+4. Investigate the separate Workers Builds failure and check whether it is required. Branch-protection reads return 403 to the connected integration; do not assume the check is non-blocking.
+5. Reconcile PR #81 docs and older PR #75–#80 dependencies. Avoid merging conflicting branches.
+6. After the auth/UI stack is integrated, audit production RLS, Storage policies, Edge Function checks, and participant evidence access.
    - explicit auth state machine;
    - missing/failed role lookup becomes unknown, never organiser;
    - require verified organiser role plus active organiser workspace;
