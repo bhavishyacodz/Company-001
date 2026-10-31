@@ -11,7 +11,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: company-001-build
+  # Keep a pull-request build from cancelling the production-main build.
+  group: company-001-build-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
