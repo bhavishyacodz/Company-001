@@ -324,17 +324,16 @@ function App() {
     }
   };
 
-  const openOrganizerWorkspace = async (candidateUser = signedInUser) => {
+  const openOrganizerWorkspace = async (candidateUser = signedInUser, destination = "organizer") => {
     if (!candidateUser?.id) {
       setOrganizerWorkspaceReady(false);
       setView("account");
       return;
     }
-    // The app bootstrap has already verified this exact user and their organiser row.
-    // Reuse that verified result instead of repeating profile/workspace requests.
+    // Reuse the already verified workspace when the same session is active.
     if (candidateUser.id === signedInUser?.id && platformRole === "organizer" && organizerWorkspaceSummary?.id) {
       setOrganizerWorkspaceReady(true);
-      setView("organizer");
+      setView(destination);
       return;
     }
     const version = ++authResolutionRef.current;
@@ -350,23 +349,43 @@ function App() {
         setView("account");
         return;
       }
-      const { data: organizer, error: organizerError } = await supabase
-        .from("organizers").select("id").eq("owner_user_id", candidateUser.id).maybeSingle();
+
+      let { data: organizer, error: organizerError } = await supabase
+        .from("organizers").select("id,display_name,slug,status").eq("owner_user_id", candidateUser.id).maybeSingle();
       if (version !== authResolutionRef.current) return;
-      if (organizerError || !organizer) {
-        setPlatformRole("organizer");
-        setOrganizerWorkspaceReady(false);
-        setView("account");
-        return;
+      if (organizerError) throw organizerError;
+
+      // A creator's first explicit Create site action activates the internal ownership
+      // record automatically; it does not require an organisation application or review.
+      if (!organizer) {
+        const metadata = candidateUser.user_metadata || {};
+        const displayName = String(metadata.display_name || metadata.full_name || metadata.name || candidateUser.email?.split("@")[0] || "My Website").trim().slice(0, 120) || "My Website";
+        const { error: activationError } = await supabase.from("organizer_applications").insert({
+          applicant_user_id: candidateUser.id,
+          business_name: displayName,
+          category: "general",
+          contact_email: candidateUser.email || "",
+          notes: "Creator workspace activation",
+          status: "approved",
+        });
+        if (activationError) throw activationError;
+        const activated = await supabase.from("organizers")
+          .select("id,display_name,slug,status").eq("owner_user_id", candidateUser.id).maybeSingle();
+        if (activated.error) throw activated.error;
+        organizer = activated.data;
+        if (!organizer) throw new Error("Your creator workspace is still being prepared. Please try again.");
       }
+
+      setOrganizerWorkspaceSummary(organizer);
       setPlatformRole("organizer");
       setOrganizerWorkspaceReady(true);
-      setView("organizer");
-    } catch {
+      setView(destination);
+    } catch (error) {
       if (version !== authResolutionRef.current) return;
-      setPlatformRole("unknown");
+      setPlatformRole("organizer");
       setOrganizerWorkspaceReady(false);
       setView("account");
+      console.error("Could not open creator workspace:", error);
     } finally {
       if (version === authResolutionRef.current) setAuthResolving(false);
     }
@@ -408,7 +427,7 @@ function App() {
             <a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a>
           </> : ["site", "templates", "account", "owner", "king-login"].includes(view) ? <>
             <button className={view === "site" ? "nav-text active" : "nav-text"} onClick={() => { setView("site"); setMobileMenu(false); }}>Home</button>
-            <button className="nav-text" onClick={() => { setView(signedInUser ? "organizer" : "account"); setMobileMenu(false); }}>Create site</button>
+            <button className="nav-text" onClick={() => { if (signedInUser) void openOrganizerWorkspace(signedInUser, "customize"); else setView("account"); setMobileMenu(false); }}>Create site</button>
             <a href={view === "site" ? "#services" : "/#services"} onClick={() => { setView("site"); setMobileMenu(false); }}>Services</a>
             <a href={view === "site" ? "#process" : "/#process"} onClick={() => { setView("site"); setMobileMenu(false); }}>Process</a>
           </> : <>
@@ -426,7 +445,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <main className="public-templates-shell"><section className="public-templates-hero"><div className="section-kicker">COMPANY-001 / WEBSITE STUDIO</div><h1>Create your website.</h1><p>Sign in, open your editor, customise your site and save it as a private draft. No template catalogue to navigate.</p><button type="button" className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Create your site <ArrowRight size={15}/></button></section></main> : view === "site" ? (
+      {view === "account" ? <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("site")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <main className="public-templates-shell"><section className="public-templates-hero"><div className="section-kicker">COMPANY-001 / WEBSITE STUDIO</div><h1>Create your website.</h1><p>Sign in, open your editor, customise your site and save it as a private draft. No template catalogue to navigate.</p><button type="button" className="button button-primary" onClick={() => { if (signedInUser) void openOrganizerWorkspace(signedInUser, "customize"); else setView("account"); }}>Create your site <ArrowRight size={15}/></button></section></main> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -532,7 +551,7 @@ function App() {
           </section>
 
           <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Creator login <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => setView(signedInUser ? "organizer" : "account")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => { if (signedInUser) void openOrganizerWorkspace(signedInUser, "customize"); else setView("account"); }} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
@@ -1317,7 +1336,7 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
                     ? <button className="button button-primary" onClick={onOpenWorkspace}>My Sites <ArrowRight size={14} /></button>
                     : application && application.status !== "rejected"
                       ? <button className="button button-primary" onClick={refreshOrganizerWorkspace} disabled={busy}>{busy ? "Checking…" : "Refresh status"} <RefreshCw size={14} /></button>
-                      : <button className="button button-primary" onClick={() => setSetupOpen(true)}>Create Website <ArrowRight size={14} /></button>}
+                      : <button className="button button-primary" onClick={() => { void onOpenWorkspace(user, "customize"); }}>Create Website <ArrowRight size={14} /></button>}
               </div>
               {settingsOpen ? (
                 <div className="profile-settings-menu" role="menu" style={{
