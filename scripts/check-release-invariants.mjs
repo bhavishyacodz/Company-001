@@ -77,7 +77,12 @@ const checks = [
     name: "saved sessions restore account routing and template selection avoids login loops",
     run: () => {
       const account = read("src/main.jsx");
-      return account.includes('storage: window.localStorage')
+      const client = read("src/services/supabase/client.js");
+      return account.includes('import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./services/supabase/client.js"')
+        && client.includes("persistSession: true")
+        && client.includes("autoRefreshToken: true")
+        && client.includes("detectSessionInUrl: true")
+        && client.includes('storage: typeof window !== "undefined" ? window.localStorage : undefined')
         && account.includes('window.localStorage.getItem("company001:selected-template")')
         && account.includes('data.session?.user && !isLiveEventRoute')
         && account.includes('supabase.from("organizers").select("id").eq("owner_user_id", data.session.user.id)')
@@ -579,6 +584,23 @@ const checks = [
     run: () => {
       return !existsSync(join(process.cwd(), "src/OwnerRegistrations.jsx"))
         && !existsSync(join(process.cwd(), "src/OwnerPaymentEvidence.jsx"));
+    },
+  },
+  {
+    name: "all frontend features use one shared Supabase client",
+    run: () => {
+      const files = [
+        "src/main.jsx",
+        "src/OrganizerWorkspace.jsx",
+        "src/OwnerPanel.jsx",
+        "src/OrganizerAccessPanel.jsx",
+        "src/OwnerEventReview.jsx",
+        "src/OwnerAuditLog.jsx",
+      ];
+      const client = read("src/services/supabase/client.js");
+      return client.includes("createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY")
+        && files.every((path) => !read(path).includes('from "@supabase/supabase-js"'))
+        && files.every((path) => !read(path).includes("createClient("));
     },
   },
 
