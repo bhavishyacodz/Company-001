@@ -27,6 +27,7 @@ export default function PlanUsagePanel({ organizer, events, registrations, usage
   const evidenceCount = Math.max(0, Number(usage?.files) || 0);
   const storageLimit = Number(organizer?.storage_quota_bytes) || current.storage;
   const maxFile = Number(organizer?.max_screenshot_bytes) || current.maxFile;
+  const maxScreenshots = Number(organizer?.max_screenshots) || current.screenshots || 40;
   const maxForms = Number(organizer?.max_forms) || current.forms;
   const maxResponses = Number(organizer?.max_responses_per_form) || current.responses;
   const percent = Math.min(100, Math.round((usedBytes / Math.max(storageLimit, 1)) * 100));
@@ -75,7 +76,7 @@ export default function PlanUsagePanel({ organizer, events, registrations, usage
           <div className="plan-current-stats">
             <div><strong>{events.length} / {maxForms}</strong><span>Forms created</span></div>
             <div><strong>{registrations.length}</strong><span>Responses loaded</span></div>
-            <div><strong>{evidenceCount} / {current.screenshots ?? "—"}</strong><span>Payment screenshots</span></div>
+            <div><strong>{evidenceCount} / {maxScreenshots}</strong><span>Payment screenshots</span></div>
           </div>
         </div>
         <div className="plan-storage-card">
@@ -103,6 +104,7 @@ export default function PlanUsagePanel({ organizer, events, registrations, usage
             <ul>
               <li>{plan.forms} published form{plan.forms === 1 ? "" : "s"}</li>
               <li>{plan.responses.toLocaleString("en-IN")} responses per form</li>
+              <li>{plan.screenshots ? plan.screenshots.toLocaleString("en-IN") + " screenshots" : key === "starter" ? "200 screenshots" : "1,000 screenshots"}</li>
               <li>{mb(plan.storage)} MB screenshot storage</li>
               <li>{mb(plan.maxFile)} MB maximum per screenshot</li>
             </ul>
