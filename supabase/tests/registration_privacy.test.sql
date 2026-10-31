@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(37);
+select plan(39);
 
 -- Entirely synthetic fixture data. This suite runs only against the local Supabase
 -- Production-ledger-aligned migrations are replayed before this suite in CI.
@@ -165,7 +165,20 @@ select ok(
 
 -- Exercise account deletion against the two-organizer fixtures. This runs
 -- inside the isolated CI database and is rolled back at the end of the suite.
+-- The SECURITY DEFINER RPCs must fail closed when the JWT role is absent or not privileged.
 reset role;
+select set_config('request.jwt.claim.role', '', true);
+select throws_ok(
+  $select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$,
+  '42501', 'service role required',
+  'Deletion preparation rejects a missing JWT role claim'
+);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select throws_ok(
+  $select public.prepare_account_deletion('10000000-0000-4000-8000-000000000002'::uuid)$,
+  '42501', 'service role required',
+  'Deletion preparation rejects a non-service JWT role'
+);
 select set_config('request.jwt.claim.role', 'service_role', true);
 set local role service_role;
 select is(
