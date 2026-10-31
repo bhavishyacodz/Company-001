@@ -11,6 +11,7 @@ const checks = [
   ["organizer Google sign-in cannot enter the owner area", source.includes('auth_flow') && source.includes('company001:google-owner-blocked')],
   ["signed-out users cannot fall through to the legacy dashboard", !source.includes('authReady && !signedInUser && ["organizer", "registrations", "customize"].includes(view)')],
   ["template selection cannot bypass organiser role verification", source.includes('!signedInUser || platformRole !== "organizer"') && source.includes("setOrganizerWorkspaceReady(ready)") && source.includes("const openOrganizerWorkspace = async () =>") && source.includes('onOpenWorkspace={openOrganizerWorkspace}')],
+  ["login passes the authenticated user into workspace handoff", source.includes("const openOrganizerWorkspace = async (candidateUser = signedInUser) =>") && source.includes("onOpenWorkspace(data.user)") && source.includes("onOpenWorkspace(user)") && source.includes('.eq("id", candidateUser.id)') && source.includes('.eq("owner_user_id", candidateUser.id)')],
 ];
 
 let failed = false;
