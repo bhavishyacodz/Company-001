@@ -283,3 +283,24 @@ a{color:inherit}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Session/profile restoration appears before the main app shell, so it receives the same theme directly. */
+.workspace-shell .workspace-auth-restoring{
+  width:min(100%,560px)!important;min-height:260px;margin:clamp(36px,10vh,110px) auto!important;padding:34px!important;
+  display:flex;flex-direction:column;justify-content:center;gap:14px;text-align:left;
+  border:1px solid #e2e7f5!important;border-radius:30px!important;background:linear-gradient(145deg,#fffefa,#eef1ff)!important;
+  color:#28304e!important;box-shadow:0 18px 55px rgba(49,62,115,.09)!important;position:relative;overflow:hidden
+}
+.workspace-shell .workspace-auth-restoring:before{content:"001";display:grid;place-items:center;width:54px;height:54px;border-radius:18px;background:linear-gradient(145deg,#8294ee,#5e74d9);color:#fff;font-size:17px;font-weight:900;letter-spacing:-.06em;box-shadow:0 10px 22px rgba(99,121,223,.24)}
+.workspace-shell .workspace-auth-restoring:after{content:"";height:4px;width:100%;position:absolute;left:0;bottom:0;background:linear-gradient(90deg,#7186e8 0 38%,#e5eaff 38% 100%);animation:c001-loading-line 1.8s ease-in-out infinite}
+.workspace-shell .workspace-auth-restoring .section-kicker{font-size:10px;letter-spacing:.16em;color:#7784c1!important}
+.workspace-shell .workspace-auth-restoring h1{font-family:Inter,sans-serif!important;font-size:clamp(23px,5vw,32px)!important;line-height:1.12;letter-spacing:-.05em;color:#28304e!important;margin:2px 0}
+.workspace-shell .workspace-auth-restoring p{color:#7a829c!important;font-size:14px;line-height:1.7}
+.app.platform-ui .account-signed-in .profile-overview-actions button[aria-busy="true"]{
+  justify-content:center;min-height:48px;background:#eef1ff!important;color:#596dc8!important;border:1px solid #dfe5ff!important;
+  box-shadow:none!important;position:relative;padding-left:42px!important
+}
+.app.platform-ui .account-signed-in .profile-overview-actions button[aria-busy="true"]:before{
+  content:"";position:absolute;left:16px;width:15px;height:15px;border:2px solid #cbd4ff;border-top-color:#6379df;border-radius:50%;animation:c001-spinner .75s linear infinite
+}
+@keyframes c001-spinner{to{transform:rotate(360deg)}}
