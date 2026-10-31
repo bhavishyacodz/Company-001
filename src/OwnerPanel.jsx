@@ -4,8 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 import OwnerEventReview from "./OwnerEventReview.jsx";
 import OwnerAuditLog from "./OwnerAuditLog.jsx";
 import OrganizerAccessPanel from "./OrganizerAccessPanel.jsx";
-// Keep the King Control Room redesign above nested legacy component styles.
-import "./experience-redesign.css";
 import "./finance-ledger.css";
 
 const supabase = createClient(
