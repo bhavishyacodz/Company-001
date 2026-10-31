@@ -366,3 +366,24 @@ a{color:inherit}
 .app.platform-ui .workspace-reg-actions .button{min-height:40px}
 @media(max-width:760px){.app.platform-ui .workspace-response-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.app.platform-ui .workspace-response-head-actions{justify-content:flex-start}}
 @media(max-width:520px){.app.platform-ui .workspace-response-summary article{padding:12px}.app.platform-ui .workspace-response-summary article strong{font-size:22px}.app.platform-ui .workspace-registration-details dl{grid-template-columns:1fr}.app.platform-ui .workspace-reg-actions .button{flex:1 1 100%}}
+
+
+/* Dedicated participant profile: readable, calm and responsive. */
+.app.platform-ui .workspace-participant-profile{display:grid;gap:18px;padding:20px;background:#fff;border:1px solid #dce2ef;border-radius:20px;box-shadow:0 10px 30px rgba(45,58,105,.055)}
+.app.platform-ui .workspace-participant-profile-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding-bottom:14px;border-bottom:1px solid #e7eaf2}
+.app.platform-ui .workspace-participant-profile-head h3{margin:6px 0;color:#252f50;font-size:22px;line-height:1.25}
+.app.platform-ui .workspace-participant-profile-head p{margin:5px 0 0;color:#596580!important;font-size:13px;overflow-wrap:anywhere}
+.app.platform-ui .workspace-participant-profile-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.app.platform-ui .workspace-participant-profile-grid article{min-width:0;display:flex;flex-direction:column;gap:7px;padding:13px;background:#f5f7fd;border:1px solid #e0e5f1;border-radius:13px}
+.app.platform-ui .workspace-participant-profile-grid article span{font-size:10px;font-weight:800;color:#64708d!important;text-transform:uppercase;letter-spacing:.04em}
+.app.platform-ui .workspace-participant-profile-grid article strong{font-size:13px;line-height:1.4;color:#2d395b;overflow-wrap:anywhere}
+.app.platform-ui .workspace-participant-profile-section{display:grid;gap:12px}
+.app.platform-ui .workspace-participant-profile-section h4{margin:0;color:#2c3656;font-size:15px}
+.app.platform-ui .workspace-participant-profile-section dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0}
+.app.platform-ui .workspace-participant-profile-section dl>div{min-width:0;padding:12px;background:#fbfcff;border:1px solid #e5e9f2;border-radius:12px}
+.app.platform-ui .workspace-participant-profile-section dt{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#727d98}
+.app.platform-ui .workspace-participant-profile-section dd{margin:6px 0 0;color:#303b5c;font-size:13px;line-height:1.55;overflow-wrap:anywhere;white-space:pre-wrap}
+.app.platform-ui .workspace-participant-profile-actions{display:flex;gap:9px;flex-wrap:wrap;padding-top:14px;border-top:1px solid #e7eaf2}
+.app.platform-ui .workspace-open-participant{align-self:center;white-space:nowrap}
+@media(max-width:760px){.app.platform-ui .workspace-participant-profile-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.app.platform-ui .workspace-participant-profile-head{flex-direction:column;align-items:stretch}}
+@media(max-width:520px){.app.platform-ui .workspace-participant-profile{padding:14px}.app.platform-ui .workspace-participant-profile-section dl{grid-template-columns:1fr}.app.platform-ui .workspace-participant-profile-actions .button,.app.platform-ui .workspace-open-participant{width:100%;justify-content:center}}
