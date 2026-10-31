@@ -55,7 +55,7 @@ const getWhiteContrastRatio = (hex) => {
 };
 
 export default function OrganizerWorkspace({ user, initialView = "organizer", initialTemplateKey = "esports-001", onBack }) {
-  const [tab, setTab] = useState(initialView);
+  const [tab, setTab] = useState(() => { try { const saved = window.sessionStorage.getItem(`company001:workspace-tab:${user.id}`); return ["organizer","customize","registrations","payments","analytics","profile","security"].includes(saved) ? saved : initialView; } catch { return initialView; } });
   const [organizer, setOrganizer] = useState(null);
   const [events, setEvents] = useState([]);
   const [registrations, setRegistrations] = useState([]);
@@ -133,6 +133,7 @@ export default function OrganizerWorkspace({ user, initialView = "organizer", in
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [user.id]);
+  useEffect(() => { try { if (["organizer","customize","registrations","payments","analytics","profile","security"].includes(tab)) window.sessionStorage.setItem(`company001:workspace-tab:${user.id}`, tab); } catch { /* Tab restoration is optional. */ } }, [tab, user.id]);
   useEffect(() => {
     if (!error) return;
     const frame = window.requestAnimationFrame(() => {
