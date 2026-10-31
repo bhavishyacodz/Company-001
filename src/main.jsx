@@ -434,7 +434,7 @@ function App() {
             <a href="#overview" onClick={() => setMobileMenu(false)}>Event</a><a href="#format" onClick={() => setMobileMenu(false)}>Details</a><a href="#rules" onClick={() => setMobileMenu(false)}>How to join</a>
           </> : ["site", "templates", "account", "owner", "king-login"].includes(view) ? <>
             <button className={view === "site" ? "nav-text active" : "nav-text"} onClick={() => { setView("site"); setMobileMenu(false); }}>Home</button>
-            <button className={view === "templates" ? "nav-text active" : "nav-text"} onClick={() => { setView("templates"); setMobileMenu(false); }}>Templates</button>
+            <button className="nav-text" onClick={() => { setView(signedInUser ? "organizer" : "account"); setMobileMenu(false); }}>Create site</button>
             <a href={view === "site" ? "#services" : "/#services"} onClick={() => { setView("site"); setMobileMenu(false); }}>Services</a>
             <a href={view === "site" ? "#process" : "/#process"} onClick={() => { setView("site"); setMobileMenu(false); }}>Process</a>
           </> : <>
@@ -452,7 +452,7 @@ function App() {
         </div>
       </header>
 
-      {view === "account" ? <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <TemplateGallery onUseTemplate={handleUseTemplate} /> : view === "site" ? (
+      {view === "account" ? <AccountPanel initialUser={platformRole === "organizer" ? signedInUser : null} initialOrganizer={organizerWorkspaceSummary} onBack={() => setView("templates")} onOpenWorkspace={openOrganizerWorkspace} onOpenKingLogin={() => setView("king-login")} /> : view === "king-login" ? <KingLoginPanel onBack={() => setView("site")} onSuccess={() => setView("owner")} /> : view === "owner" ? <OwnerPanel onBack={() => setView("site")} /> : view === "templates" ? <main className="public-templates-shell"><section className="public-templates-hero"><div className="section-kicker">COMPANY-001 / WEBSITE STUDIO</div><h1>Create your website.</h1><p>Sign in, open your editor, customise your site and save it as a private draft. No template catalogue to navigate.</p><button type="button" className="button button-primary" onClick={() => setView(signedInUser ? "organizer" : "account")}>Create your site <ArrowRight size={15}/></button></section></main> : view === "site" ? (
         isLiveEventRoute ? <main>
           <section className="hero" id="overview" style={isLiveEventRoute && getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl) ? (() => { const imageUrl = getSafeHttpsImageUrl(eventData?.branding?.heroBackgroundUrl); const overlay = Math.max(0,Math.min(80,Number(eventData?.branding?.heroOverlay) || 0))/100; return { backgroundImage: `linear-gradient(rgba(10,11,18,${overlay}),rgba(10,11,18,${overlay})), url(${JSON.stringify(imageUrl)})`, backgroundSize: "cover", backgroundPosition: ["center center","center top","center bottom","left center","right center","left top","right top","left bottom","right bottom"].includes(eventData?.branding?.heroBackgroundPosition) ? eventData.branding.heroBackgroundPosition : "center center" }; })() : undefined}>
             <div className="hero-grid" />
@@ -557,8 +557,8 @@ function App() {
             </div>
           </section>
 
-          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Organiser login <ArrowRight size={14} /></button></footer>
-        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => setView("templates")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
+          <footer className="footer"><button className="brand footer-brand" onClick={() => setView("site")}><span className="brand-mark"><Swords size={17} /></span><span className="brand-word">ARENA<span className="brand-period">.</span><small>POWERED BY COMPANY-001</small></span></button><span>{isLiveEventRoute ? categoryPresentation.label : "Company-001 · Event templates"}</span><button className="footer-link" onClick={() => setView("account")}>Creator login <ArrowRight size={14} /></button></footer>
+        </main> : <CompanyHome onStart={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })} onTemplates={() => setView(signedInUser ? "organizer" : "account")} onOrganiser={() => setView(signedInUser ? "organizer" : "account")} />
       ) : (
         <main className="dashboard">
           <aside className="sidebar">
@@ -1091,9 +1091,9 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
       const { data, error } = await supabase.from("organizer_applications").insert({
         applicant_user_id: user.id,
         business_name: businessName.trim(),
-        category: organizerCategory,
+        category: "general",
         contact_email: user.email,
-        notes: "Requested event category: " + organizerCategory,
+        notes: "Creator workspace setup,
       }).select("id,business_name,status,decision_note,created_at").single();
       if (error) throw error;
       setApplication(data);
@@ -1298,20 +1298,20 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
   return (
     <main className="account-shell">
       <section className="account-card">
-        {!user ? <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Browse public templates</button> : null}
-        {!user ? <div className="section-kicker">COMPANY-001 / ORGANISER ACCESS</div> : null}
-        {!user ? <h1>{mode === "signup" ? "Start your arena." : "Welcome back."}</h1> : null}
-        {!user ? <p className="account-lead">Create an account, set up your organiser workspace, and prepare registration pages for your kind of event.</p> : null}
+        {!user ? <button className="account-back" onClick={onBack}><ArrowRight size={14} /> Back to website</button> : null}
+        {!user ? <div className="section-kicker">COMPANY-001 / CREATOR ACCESS</div> : null}
+        {!user ? <h1>{mode === "signup" ? "Create your website." : "Welcome back."}</h1> : null}
+        {!user ? <p className="account-lead">Create an account, open your website editor, and save your work as a private draft.</p> : null}
         {!user ? (
           <>
             <div className="account-tabs"><button className={mode === "signup" ? "active" : ""} onClick={() => { setMode("signup"); setNotice(""); }}>Create account</button><button className={mode === "signin" ? "active" : ""} onClick={() => { setMode("signin"); setNotice(""); }}>Sign in</button></div>
             <button className="account-google-button" type="button" onClick={signInWithGoogle} disabled={busy}><span className="account-google-mark" aria-hidden="true">G</span><span>{busy ? "Connecting…" : "Continue with Google"}</span></button>
             <div className="account-auth-divider"><span>OR USE EMAIL</span></div>
             <form className="account-form" onSubmit={authenticate}>
-              {mode === "signup" ? <label>YOUR DISPLAY NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How organisers see your name" /></label> : null}
+              {mode === "signup" ? <label>YOUR NAME<input value={displayName} onChange={e => setDisplayName(e.target.value)} minLength={2} maxLength={80} required placeholder="How your creator profile appears" /></label> : null}
               <label>EMAIL ADDRESS<input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="you@example.com" /></label>
               <label>PASSWORD<input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} autoComplete={mode === "signup" ? "new-password" : "current-password"} placeholder="At least 8 characters" /></label>
-              <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Please wait…" : mode === "signup" ? "Create organiser account" : "Sign in"} <ArrowRight size={16} /></button>
+              <button className="button button-primary full-width" disabled={busy} type="submit">{busy ? "Please wait…" : mode === "signup" ? "Create account" : "Sign in"} <ArrowRight size={16} /></button>
             </form>
           </>
         ) : (
@@ -1372,8 +1372,8 @@ function AccountPanel({ initialUser = null, initialOrganizer = null, onBack, onO
               </section>
             ) : setupOpen && !organizerWorkspace && (!application || application.status === "rejected") ? (
               <form id="organizer-setup" className="account-form" onSubmit={submitApplication}>
-                <label>ORGANISER / COMMUNITY NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
-                <label>WHAT KIND OF EVENTS DO YOU RUN?<select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
+                <label>YOUR NAME OR WEBSITE NAME<input value={businessName} onChange={e => setBusinessName(e.target.value)} required minLength={2} maxLength={120} placeholder="Your event or community name" /></label>
+                <label><select value={organizerCategory} onChange={e => setOrganizerCategory(e.target.value)} required><option value="esports">eSports tournaments</option><option value="garba">Garba / Navratri</option><option value="sports">Sports tournaments</option><option value="workshop">Workshops / seminars</option><option value="coaching">Coaching / classes</option><option value="cultural">Cultural events</option><option value="community">Community meetups</option></select></label>
                 <div className="account-delete-actions">
                   <button className="button button-primary" disabled={busy} type="submit">{busy ? "Setting up…" : "Create Website"} <ArrowRight size={16} /></button>
                   <button className="button button-secondary" type="button" disabled={busy} onClick={() => setSetupOpen(false)}>Cancel</button>
